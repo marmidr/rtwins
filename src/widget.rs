@@ -2,8 +2,6 @@
 
 #![allow(dead_code)]
 
-use super::colors::*;
-
 /// Screen coordinates
 pub struct Coord
 {
@@ -42,6 +40,11 @@ pub struct Rect
 
 impl Rect
 {
+    /// Returns default object; can be used in `const` initialization
+    const fn cdeflt() -> Rect {
+        Rect{coord: Coord::cdeflt(), size: Size::cdeflt()}
+    }
+
     pub fn set_max(&mut self) {
         self.coord.col = 1;
         self.coord.row = 1;
@@ -50,65 +53,218 @@ impl Rect
     }
 }
 
-impl Rect
+/// Visual style of button
+pub enum ButtonStyle
 {
-    /// Returns default object; can be used in `const` initialization
-    const fn cdeflt() -> Rect {
-        Rect{coord: Coord::cdeflt(), size: Size::cdeflt()}
-    }
+    Simple,
+    Solid,
+    Solid1p5,
 }
 
+/// Visual style of Progress Bar
+pub enum PgBarStyle
+{
+    /// #
+    Hash,
+    ///  ▒
+    Shade,
+    /// □
+    Rectangle,
+}
+
+
 /// Widget unique identifier
-pub type WID = u16;
-/// convenient; default value points to nothing
-pub const WIDGET_ID_NONE: WID = u16::MIN;
+pub type Wid = u16;
+
+/// Convenient, default value that points to nothing
+pub const WIDGET_ID_NONE: Wid = u16::MIN;
 /// special function parameter
-pub const WIDGET_ID_ALL: WID = u16::MAX;
+pub const WIDGET_ID_ALL: Wid = u16::MAX;
+
+/// Widgets properties
+pub mod wp
+{
+    use super::super::colors::*;
+    use super::ButtonStyle;
+    use super::PgBarStyle;
+
+    pub struct Window {
+        pub title   : &'static str,
+        pub fg_color: ColorFG,
+        pub bg_color: ColorBG,
+        pub is_popup: bool,
+        // get_state: fn() -> &IWindowState
+    }
+
+    impl Window {
+        pub const fn into(self) -> super::Type {
+            super::Type::Window(self)
+        }
+    }
+
+    pub struct Panel {
+        pub title   : &'static str,
+        pub fg_color: ColorFG,
+        pub bg_color: ColorBG,
+        pub no_frame: bool
+    }
+
+    pub struct Label {
+        pub title   : &'static str,
+        pub fg_color: ColorFG,
+        pub bg_color: ColorBG,
+    }
+
+    pub struct TextEdit {
+        pub fg_color: ColorFG,
+        pub bg_color: ColorBG,
+    }
+
+    pub struct CheckBox {
+        pub text    : &'static str,
+        pub fg_color: ColorFG,
+    }
+
+    pub struct Radio {
+        pub text    : &'static str,
+        pub fg_color: ColorFG,
+        pub group_id: u16,
+        pub radio_id: u16
+    }
+
+    pub struct Button {
+        pub text    : &'static str,
+        pub fg_color: ColorFG,
+        pub bg_color: ColorBG,
+        pub style   : ButtonStyle
+    }
+
+    pub struct Led {
+        pub text        : &'static str,
+        pub fg_color    : ColorFG,
+        pub bg_color_off: ColorBG,
+        pub bg_color_on : ColorBG
+    }
+
+    pub struct PageCtrl {
+        pub tab_width   : u8,
+        pub vert_offs   : u8
+    }
+
+    pub struct Page {
+        pub title       : &'static str,
+        pub fg_color    : ColorFG,
+    }
+
+    pub struct ProgressBar {
+        pub fg_color    : ColorFG,
+        pub style       : PgBarStyle
+    }
+
+    pub struct ListBox {
+        pub fg_color    : ColorFG,
+        pub bg_color    : ColorBG,
+        pub no_frame    : bool
+    }
+
+    pub struct ComboBox {
+        pub fg_color        : ColorFG,
+        pub bg_color        : ColorBG,
+        pub drop_down_size  : u8
+    }
+
+    pub struct CustomWgt {
+    }
+
+    pub struct TextBox {
+        pub fg_color: ColorFG,
+        pub bg_color: ColorBG,
+    }
+
+    pub struct Layer {
+    }
+
+}
 
 /// Widget type with all specific data
 pub enum Type
 {
     None,
-    Window {
-        title   : &'static str,
-        fg_color: ColorFG,
-        bg_color: ColorBG,
-        is_popup: bool,
-        // get_state: fn() -> &IWindowState
-    },
-    Panel,
-    Label,
-    TextEdit,
-    CheckBox,
-    Radio,
-    Button,
-    Led,
-    PageCtrl,
-    Page,
-    ProgressBar,
-    ListBox,
-    ComboBox,
-    CustomWgt,
-    TextBox,
-    Layer,
+    Window(wp::Window),
+    Panel(wp::Panel),
+    Label(wp::Label),
+    TextEdit(wp::TextEdit),
+    CheckBox(wp::CheckBox),
+    Radio(wp::Radio),
+    Button(wp::Button),
+    Led(wp::Led),
+    PageCtrl(wp::PageCtrl),
+    Page(wp::Page),
+    ProgressBar(wp::ProgressBar),
+    ListBox(wp::ListBox),
+    ComboBox(wp::ComboBox),
+    CustomWgt(wp::CustomWgt),
+    TextBox(wp::TextBox),
+    Layer(wp::Layer),
+}
+
+impl Type {
+    /// Extract window properties from enum
+    pub fn prop_wnd<'a>(&'a self) -> &'a wp::Window {
+        match self {
+            Type::Window(ref wp) => wp,
+            _ => panic!()
+        }
+    }
+
+    /// Extract panel properties from enum
+    pub fn prop_pnl<'a>(&'a self) -> &'a wp::Panel {
+        match self {
+            Type::Panel(ref wp) => wp,
+            _ => panic!()
+        }
+    }
 }
 
 /// Widget itself
 pub struct Widget
 {
     /// Unique widget ID
-    pub id: WID,
+    pub id      : Wid,
+    pub parent  : Wid,
     /// coordinates
-    pub coord: Coord,
+    pub coord   : Coord,
     /// widget size
-    pub size: Size,
-    /// widget type with
-    pub typ: Type,
-    /// link to children widgets
-    pub link: &'static[Widget]
+    pub size    : Size,
+    /// widget type with properties
+    pub typ     : Type,
+    /// link to children widgets, 2x8B
+    pub link    : &'static[Widget]
 }
 
-enum Prop {
+// union IntOrFloat {
+//     i: u32,
+//     f: f32,
+// }
+
+#[derive(Copy, Clone)]
+struct Idx
+{
+    own_idx     : u16,
+    parent_idx  : u16,
+    childs_idx  : u16,
+    childs_cnt  : u16,
+}
+
+union Link
+{
+    addr: u32,
+    idx : Idx
+}
+
+/// Widgets dynamic properties
+enum DynProp
+{
     Chbx {
         checked: bool
     },
@@ -134,9 +290,9 @@ enum Prop {
     }
 }
 
-pub struct WidgetProp
+pub struct WidgetDynProp
 {
-    prop: Prop,
+    prop    : DynProp,
     // applies to every widget
-    enabled: bool
+    enabled : bool
 }
