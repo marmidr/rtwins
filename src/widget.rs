@@ -14,7 +14,7 @@ pub struct Coord
 impl Coord
 {
     /// Returns default object; can be used in `const` initialization
-    pub const fn dflt()  -> Coord {
+    pub const fn cdeflt()  -> Coord {
         Coord{col: 0, row: 0}
     }
 }
@@ -28,7 +28,7 @@ pub struct Size
 
 impl Size {
     /// Returns default object; can be used in `const` initialization
-    pub const fn dflt() -> Size {
+    pub const fn cdeflt() -> Size {
         Size{width: 0, height: 0}
     }
 }
@@ -45,22 +45,24 @@ impl Rect
     pub fn set_max(&mut self) {
         self.coord.col = 1;
         self.coord.row = 1;
-        self.size.width = 0xff;
-        self.size.height = 0xff;
+        self.size.width = u8::MAX;
+        self.size.height = u8::MAX;
     }
 }
 
 impl Rect
 {
     /// Returns default object; can be used in `const` initialization
-    const fn dflt() -> Rect {
-        Rect{coord: Coord::dflt(), size: Size::dflt()}
+    const fn cdeflt() -> Rect {
+        Rect{coord: Coord::cdeflt(), size: Size::cdeflt()}
     }
 }
 
 /// Widget unique identifier
 pub type WID = u16;
-pub const WIDGET_ID_NONE: WID = 0;    // convenient; default value points to nothing
+/// convenient; default value points to nothing
+pub const WIDGET_ID_NONE: WID = u16::MIN;
+/// special function parameter
 pub const WIDGET_ID_ALL: WID = u16::MAX;
 
 /// Widget type with all specific data
@@ -68,7 +70,7 @@ pub enum Type
 {
     None,
     Window {
-        title: &'static str,
+        title   : &'static str,
         fg_color: ColorFG,
         bg_color: ColorBG,
         is_popup: bool,
@@ -94,10 +96,16 @@ pub enum Type
 /// Widget itself
 pub struct Widget
 {
+    /// Unique widget ID
     pub id: WID,
+    /// coordinates
     pub coord: Coord,
+    /// widget size
     pub size: Size,
+    /// widget type with
     pub typ: Type,
+    /// link to children widgets
+    pub link: &'static[Widget]
 }
 
 enum Prop {
