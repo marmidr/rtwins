@@ -1,6 +1,7 @@
 //! RTWins TUI libarry
 
 pub mod esc;
+pub mod pal;
 pub mod colors;
 pub mod widget;
 pub mod widget_impl;

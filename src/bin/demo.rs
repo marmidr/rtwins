@@ -2,6 +2,7 @@
 
 extern crate rtwins;
 use rtwins::esc;
+use std::io::Write;
 
 /// Simple widget-based interface definition as const
 mod tui
@@ -11,8 +12,7 @@ use rtwins::colors::{ColorBG, ColorFG};
 use rtwins::widget::WIDGET_ID_NONE;
 
 #[allow(dead_code)]
-pub enum Id
-{
+pub enum Id {
     WndMain = rtwins::WIDGET_ID_NONE as isize + 1,
         Lbl1,
         Lbl2,
@@ -67,10 +67,88 @@ pub const WINDOW: Widget = Widget {
 
 }
 
+struct Pal {
+    line_buff: String,
+    logging: bool,
+    mtx: std::sync::Mutex<()>,
+    started_at: std::time::Instant,
+}
+
+impl Pal {
+    fn new() -> Self {
+        Pal{line_buff: String::with_capacity(1000),
+            logging: false,
+            mtx: std::sync::Mutex::default(),
+            started_at: std::time::Instant::now(),
+        }
+    }
+}
+
+impl rtwins::pal::Pal for Pal
+{
+    fn write_char(&mut self, c: char) {
+        self.line_buff.push(c);
+    }
+
+    fn write_char_n(&mut self, c: char, repeat: i16) {
+        for _ in 0..repeat {
+            self.line_buff.push(c);
+        }
+    }
+
+    fn write_str(&mut self, s: &str) {
+        self.line_buff.push_str(s);
+    }
+
+    fn write_str_n(&mut self, s: &str, repeat: i16) {
+        for _ in 0..repeat {
+            self.line_buff.push_str(s);
+        }
+    }
+
+    fn flush_buff(&mut self) {
+        std::io::stdout().lock().write(self.line_buff.as_bytes()).expect("Error writing to stdout");
+        self.line_buff.clear();
+    }
+
+    fn set_logging(&mut self, on: bool) {
+        self.logging = on;
+    }
+
+    fn sleep(&mut self, ms: u16) {
+        std::thread::sleep( std::time::Duration::from_millis(ms as u64));
+    }
+
+    fn get_logs_row(&mut self, ) -> u16 {
+        0
+    }
+
+    fn get_time_stamp(&mut self, ) -> u32 {
+        let dif = std::time::Instant::now() - self.started_at;
+        dif.as_millis() as u32
+    }
+
+    fn get_time_diff(&mut self, prev_timestamp: u32) -> u32 {
+        let dif = std::time::Instant::now() - self.started_at;
+        dif.as_millis() as u32 - prev_timestamp
+    }
+
+    fn lock(&mut self, wait: bool) -> bool {
+        if wait {
+            let lr = self.mtx.lock();
+            lr.is_ok()
+        }
+        else {
+            self.mtx.try_lock().is_ok()
+        }
+    }
+}
+
 // -----------------------------------------------------------------------------------------------
 
 fn main()
 {
+    let _pal = Pal::new();
     rtwins::init();
     println!("RTWins demo; lib v{}", rtwins::VER);
     println!("Normal {}Bold{} {}Italic{}", esc::BOLD, esc::NORMAL, esc::ITALICS_ON, esc::ITALICS_OFF);
