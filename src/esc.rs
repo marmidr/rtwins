@@ -3,7 +3,7 @@
 //! See more: https://en.m.wikipedia.org/wiki/ANSI_escape_code
 //!
 
-pub mod esc {
+// https://doc.rust-lang.org/reference/macros-by-example.html
 
 /// Control Sequence Introducer
 #[macro_export]
@@ -19,6 +19,7 @@ macro_rules! csi {
 
 /// Operating System Command
 #[macro_export]
+#[allow(unused_macros)]
 macro_rules! osc {
     () => {
         ""
@@ -31,13 +32,14 @@ macro_rules! osc {
 
 /// String Terminator
 #[macro_export]
+#[allow(unused_macros)]
 macro_rules! st {
     () => {
         ""
     };
 
     ($elem:expr) => {
-        concat!("\x27\\", $elem)
+        concat!("\x1B\\", $elem)
     };
 }
 
@@ -73,10 +75,21 @@ pub const STRIKETHROUGH_OFF : & str =   csi!("29m");
 
 pub const ATTRIBUTES_DEFAULT : & str =  csi!("10;22;23;24;25;27;28;29m");
 
-// pub const ESC_FONT(id) : & str = csi!("1" #id "m"); // id: 1..9
-// pub const ESC_FONT_DEFAULT : & str = csi!("10m");
-// // '\u001B]8;;https://github.com\u0007Click\u001B]8;;\u0007'
-// pub const ESC_LINK(url, caption) : & str = osc!("8;;") url "\u0007" caption ANSI_OSC("8;;\u{0007}")
-// pub const ESC_LINK_FMT : & str =                     ESC_LINK("%s", "%s");
+pub const FONT_DEFAULT : & str =        csi!("10m");
+pub const FONT_1 : & str =              csi!("11m");
+pub const FONT_2 : & str =              csi!("12m");
+pub const FONT_3 : & str =              csi!("13m");
+pub const FONT_4 : & str =              csi!("14m");
+pub const FONT_5 : & str =              csi!("15m");
+pub const FONT_6 : & str =              csi!("16m");
+pub const FONT_7 : & str =              csi!("17m");
+pub const FONT_8 : & str =              csi!("18m");
+pub const FONT_9 : & str =              csi!("19m");
 
+// '\u001B]8;;https://github.com\u0007Click\u001B]8;;\u0007'
+pub fn link(url: &str, capt: &str) -> String {
+    let x = osc!("8;;").to_string() + url + "\u{0007}" + capt + osc!("8;;\u{0007}");
+    let mut out = String::from("\x1B]");
+    out.push_str(&x);
+    out
 }

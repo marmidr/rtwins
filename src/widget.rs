@@ -109,10 +109,22 @@ pub mod wp
         pub no_frame: bool
     }
 
+    impl Panel {
+        pub const fn into(self) -> super::Type {
+            super::Type::Panel(self)
+        }
+    }
+
     pub struct Label {
         pub title   : &'static str,
         pub fg_color: ColorFG,
         pub bg_color: ColorBG,
+    }
+
+    impl Label {
+        pub const fn into(self) -> super::Type {
+            super::Type::Label(self)
+        }
     }
 
     pub struct TextEdit {
@@ -120,9 +132,21 @@ pub mod wp
         pub bg_color: ColorBG,
     }
 
+    impl TextEdit {
+        pub const fn into(self) -> super::Type {
+            super::Type::TextEdit(self)
+        }
+    }
+
     pub struct CheckBox {
         pub text    : &'static str,
         pub fg_color: ColorFG,
+    }
+
+    impl CheckBox {
+        pub const fn into(self) -> super::Type {
+            super::Type::CheckBox(self)
+        }
     }
 
     pub struct Radio {
@@ -132,11 +156,23 @@ pub mod wp
         pub radio_id: u16
     }
 
+    impl Radio {
+        pub const fn into(self) -> super::Type {
+            super::Type::Radio(self)
+        }
+    }
+
     pub struct Button {
         pub text    : &'static str,
         pub fg_color: ColorFG,
         pub bg_color: ColorBG,
         pub style   : ButtonStyle
+    }
+
+    impl Button {
+        pub const fn into(self) -> super::Type {
+            super::Type::Button(self)
+        }
     }
 
     pub struct Led {
@@ -146,9 +182,21 @@ pub mod wp
         pub bg_color_on : ColorBG
     }
 
+    impl Led {
+        pub const fn into(self) -> super::Type {
+            super::Type::Led(self)
+        }
+    }
+
     pub struct PageCtrl {
         pub tab_width   : u8,
         pub vert_offs   : u8
+    }
+
+    impl PageCtrl {
+        pub const fn into(self) -> super::Type {
+            super::Type::PageCtrl(self)
+        }
     }
 
     pub struct Page {
@@ -156,9 +204,21 @@ pub mod wp
         pub fg_color    : ColorFG,
     }
 
+    impl Page {
+        pub const fn into(self) -> super::Type {
+            super::Type::Page(self)
+        }
+    }
+
     pub struct ProgressBar {
         pub fg_color    : ColorFG,
         pub style       : PgBarStyle
+    }
+
+    impl ProgressBar {
+        pub const fn into(self) -> super::Type {
+            super::Type::ProgressBar(self)
+        }
     }
 
     pub struct ListBox {
@@ -167,13 +227,31 @@ pub mod wp
         pub no_frame    : bool
     }
 
+    impl ListBox {
+        pub const fn into(self) -> super::Type {
+            super::Type::ListBox(self)
+        }
+    }
+
     pub struct ComboBox {
         pub fg_color        : ColorFG,
         pub bg_color        : ColorBG,
         pub drop_down_size  : u8
     }
 
+    impl ComboBox {
+        pub const fn into(self) -> super::Type {
+            super::Type::ComboBox(self)
+        }
+    }
+
     pub struct CustomWgt {
+    }
+
+    impl CustomWgt {
+        pub const fn into(self) -> super::Type {
+            super::Type::CustomWgt(self)
+        }
     }
 
     pub struct TextBox {
@@ -181,9 +259,20 @@ pub mod wp
         pub bg_color: ColorBG,
     }
 
+    impl TextBox {
+        pub const fn into(self) -> super::Type {
+            super::Type::TextBox(self)
+        }
+    }
+
     pub struct Layer {
     }
 
+    impl Layer {
+        pub const fn into(self) -> super::Type {
+            super::Type::Layer(self)
+        }
+    }
 }
 
 /// Widget type with all specific data

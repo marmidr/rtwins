@@ -22,9 +22,9 @@ pub enum Id
         PnlWhite,
 }
 
-/// Easy conversion from enum to i16
+/// Easy conversion from enum to Wid
 impl Id {
-    const fn into(self) -> u16 { self as u16 }
+    const fn into(self) -> rtwins::Wid { self as rtwins::Wid }
 }
 
 pub const NO_CHILDS: [Widget; 0] = [];
@@ -47,7 +47,11 @@ pub const WINDOW: Widget = Widget {
             parent: rtwins::WIDGET_ID_NONE,
             coord: Coord::cdeflt(),
             size: Size::cdeflt(),
-            typ: Type::None,
+            typ: wp::Label {
+                title   : "Name",
+                fg_color: ColorFG::White,
+                bg_color: ColorBG::Blue,
+            }.into(),
             link: &NO_CHILDS
         },
         Widget {
