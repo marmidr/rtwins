@@ -85,7 +85,7 @@ fn main()
     };
 
     println!("w_none childs: {}", w_none.link.len() );
-    println!("w_none widgets: {}", rtwins::widget::wgt_count(&w_none));
+    println!("w_none widgets: {}", rtwins::wgt_count(&w_none));
     println!("WINDOW childs: {}", tui::WINDOW.link.len() );
 
     let title = |wgt: &rtwins::Widget| match wgt.typ {
@@ -96,7 +96,7 @@ fn main()
     println!("WINDOW title: {}", title(&tui::WINDOW) );
     println!("WINDOW title: {}", wnd_prop(&tui::WINDOW).title );
     println!("WINDOW title: {}", tui::WINDOW.typ.prop_wnd().title );
-    println!("WINDOW widgets: {}", rtwins::widget::wgt_count(&tui::WINDOW) );
+    println!("WINDOW widgets: {}", rtwins::wgt_count(&tui::WINDOW) );
     println!("sizeof Widget: {}", std::mem::size_of::<rtwins::widget::Widget>());
     println!("sizeof Type: {}", std::mem::size_of::<rtwins::widget::Type>());
     println!("sizeof Id: {}", std::mem::size_of::<tui::Id>());
@@ -115,4 +115,4 @@ fn wnd_prop(wgt: &rtwins::Widget) -> &rtwins::widget::wp::Window {
 }
 
 /// Example of const-evaluated and translated Widgets tree into Widgets array
-const _W: [rtwins::Widget; rtwins::widget::wgt_count(&tui::WINDOW)] = rtwins::widget::wgt_translate(&tui::WINDOW);
+const _W: [rtwins::Widget; rtwins::wgt_count(&tui::WINDOW)] = rtwins::wgt_translate(&tui::WINDOW);
