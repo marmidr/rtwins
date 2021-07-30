@@ -1,6 +1,7 @@
 //! Color definitions
 
 /// Foreground colors
+#[derive(Copy, Clone)]
 pub enum ColorFG
 {
     Inherit,
@@ -25,6 +26,7 @@ pub enum ColorFG
 }
 
 /// Background colors
+#[derive(Copy, Clone)]
 pub enum ColorBG
 {
     Inherit,

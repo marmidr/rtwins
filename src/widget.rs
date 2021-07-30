@@ -3,6 +3,7 @@
 #![allow(dead_code)]
 
 /// Screen coordinates
+#[derive(Clone, Copy)]
 pub struct Coord
 {
     pub col: u8,
@@ -18,6 +19,7 @@ impl Coord
 }
 
 /// Widget size
+#[derive(Clone, Copy)]
 pub struct Size
 {
     pub width: u8,
@@ -32,6 +34,7 @@ impl Size {
 }
 
 /// Rectangle area
+#[derive(Clone, Copy)]
 pub struct Rect
 {
     coord: Coord,
@@ -54,6 +57,7 @@ impl Rect
 }
 
 /// Visual style of button
+#[derive(Copy, Clone)]
 pub enum ButtonStyle
 {
     Simple,
@@ -62,6 +66,7 @@ pub enum ButtonStyle
 }
 
 /// Visual style of Progress Bar
+#[derive(Copy, Clone)]
 pub enum PgBarStyle
 {
     /// #
@@ -74,12 +79,12 @@ pub enum PgBarStyle
 
 
 /// Widget unique identifier
-pub type Wid = u16;
+pub type WId = u16;
 
 /// Convenient, default value that points to nothing
-pub const WIDGET_ID_NONE: Wid = u16::MIN;
+pub const WIDGET_ID_NONE: WId = u16::MIN;
 /// special function parameter
-pub const WIDGET_ID_ALL: Wid = u16::MAX;
+pub const WIDGET_ID_ALL: WId = u16::MAX;
 
 /// Widgets properties
 pub mod wp
@@ -88,6 +93,7 @@ pub mod wp
     use super::ButtonStyle;
     use super::PgBarStyle;
 
+    #[derive(Copy, Clone)]
     pub struct Window {
         pub title   : &'static str,
         pub fg_color: ColorFG,
@@ -102,6 +108,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct Panel {
         pub title   : &'static str,
         pub fg_color: ColorFG,
@@ -115,6 +122,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct Label {
         pub title   : &'static str,
         pub fg_color: ColorFG,
@@ -127,6 +135,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct TextEdit {
         pub fg_color: ColorFG,
         pub bg_color: ColorBG,
@@ -138,6 +147,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct CheckBox {
         pub text    : &'static str,
         pub fg_color: ColorFG,
@@ -149,6 +159,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct Radio {
         pub text    : &'static str,
         pub fg_color: ColorFG,
@@ -162,6 +173,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct Button {
         pub text    : &'static str,
         pub fg_color: ColorFG,
@@ -175,6 +187,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct Led {
         pub text        : &'static str,
         pub fg_color    : ColorFG,
@@ -188,6 +201,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct PageCtrl {
         pub tab_width   : u8,
         pub vert_offs   : u8
@@ -199,6 +213,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct Page {
         pub title       : &'static str,
         pub fg_color    : ColorFG,
@@ -210,6 +225,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct ProgressBar {
         pub fg_color    : ColorFG,
         pub style       : PgBarStyle
@@ -221,6 +237,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct ListBox {
         pub fg_color    : ColorFG,
         pub bg_color    : ColorBG,
@@ -233,6 +250,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct ComboBox {
         pub fg_color        : ColorFG,
         pub bg_color        : ColorBG,
@@ -245,6 +263,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct CustomWgt {
     }
 
@@ -254,6 +273,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct TextBox {
         pub fg_color: ColorFG,
         pub bg_color: ColorBG,
@@ -265,6 +285,7 @@ pub mod wp
         }
     }
 
+    #[derive(Copy, Clone)]
     pub struct Layer {
     }
 
@@ -276,9 +297,10 @@ pub mod wp
 }
 
 /// Widget type with all specific data
+#[derive(Copy, Clone)]
 pub enum Type
 {
-    None,
+    NoWgt,
     Window(wp::Window),
     Panel(wp::Panel),
     Label(wp::Label),
@@ -298,29 +320,36 @@ pub enum Type
 }
 
 impl Type {
+    /// Returns default object; can be used in `const` initialization
+    pub const fn cdeflt()  -> Self {
+        Self::NoWgt
+    }
+
     /// Extract window properties from enum
-    pub fn prop_wnd<'a>(&'a self) -> &'a wp::Window {
+    // pub fn prop_wnd<'a>(&'a self) -> &'a wp::Window {
+    pub fn prop_wnd(&self) -> &wp::Window {
         match self {
-            Type::Window(ref wp) => wp,
+            Self::Window(ref wp) => wp,
             _ => panic!()
         }
     }
 
     /// Extract panel properties from enum
-    pub fn prop_pnl<'a>(&'a self) -> &'a wp::Panel {
+    pub fn prop_pnl(&self) -> &wp::Panel {
         match self {
-            Type::Panel(ref wp) => wp,
+            Self::Panel(ref wp) => wp,
             _ => panic!()
         }
     }
 }
 
 /// Widget itself
+#[derive(Copy, Clone)]
 pub struct Widget
 {
     /// Unique widget ID
-    pub id      : Wid,
-    pub parent  : Wid,
+    pub id      : WId,
+    pub parent  : WId,
     /// coordinates
     pub coord   : Coord,
     /// widget size
@@ -329,6 +358,20 @@ pub struct Widget
     pub typ     : Type,
     /// link to children widgets, 2x8B
     pub link    : &'static[Widget]
+}
+
+impl Widget {
+    /// Returns default object; can be used in `const` initialization
+    pub const fn cdeflt()  -> Self {
+        Widget{
+            id      : WIDGET_ID_NONE,
+            parent  : WIDGET_ID_NONE,
+            coord   : Coord::cdeflt(),
+            size    : Size::cdeflt(),
+            typ     : Type::cdeflt(),
+            link    : &[]
+        }
+    }
 }
 
 // union IntOrFloat {
@@ -358,7 +401,6 @@ enum DynProp
         checked: bool
     },
     Led {
-        txt: &'static str,
         lit: bool
     },
     Lbx {
@@ -384,4 +426,26 @@ pub struct WidgetDynProp
     prop    : DynProp,
     // applies to every widget
     enabled : bool
+}
+
+/// Counts total number of widgets in tree-like definition
+pub const fn wgt_count(wgt: &Widget) -> usize {
+    let mut n: usize = 1;
+    let mut i: usize = 0;
+    while i < wgt.link.len() {
+        n += wgt_count(&wgt.link[i]);
+        i += 1;
+    }
+    n
+}
+
+// TODO: not finished
+pub const fn wgt_translate<const N: usize>(wgt: &Widget) -> [Widget; N] {
+    let mut result: [Widget; N] = [Widget::cdeflt(); N];
+    let mut i: usize = 0;
+    while i < wgt.link.len() {
+        result[i] = *wgt;
+        i += 1;
+    }
+    result
 }

@@ -24,7 +24,7 @@ pub enum Id
 
 /// Easy conversion from enum to Wid
 impl Id {
-    const fn into(self) -> rtwins::Wid { self as rtwins::Wid }
+    const fn into(self) -> rtwins::WId { self as rtwins::WId }
 }
 
 pub const NO_CHILDS: [Widget; 0] = [];
@@ -59,7 +59,7 @@ pub const WINDOW: Widget = Widget {
             parent: rtwins::WIDGET_ID_NONE,
             coord: Coord::cdeflt(),
             size: Size::cdeflt(),
-            typ: Type::None,
+            typ: Type::NoWgt,
             link: &[]
         },
     ]
@@ -80,11 +80,12 @@ fn main()
         parent  : rtwins::WIDGET_ID_NONE,
         coord   : rtwins::Coord::cdeflt(),
         size    : rtwins::Size::cdeflt(),
-        typ     : rtwins::Type::None,
+        typ     : rtwins::Type::NoWgt,
         link    : &tui::NO_CHILDS
     };
 
     println!("w_none childs: {}", w_none.link.len() );
+    println!("w_none widgets: {}", rtwins::widget::wgt_count(&w_none));
     println!("WINDOW childs: {}", tui::WINDOW.link.len() );
 
     let title = |wgt: &rtwins::Widget| match wgt.typ {
@@ -95,6 +96,7 @@ fn main()
     println!("WINDOW title: {}", title(&tui::WINDOW) );
     println!("WINDOW title: {}", wnd_prop(&tui::WINDOW).title );
     println!("WINDOW title: {}", tui::WINDOW.typ.prop_wnd().title );
+    println!("WINDOW widgets: {}", rtwins::widget::wgt_count(&tui::WINDOW) );
     println!("sizeof Widget: {}", std::mem::size_of::<rtwins::widget::Widget>());
     println!("sizeof Type: {}", std::mem::size_of::<rtwins::widget::Type>());
     println!("sizeof Id: {}", std::mem::size_of::<tui::Id>());
@@ -105,9 +107,12 @@ fn main()
 }
 
 /// Extract window properties from enum
-fn wnd_prop<'a>(wgt: &'a rtwins::Widget) -> &'a rtwins::widget::wp::Window {
+fn wnd_prop(wgt: &rtwins::Widget) -> &rtwins::widget::wp::Window {
     match wgt.typ {
         rtwins::Type::Window(ref wp) => wp,
         _ => panic!()
     }
 }
+
+/// Example of const-evaluated and translated Widgets tree into Widgets array
+const _W: [rtwins::Widget; rtwins::widget::wgt_count(&tui::WINDOW)] = rtwins::widget::wgt_translate(&tui::WINDOW);
