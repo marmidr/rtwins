@@ -1,8 +1,8 @@
-//! RTWins Widget
+//! # RTWins Widget
 
 #![allow(dead_code)]
 
-/// Screen coordinates
+/// Widget screen coordinates
 #[derive(Clone, Copy)]
 pub struct Coord
 {
@@ -82,9 +82,9 @@ pub enum PgBarStyle
 pub type WId = u16;
 
 /// Convenient, default value that points to nothing
-pub const WIDGET_ID_NONE: WId = u16::MIN;
-/// special function parameter
-pub const WIDGET_ID_ALL: WId = u16::MAX;
+pub const WIDGET_ID_NONE: WId = WId::MIN;
+/// Used as a special function parameter
+pub const WIDGET_ID_ALL: WId = WId::MAX;
 
 /// Widgets properties
 pub mod wp

@@ -1,9 +1,7 @@
-//! *ANSI ESC codes*
+//! # ANSI ESC codes
 //!
-//! See more: https://en.m.wikipedia.org/wiki/ANSI_escape_code
+//! [More on Wikipedia](https://en.m.wikipedia.org/wiki/ANSI_escape_code)
 //!
-
-// https://doc.rust-lang.org/reference/macros-by-example.html
 
 // -----------------------------------------------------------------------------------------------
 /// # Escape sequence generation
@@ -58,6 +56,7 @@ macro_rules! st {
     };
 }
 
+/// Foreground RGB color
 #[macro_export]
 macro_rules! fg_rgb {
     // r,g,b: 0..255
@@ -66,6 +65,7 @@ macro_rules! fg_rgb {
     };
 }
 
+/// Foreground 8-bit color
 #[macro_export]
 #[allow(unused_macros)]
 macro_rules! fg_color {
@@ -75,6 +75,7 @@ macro_rules! fg_color {
     };
 }
 
+/// Background RGB color
 #[macro_export]
 macro_rules! bg_rgb {
     // r,g,b: 0..255
@@ -83,6 +84,7 @@ macro_rules! bg_rgb {
     };
 }
 
+/// Background 8-bit color
 #[macro_export]
 macro_rules! bg_color {
     // clno: 1..255, 232..255=black->white
@@ -95,87 +97,89 @@ macro_rules! bg_color {
 // -----------------------------------------------------------------------------------------------
 /// # Text Display Modifier Escape Sequences
 
-pub const BOLD : &str =                 csi!("1m");
-pub const FAINT : &str =                csi!("2m");
-pub const NORMAL : &str =               csi!("22m");
+pub const BOLD                : &str = csi!("1m");
+pub const FAINT               : &str = csi!("2m");
+pub const NORMAL              : &str = csi!("22m");
 
+/// # Text attributes
 // if not italics, may be same as inverse
-pub const ITALICS_ON : &str =           csi!("3m");
-pub const ITALICS_OFF : &str =          csi!("23m");
+pub const ITALICS_ON          : &str = csi!("3m");
+pub const ITALICS_OFF         : &str = csi!("23m");
 
-pub const UNDERLINE_ON : &str =         csi!("4m");
-pub const UNDERLINE_OFF : &str =        csi!("24m");
+pub const UNDERLINE_ON        : &str = csi!("4m");
+pub const UNDERLINE_OFF       : &str = csi!("24m");
 
-pub const OVERLINE_ON : &str =          csi!("53m");
-pub const OVERLINE_OFF : &str =         csi!("55m");
+pub const OVERLINE_ON         : &str = csi!("53m");
+pub const OVERLINE_OFF        : &str = csi!("55m");
 
 // if not blinks, the bg color may be lighter
-pub const BLINK : &str =                csi!("5m");
-pub const BLINK_OFF : &str =            csi!("25m");
+pub const BLINK               : &str = csi!("5m");
+pub const BLINK_OFF           : &str = csi!("25m");
 
-pub const INVERSE_ON : &str =           csi!("7m");
-pub const INVERSE_OFF : &str =          csi!("27m");
+pub const INVERSE_ON          : &str = csi!("7m");
+pub const INVERSE_OFF         : &str = csi!("27m");
 
-pub const INVISIBLE_ON : &str =         csi!("8m");
-pub const INVISIBLE_OFF : &str =        csi!("28m");
+pub const INVISIBLE_ON        : &str = csi!("8m");
+pub const INVISIBLE_OFF       : &str = csi!("28m");
 
-pub const STRIKETHROUGH_ON : &str =     csi!("9m");
-pub const STRIKETHROUGH_OFF : &str =    csi!("29m");
+pub const STRIKETHROUGH_ON    : &str = csi!("9m");
+pub const STRIKETHROUGH_OFF   : &str = csi!("29m");
 
-pub const ATTRIBUTES_DEFAULT : &str =   csi!("10;22;23;24;25;27;28;29m");
+pub const ATTRIBUTES_DEFAULT  : &str = csi!("10;22;23;24;25;27;28;29m");
 
-pub const FONT_DEFAULT : &str =         csi!("10m");
-pub const FONT_1 : &str =               csi!("11m");
-pub const FONT_2 : &str =               csi!("12m");
-pub const FONT_3 : &str =               csi!("13m");
-pub const FONT_4 : &str =               csi!("14m");
-pub const FONT_5 : &str =               csi!("15m");
-pub const FONT_6 : &str =               csi!("16m");
-pub const FONT_7 : &str =               csi!("17m");
-pub const FONT_8 : &str =               csi!("18m");
-pub const FONT_9 : &str =               csi!("19m");
+/// # Font selection
+pub const FONT_DEFAULT    : &str = csi!("10m");
+pub const FONT_1          : &str = csi!("11m");
+pub const FONT_2          : &str = csi!("12m");
+pub const FONT_3          : &str = csi!("13m");
+pub const FONT_4          : &str = csi!("14m");
+pub const FONT_5          : &str = csi!("15m");
+pub const FONT_6          : &str = csi!("16m");
+pub const FONT_7          : &str = csi!("17m");
+pub const FONT_8          : &str = csi!("18m");
+pub const FONT_9          : &str = csi!("19m");
 
 // -----------------------------------------------------------------------------------------------
 /// # Text Color Control Sequences
 /// 4/8/24-bit ANSI colors
 /// https://en.wikipedia.org/wiki/ANSI_escape_code
 
-pub const FG_BLACK : &str =                     csi!("30m");
-pub const FG_BLACK_INTENSE : &str =             csi!("90m");
-pub const FG_RED : &str =                       csi!("31m");
-pub const FG_RED_INTENSE : &str =               csi!("91m");
-pub const FG_GREEN : &str =                     csi!("32m");
-pub const FG_GREEN_INTENSE : &str =             csi!("92m");
-pub const FG_YELLOW : &str =                    csi!("33m");
-pub const FG_YELLOW_INTENSE : &str =            csi!("93m");
-pub const FG_BLUE : &str =                      csi!("34m");
-pub const FG_BLUE_INTENSE : &str =              csi!("94m");
-pub const FG_MAGENTA : &str =                   csi!("35m");
-pub const FG_MAGENTA_INTENSE : &str =           csi!("95m");
-pub const FG_CYAN : &str =                      csi!("36m");
-pub const FG_CYAN_INTENSE : &str =              csi!("96m");
-pub const FG_WHITE : &str =                     csi!("37m");
-pub const FG_WHITE_INTENSE : &str =             csi!("97m");
-pub const FG_DEFAULT : &str =                   csi!("39m");
+pub const FG_BLACK            : &str = csi!("30m");
+pub const FG_BLACK_INTENSE    : &str = csi!("90m");
+pub const FG_RED              : &str = csi!("31m");
+pub const FG_RED_INTENSE      : &str = csi!("91m");
+pub const FG_GREEN            : &str = csi!("32m");
+pub const FG_GREEN_INTENSE    : &str = csi!("92m");
+pub const FG_YELLOW           : &str = csi!("33m");
+pub const FG_YELLOW_INTENSE   : &str = csi!("93m");
+pub const FG_BLUE             : &str = csi!("34m");
+pub const FG_BLUE_INTENSE     : &str = csi!("94m");
+pub const FG_MAGENTA          : &str = csi!("35m");
+pub const FG_MAGENTA_INTENSE  : &str = csi!("95m");
+pub const FG_CYAN             : &str = csi!("36m");
+pub const FG_CYAN_INTENSE     : &str = csi!("96m");
+pub const FG_WHITE            : &str = csi!("37m");
+pub const FG_WHITE_INTENSE    : &str = csi!("97m");
+pub const FG_DEFAULT          : &str = csi!("39m");
 
 
-pub const BG_BLACK : &str =                     csi!("40m");
-pub const BG_BLACK_INTENSE : &str =             csi!("100m");
-pub const BG_RED : &str =                       csi!("41m");
-pub const BG_RED_INTENSE : &str =               csi!("101m");
-pub const BG_GREEN : &str =                     csi!("42m");
-pub const BG_GREEN_INTENSE : &str =             csi!("102m");
-pub const BG_YELLOW : &str =                    csi!("43m");
-pub const BG_YELLOW_INTENSE : &str =            csi!("103m");
-pub const BG_BLUE : &str =                      csi!("44m");
-pub const BG_BLUE_INTENSE : &str =              csi!("104m");
-pub const BG_MAGENTA : &str =                   csi!("45m");
-pub const BG_MAGENTA_INTENSE : &str =           csi!("105m");
-pub const BG_CYAN : &str =                      csi!("46m");
-pub const BG_CYAN_INTENSE : &str =              csi!("106m");
-pub const BG_WHITE : &str =                     csi!("47m");
-pub const BG_WHITE_INTENSE : &str =             csi!("107m");
-pub const BG_DEFAULT : &str =                   csi!("49m");
+pub const BG_BLACK            : &str = csi!("40m");
+pub const BG_BLACK_INTENSE    : &str = csi!("100m");
+pub const BG_RED              : &str = csi!("41m");
+pub const BG_RED_INTENSE      : &str = csi!("101m");
+pub const BG_GREEN            : &str = csi!("42m");
+pub const BG_GREEN_INTENSE    : &str = csi!("102m");
+pub const BG_YELLOW           : &str = csi!("43m");
+pub const BG_YELLOW_INTENSE   : &str = csi!("103m");
+pub const BG_BLUE             : &str = csi!("44m");
+pub const BG_BLUE_INTENSE     : &str = csi!("104m");
+pub const BG_MAGENTA          : &str = csi!("45m");
+pub const BG_MAGENTA_INTENSE  : &str = csi!("105m");
+pub const BG_CYAN             : &str = csi!("46m");
+pub const BG_CYAN_INTENSE     : &str = csi!("106m");
+pub const BG_WHITE            : &str = csi!("47m");
+pub const BG_WHITE_INTENSE    : &str = csi!("107m");
+pub const BG_DEFAULT          : &str = csi!("49m");
 
 /// Put Foreground and Background colors to their defaults
 pub const COLORS_DEFAULT : &str =               csi!("0m");

@@ -1,4 +1,4 @@
-//! RTwins demo app
+//! # RTwins demo app
 
 extern crate rtwins;
 use rtwins::esc;
@@ -154,9 +154,9 @@ fn main()
         esc::BOLD,
         rtwins::esc::link("https://github.com/marmidr/rtwins", "RTWins"),
         esc::NORMAL,
-        esc::ESC_FG_HOT_PINK,
+        esc::FG_HOT_PINK,
         rtwins::VER,
-        esc::ESC_FG_DEFAULT
+        esc::FG_DEFAULT
     );
     println!("{}Faint{} {}Bold{} {}Italic{}",
         esc::FAINT, esc::NORMAL, esc::BOLD, esc::NORMAL, esc::ITALICS_ON, esc::ITALICS_OFF);

@@ -1,4 +1,4 @@
-//! RTWins Widget
+//! # RTWins Widget
 
 use super::widget::Widget;
 

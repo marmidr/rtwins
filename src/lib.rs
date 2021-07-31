@@ -1,4 +1,9 @@
-//! RTWins TUI libarry
+//! # RTWins TUI libarry
+//! `RTWins` is a Rust library designed for easy creation of visual terminal applications.
+//!
+//! *Future goal: make it run on non-os platforms, like bare Cortex-M3.*
+//!
+//! It provides basic facilities required by interactive applications such as screen and cursor management, keyboard input, keymaps, color codes.
 
 pub mod esc;
 pub mod pal;

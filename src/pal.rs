@@ -1,4 +1,4 @@
-//! RTWins Widget
+//! # RTWins Widget
 
 // struct Stats
 // {
