@@ -150,8 +150,16 @@ fn main()
 {
     let _pal = Pal::new();
     rtwins::init();
-    println!("RTWins demo; lib v{}", rtwins::VER);
-    println!("Normal {}Bold{} {}Italic{}", esc::BOLD, esc::NORMAL, esc::ITALICS_ON, esc::ITALICS_OFF);
+    println!("** {}{}{} ** demo; lib v{}{}{}",
+        esc::BOLD,
+        rtwins::esc::link("https://github.com/marmidr/rtwins", "RTWins"),
+        esc::NORMAL,
+        esc::ESC_FG_HOT_PINK,
+        rtwins::VER,
+        esc::ESC_FG_DEFAULT
+    );
+    println!("{}Faint{} {}Bold{} {}Italic{}",
+        esc::FAINT, esc::NORMAL, esc::BOLD, esc::NORMAL, esc::ITALICS_ON, esc::ITALICS_OFF);
 
     let w_none = rtwins::Widget {
         id      : 0,
@@ -194,3 +202,13 @@ fn wnd_prop(wgt: &rtwins::Widget) -> &rtwins::widget::wp::Window {
 
 /// Example of const-evaluated and translated Widgets tree into Widgets array
 const _W: [rtwins::Widget; rtwins::wgt_count(&tui::WINDOW)] = rtwins::wgt_translate(&tui::WINDOW);
+
+#[cfg(test)]
+mod tests {
+
+#[test]
+fn test_wgts(){
+
+}
+
+} // mod

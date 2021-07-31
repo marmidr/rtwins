@@ -1,0 +1,13 @@
+{
+    "recommendations": [
+        "matklad.rust-analyzer",
+        "alefragnani.bookmarks",
+        "wayou.vscode-todo-highlight",
+        "adamwalzer.string-converter",
+        "gruntfuggly.todo-tree",
+        "shardulm94.trailing-spaces",
+        "swellaby.vscode-rust-test-adapter",
+        "rockingskier.copy-copy-paste",
+        "maptz.camelcasenavigation"
+    ]
+}

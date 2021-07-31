@@ -13,11 +13,11 @@ Implementation is based on:
 ## Primary goals
 
 - text properties
-    - [ ] foreground and background color codes
-    - [ ] attributes (bold, inversion)
+    - [x] foreground and background color codes
+    - [x] attributes (bold, inversion)
 - operations
-    - [ ] clear screen
-    - [ ] go to home
+    - [x] clear screen
+    - [x] go to home
     - [ ] go to location
 - reading input
     - [ ] regular characters (a..z)
