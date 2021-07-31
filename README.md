@@ -18,7 +18,7 @@ Implementation is based on:
 - operations
     - [x] clear screen
     - [x] go to home
-    - [ ] go to location
+    - [x] go to location
 - reading input
     - [ ] regular characters (a..z)
     - [ ] control codes (Up/Down, Del, Ctrl, Home, ...)

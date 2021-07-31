@@ -61,17 +61,16 @@ macro_rules! st {
 macro_rules! fg_rgb {
     // r,g,b: 0..255
     ($r:expr, $g:expr, $b:expr) => {
-        csi!(concat!("38;2;", stringify!($r), ";", stringify!($g), ";", stringify!($b), "m"));
+        $crate::csi!(concat!("38;2;", stringify!($r), ";", stringify!($g), ";", stringify!($b), "m"));
     };
 }
 
 /// Foreground 8-bit color
 #[macro_export]
-#[allow(unused_macros)]
 macro_rules! fg_color {
     // clno: 1..255, 232..255=black->white
     ($clno:expr) => {
-        csi!(concat!("38;5;", stringify!($clno), "m"));
+        $crate::csi!(concat!("38;5;", stringify!($clno), "m"));
     };
 }
 
@@ -80,7 +79,7 @@ macro_rules! fg_color {
 macro_rules! bg_rgb {
     // r,g,b: 0..255
     ($r:expr, $g:expr, $b:expr) => {
-        csi!(concat!("48;2;", stringify!($r), ";", stringify!($g), ";", stringify!($b), "m"));
+        $crate::csi!(concat!("48;2;", stringify!($r), ";", stringify!($g), ";", stringify!($b), "m"));
     };
 }
 
@@ -89,7 +88,7 @@ macro_rules! bg_rgb {
 macro_rules! bg_color {
     // clno: 1..255, 232..255=black->white
     ($clno:expr) => {
-        csi!(concat!("48;5;", stringify!($clno), "m"));
+        $crate::csi!(concat!("48;5;", stringify!($clno), "m"));
     };
 }
 
@@ -464,19 +463,31 @@ pub const CURSOR_HIDE           : &str = csi!("?25l");
 pub const CURSOR_SHOW           : &str = csi!("?25h");
 
 pub const CURSOR_HOME           : &str = csi!("H");
-// pub const CURSOR_COLUMN(col) : &str =            csi!(#col "G");
-// pub const CURSOR_GOTO(row, col) : &str =         csi!(#row ";" #col "H");
-// pub const CURSOR_UP(lines) : &str =              csi!(#lines "A");
-// pub const CURSOR_DOWN(lines) : &str =            csi!(#lines "B");
-// pub const CURSOR_FORWARD(columns) : &str =       csi!(#columns "C");
-// pub const CURSOR_BACKWARD(columns) : &str =      csi!(#columns "D");
 
-// pub const CURSOR_COLUMN_FMT           CURSOR_COLUMN(%u)
-// pub const CURSOR_GOTO_FMT             CURSOR_GOTO(%u, %u)
-// pub const CURSOR_UP_FMT               CURSOR_UP(%u)
-// pub const CURSOR_DOWN_FMT             CURSOR_DOWN(%u)
-// pub const CURSOR_FORWARD_FMT          CURSOR_FORWARD(%u)
-// pub const CURSOR_BACKWARD_FMT         CURSOR_BACKWARD(%u)
+#[macro_export]
+macro_rules! cursor_column { ($col:expr)            => { $crate::csi!(concat!(stringify!($col), "G")); }; }
+
+#[macro_export]
+macro_rules! cursor_goto { ($row:expr, $col:expr)   => { $crate::csi!(concat!(stringify!($row), ";", stringify!($col), "H")); }; }
+
+#[macro_export]
+macro_rules! cursor_up { ($n:expr)                  => { $crate::csi!(concat!(stringify!($n), "A")); }; }
+
+#[macro_export]
+macro_rules! cursor_down { ($n:expr)                => { $crate::csi!(concat!(stringify!($n), "B")); }; }
+
+#[macro_export]
+macro_rules! cursor_forward { ($n:expr)             => { $crate::csi!(concat!(stringify!($n), "C")); }; }
+
+#[macro_export]
+macro_rules! cursor_backward { ($n:expr)            => { $crate::csi!(concat!(stringify!($n), "D")); }; }
+
+pub const CURSOR_COLUMN_FMT   : &str = cursor_column!("{}");
+pub const CURSOR_GOTO_FMT     : &str = cursor_goto!("{}", "{}");
+pub const CURSOR_UP_FMT       : &str = cursor_up!("{}");
+pub const CURSOR_DOWN_FMT     : &str = cursor_down!("{}");
+pub const CURSOR_FORWARD_FMT  : &str = cursor_forward!("{}");
+pub const CURSOR_BACKWARD_FMT : &str = cursor_backward!("{}");
 
 // -----------------------------------------------------------------------------------------------
 /// # Line control
@@ -486,32 +497,40 @@ pub const LINE_ERASE_ALL    : &str = csi!("2K");
 pub const LINE_ERASE_RIGHT  : &str = csi!("0K");
 pub const LINE_ERASE_LEFT   : &str = csi!("1K");
 
-/// Insert line
-// pub const LINE_INSERT(n) : &str =                csi!(#n "L");
-// pub const LINE_INSERT_FMT             LINE_INSERT(%u)
+/// Insert `n` lines
+#[macro_export]
+macro_rules! line_insert { ($n:expr) => { $crate::csi!(concat!(stringify!($n), "L")); }; }
 
-// Delete line
-// pub const LINE_DELETE(n)              ANSI_CSI(#n "M")
-// pub const LINE_DELETE_FMT             LINE_DELETE(%u)
+/// Delete `n` lines
+#[macro_export]
+macro_rules! line_delete { ($n:expr) => { $crate::csi!(concat!(stringify!($n), "M")); }; }
+
+pub const LINE_INSERT_FMT: &str =  line_insert!("{}");
+pub const LINE_DELETE_FMT: &str =  line_delete!("{}");
 
 // -----------------------------------------------------------------------------------------------
 /// # Character control
 
-/// Repeat last character `n` times - not fully supported
-// pub const CHAR_REPEAT_LAST(n) : &str =           csi!(#n "b");
-// pub const CHAR_REPEAT_LAST_FMT        CHAR_REPEAT_LAST(%u)
+/// Repeat last character `n` times - not supported on every platform
+#[macro_export]
+macro_rules! char_repeat_last { ($n:expr)       => { $crate::csi!(concat!(stringify!($n), "b")); }; }
 
 /// Erase `n` characters (replace with space)
-// pub const CHAR_ERASE(n) : &str =                 csi!(#n "X");
-// pub const CHAR_ERASE_FMT              CHAR_ERASE(%u)
+#[macro_export]
+macro_rules! char_erase { ($n:expr)             => { $crate::csi!(concat!(stringify!($n), "X")); }; }
 
 /// Delete `n` characters
-// pub const CHAR_DELETE(n) : &str =                csi!(#n "P");
-// pub const CHAR_DELETE_FMT             CHAR_DELETE(%u)
+#[macro_export]
+macro_rules! char_delete { ($n:expr)            => { $crate::csi!(concat!(stringify!($n), "P")); }; }
 
-/// Insert n characters
-// pub const CHAR_INSERT(n) : &str =                csi!(#n "@");
-// pub const CHAR_INSERT_FMT             CHAR_INSERT(%u)
+/// Insert `n` characters
+#[macro_export]
+macro_rules! char_insert { ($n:expr)            => { $crate::csi!(concat!(stringify!($n), "@")); }; }
+
+pub const CHAR_REPEAT_LAST_FMT : &str = char_repeat_last!("{}");
+pub const CHAR_ERASE_FMT       : &str = char_erase!("{}");
+pub const CHAR_DELETE_FMT      : &str = char_delete!("{}");
+pub const CHAR_INSERT_FMT      : &str = char_insert!("{}");
 
 // -----------------------------------------------------------------------------------------------
 /// # Screen Control Sequences
@@ -522,19 +541,23 @@ pub const SCREEN_ERASE_BELOW  : &str = csi!("0J");
 pub const SCREEN_ERASE_ABOVE  : &str = csi!("1J");
 
 /// Save / restore screen content
-pub const SCREEN_SAVE    : &str = csi!("?47h");
-pub const SCREEN_RESTORE : &str = csi!("?47l");
+pub const SCREEN_SAVE         : &str = csi!("?47h");
+pub const SCREEN_RESTORE      : &str = csi!("?47l");
 
 /// Reverse/normal video mode (BG <--> FG)
 pub const SCREEN_REVERSE_ON   : &str = csi!("?5h");
 pub const SCREEN_REVERSE_OFF  : &str = csi!("?5l");
 
-/// Scrool screen
-// pub const SCREEN_SCROLL_UP(n) : &str =           csi!(#n "S");
-// pub const SCREEN_SCROLL_DOWN(n) : &str =         csi!(#n "T");
+/// Scrool screen up `n' lines
+#[macro_export]
+macro_rules! screen_scroll_up   { ($n:expr) => { $crate::csi!(concat!(stringify!($n), "S")); }; }
 
-// pub const SCREEN_SCROLL_UP_FMT        SCREEN_SCROLL_UP(%u)
-// pub const SCREEN_SCROLL_DOWN_FMT      SCREEN_SCROLL_DOWN(%u)
+/// Scrool screen down `n' lines
+#[macro_export]
+macro_rules! screen_scroll_down { ($n:expr) => { $crate::csi!(concat!(stringify!($n), "T")); }; }
+
+pub const SCREEN_SCROLL_UP_FMT    : &str = screen_scroll_up!("{}");
+pub const SCREEN_SCROLL_DOWN_FMT  : &str = screen_scroll_down!("{}");
 
 // -----------------------------------------------------------------------------------------------
 /// # Mouse Control Sequences
@@ -549,12 +572,12 @@ pub const MOUSE_REPORTING_M2_ON  : &str = csi!("?1000h");
 pub const MOUSE_REPORTING_M2_OFF : &str = csi!("?1000l");
 
 // -----------------------------------------------------------------------------------------------
-/// Miscellaneous Control Sequences
+/// # Miscellaneous Control Sequences
 
 /// Terminal reset - clear the screen and scroll buffer
 pub const TERM_RESET            : &str = esc!("c");
 
-/// Bell
+/// Bell signal
 pub const BELL                  : &str = "\x07";
 
 /// Character encoding
@@ -574,10 +597,23 @@ pub const SEQ_MAX_LENGTH        : u8 = 8;
 
 // -----------------------------------------------------------------------------------------------
 
-// '\u001B]8;;https://github.com\u0007Click\u001B]8;;\u0007'
-pub fn link(url: &str, capt: &str) -> String {
-    let lnk = osc!("8;;").to_string() + url + "\u{0007}" + capt + osc!("8;;\u{0007}");
-    let mut out = String::from("\x1B]");
-    out.push_str(&lnk);
-    out
+/// Clickable URL with title
+/// `\u001B]8;;https://github.com\u0007Click\u001B]8;;\u0007`
+
+// pub fn link(url: &str, capt: &str) -> String {
+//     let lnk = osc!("8;;").to_string() + url + "\u{0007}" + capt + osc!("8;;\u{0007}");
+//     let mut out = String::from("\x1B]");
+//     out.push_str(&lnk);
+//     out
+// }
+
+#[macro_export]
+macro_rules! link {
+    ($url:expr, $capt:expr) => {
+        concat!(
+            $crate::osc!("8;;"),
+            $url, "\u{0007}", $capt,
+            $crate::osc!("8;;\u{0007}")
+        );
+    };
 }

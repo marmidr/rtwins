@@ -152,7 +152,7 @@ fn main()
     rtwins::init();
     println!("** {}{}{} ** demo; lib v{}{}{}",
         esc::BOLD,
-        rtwins::esc::link("https://github.com/marmidr/rtwins", "RTWins"),
+        rtwins::link!("https://github.com/marmidr/rtwins", "RTWins"),
         esc::NORMAL,
         esc::FG_HOT_PINK,
         rtwins::VER,
@@ -203,12 +203,3 @@ fn wnd_prop(wgt: &rtwins::Widget) -> &rtwins::widget::wp::Window {
 /// Example of const-evaluated and translated Widgets tree into Widgets array
 const _W: [rtwins::Widget; rtwins::wgt_count(&tui::WINDOW)] = rtwins::wgt_translate(&tui::WINDOW);
 
-#[cfg(test)]
-mod tests {
-
-#[test]
-fn test_wgts(){
-
-}
-
-} // mod
