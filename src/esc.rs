@@ -61,7 +61,7 @@ macro_rules! st {
 macro_rules! fg_rgb {
     // r,g,b: 0..255
     ($r:expr, $g:expr, $b:expr) => {
-        $crate::csi!(concat!("38;2;", stringify!($r), ";", stringify!($g), ";", stringify!($b), "m"));
+        $crate::csi!(concat!("38;2;", $r, ";", $g, ";", $b, "m"));
     };
 }
 
@@ -70,7 +70,7 @@ macro_rules! fg_rgb {
 macro_rules! fg_color {
     // clno: 1..255, 232..255=black->white
     ($clno:expr) => {
-        $crate::csi!(concat!("38;5;", stringify!($clno), "m"));
+        $crate::csi!(concat!("38;5;", $clno, "m"));
     };
 }
 
@@ -79,7 +79,7 @@ macro_rules! fg_color {
 macro_rules! bg_rgb {
     // r,g,b: 0..255
     ($r:expr, $g:expr, $b:expr) => {
-        $crate::csi!(concat!("48;2;", stringify!($r), ";", stringify!($g), ";", stringify!($b), "m"));
+        $crate::csi!(concat!("48;2;", $r, ";", $g, ";", $b, "m"));
     };
 }
 
@@ -88,7 +88,7 @@ macro_rules! bg_rgb {
 macro_rules! bg_color {
     // clno: 1..255, 232..255=black->white
     ($clno:expr) => {
-        $crate::csi!(concat!("48;5;", stringify!($clno), "m"));
+        $crate::csi!(concat!("48;5;", $clno, "m"));
     };
 }
 
@@ -181,7 +181,7 @@ pub const BG_WHITE_INTENSE    : &str = csi!("107m");
 pub const BG_DEFAULT          : &str = csi!("49m");
 
 /// Put Foreground and Background colors to their defaults
-pub const COLORS_DEFAULT : &str =               csi!("0m");
+pub const COLORS_DEFAULT      : &str = csi!("0m");
 
 // -----------------------------------------------------------------------------------------------
 /// # WEB colors
@@ -465,29 +465,47 @@ pub const CURSOR_SHOW           : &str = csi!("?25h");
 pub const CURSOR_HOME           : &str = csi!("H");
 
 #[macro_export]
-macro_rules! cursor_column { ($col:expr)            => { $crate::csi!(concat!(stringify!($col), "G")); }; }
+macro_rules! cursor_column {
+    () =>           { $crate::csi!("{1}G"); };
+    ($col:expr) =>  { $crate::csi!(concat!(stringify!($col), "G")); };
+}
 
 #[macro_export]
-macro_rules! cursor_goto { ($row:expr, $col:expr)   => { $crate::csi!(concat!(stringify!($row), ";", stringify!($col), "H")); }; }
+macro_rules! cursor_goto {
+    () =>                       { $crate::csi!("{1};{2}H"); };
+    ($row:expr, $col:expr)   => { $crate::csi!(concat!(stringify!($row), ";", stringify!($col), "H")); };
+}
 
 #[macro_export]
-macro_rules! cursor_up { ($n:expr)                  => { $crate::csi!(concat!(stringify!($n), "A")); }; }
+macro_rules! cursor_up {
+    () =>           { $crate::csi!("{1}A"); };
+    ($n:expr)   =>  { $crate::csi!(concat!($n, "A")); };
+}
 
 #[macro_export]
-macro_rules! cursor_down { ($n:expr)                => { $crate::csi!(concat!(stringify!($n), "B")); }; }
+macro_rules! cursor_down {
+    () =>           { $crate::csi!("{1}B"); };
+    ($n:expr) =>    { $crate::csi!(concat!($n, "B")); };
+}
 
 #[macro_export]
-macro_rules! cursor_forward { ($n:expr)             => { $crate::csi!(concat!(stringify!($n), "C")); }; }
+macro_rules! cursor_forward {
+    () =>           { $crate::csi!("{1}C"); };
+    ($n:expr) =>    { $crate::csi!(concat!($n, "C")); };
+}
 
 #[macro_export]
-macro_rules! cursor_backward { ($n:expr)            => { $crate::csi!(concat!(stringify!($n), "D")); }; }
+macro_rules! cursor_backward {
+    () =>           { $crate::csi!("{1}D"); };
+    ($n:expr) =>    { $crate::csi!(concat!($n, "D")); };
+}
 
-pub const CURSOR_COLUMN_FMT   : &str = cursor_column!("{}");
-pub const CURSOR_GOTO_FMT     : &str = cursor_goto!("{}", "{}");
-pub const CURSOR_UP_FMT       : &str = cursor_up!("{}");
-pub const CURSOR_DOWN_FMT     : &str = cursor_down!("{}");
-pub const CURSOR_FORWARD_FMT  : &str = cursor_forward!("{}");
-pub const CURSOR_BACKWARD_FMT : &str = cursor_backward!("{}");
+pub const CURSOR_COLUMN_FMT   : &str = cursor_column!();
+pub const CURSOR_GOTO_FMT     : &str = cursor_goto!();
+pub const CURSOR_UP_FMT       : &str = cursor_up!();
+pub const CURSOR_DOWN_FMT     : &str = cursor_down!();
+pub const CURSOR_FORWARD_FMT  : &str = cursor_forward!();
+pub const CURSOR_BACKWARD_FMT : &str = cursor_backward!();
 
 // -----------------------------------------------------------------------------------------------
 /// # Line control
@@ -499,38 +517,56 @@ pub const LINE_ERASE_LEFT   : &str = csi!("1K");
 
 /// Insert `n` lines
 #[macro_export]
-macro_rules! line_insert { ($n:expr) => { $crate::csi!(concat!(stringify!($n), "L")); }; }
+macro_rules! line_insert {
+    () =>           { $crate::csi!("{1}L"); };
+    ($n:expr) =>    { $crate::csi!(concat!($n, "L")); };
+}
 
 /// Delete `n` lines
 #[macro_export]
-macro_rules! line_delete { ($n:expr) => { $crate::csi!(concat!(stringify!($n), "M")); }; }
+macro_rules! line_delete {
+    () =>           { $crate::csi!("{1}M"); };
+    ($n:expr) =>    { $crate::csi!(concat!($n, "M")); };
+}
 
-pub const LINE_INSERT_FMT: &str =  line_insert!("{}");
-pub const LINE_DELETE_FMT: &str =  line_delete!("{}");
+pub const LINE_INSERT_FMT: &str =  line_insert!();
+pub const LINE_DELETE_FMT: &str =  line_delete!();
 
 // -----------------------------------------------------------------------------------------------
 /// # Character control
 
 /// Repeat last character `n` times - not supported on every platform
 #[macro_export]
-macro_rules! char_repeat_last { ($n:expr)       => { $crate::csi!(concat!(stringify!($n), "b")); }; }
+macro_rules! char_repeat_last {
+    () =>           { $crate::csi!("{1}b"); };
+    ($n:expr) =>    { $crate::csi!(concat!($n, "b")); };
+}
 
 /// Erase `n` characters (replace with space)
 #[macro_export]
-macro_rules! char_erase { ($n:expr)             => { $crate::csi!(concat!(stringify!($n), "X")); }; }
+macro_rules! char_erase {
+    () =>           { $crate::csi!("{1}X"); };
+    ($n:expr) =>    { $crate::csi!(concat!($n, "X")); };
+}
 
 /// Delete `n` characters
 #[macro_export]
-macro_rules! char_delete { ($n:expr)            => { $crate::csi!(concat!(stringify!($n), "P")); }; }
+macro_rules! char_delete {
+    () =>           { $crate::csi!("{1}P"); };
+    ($n:expr) =>    { $crate::csi!(concat!($n, "P")); };
+}
 
 /// Insert `n` characters
 #[macro_export]
-macro_rules! char_insert { ($n:expr)            => { $crate::csi!(concat!(stringify!($n), "@")); }; }
+macro_rules! char_insert {
+    () =>           { $crate::csi!("{1}L"); };
+    ($n:expr) =>    { $crate::csi!(concat!($n, "L")); };
+}
 
-pub const CHAR_REPEAT_LAST_FMT : &str = char_repeat_last!("{}");
-pub const CHAR_ERASE_FMT       : &str = char_erase!("{}");
-pub const CHAR_DELETE_FMT      : &str = char_delete!("{}");
-pub const CHAR_INSERT_FMT      : &str = char_insert!("{}");
+pub const CHAR_REPEAT_LAST_FMT : &str = char_repeat_last!();
+pub const CHAR_ERASE_FMT       : &str = char_erase!();
+pub const CHAR_DELETE_FMT      : &str = char_delete!();
+pub const CHAR_INSERT_FMT      : &str = char_insert!();
 
 // -----------------------------------------------------------------------------------------------
 /// # Screen Control Sequences
@@ -550,14 +586,20 @@ pub const SCREEN_REVERSE_OFF  : &str = csi!("?5l");
 
 /// Scrool screen up `n' lines
 #[macro_export]
-macro_rules! screen_scroll_up   { ($n:expr) => { $crate::csi!(concat!(stringify!($n), "S")); }; }
+macro_rules! screen_scroll_up {
+    () =>           { $crate::csi!("{1}S"); };
+    ($n:expr) =>    { $crate::csi!(concat!($n, "S")); };
+}
 
 /// Scrool screen down `n' lines
 #[macro_export]
-macro_rules! screen_scroll_down { ($n:expr) => { $crate::csi!(concat!(stringify!($n), "T")); }; }
+macro_rules! screen_scroll_down {
+    () =>           { $crate::csi!("{1}T"); };
+    ($n:expr) =>    { $crate::csi!(concat!($n, "T")); };
+}
 
-pub const SCREEN_SCROLL_UP_FMT    : &str = screen_scroll_up!("{}");
-pub const SCREEN_SCROLL_DOWN_FMT  : &str = screen_scroll_down!("{}");
+pub const SCREEN_SCROLL_UP_FMT    : &str = screen_scroll_up!();
+pub const SCREEN_SCROLL_DOWN_FMT  : &str = screen_scroll_down!();
 
 // -----------------------------------------------------------------------------------------------
 /// # Mouse Control Sequences
@@ -617,3 +659,5 @@ macro_rules! link {
         );
     };
 }
+
+// -----------------------------------------------------------------------------------------------

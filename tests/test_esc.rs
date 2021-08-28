@@ -3,6 +3,20 @@
 extern crate rtwins;
 use rtwins::esc::*;
 
+
+#[test]
+fn test_esc_macros() {
+    assert_eq!("\x1b[{1}G", rtwins::cursor_column!());
+    assert_eq!("\x1b[{1}G", CURSOR_COLUMN_FMT);
+    assert_eq!("\x1b[42G", rtwins::cursor_column!(42));
+
+    assert_eq!("\x1b[48;5;123m", rtwins::bg_color!(123));
+    assert_eq!("\x1b[48;2;255;192;203m", BG_PINK);
+
+    assert_eq!("\x1b[38;5;213m", rtwins::fg_color!(213));
+    assert_eq!("\x1b[38;2;220;20;60m", FG_CRIMSON);
+}
+
 #[test]
 fn test_colors_attributes() {
     let s = String::new()

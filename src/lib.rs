@@ -55,51 +55,55 @@ impl Ctx {
     }
 
     pub fn move_to(&mut self, col: u16, row: u16) {
-        // let s = String::from(esc::CURSOR_GOTO_FMT).replacen("{}", &col.to_string(), 1);
-        // let s = s.replace("{}", &row.to_string());
-        // self.pal.write_str(s.as_str());
+        let s = String::from(esc::CURSOR_GOTO_FMT)
+            .replace("{1}", &col.to_string())
+            .replace("{2}", &row.to_string());
+        self.pal.write_str(s.as_str());
     }
 
     pub fn move_to_col(&mut self, col: u16) {
-        // let s = String::from(esc::CURSOR_COLUMN_FMT).replace("{}", &col.to_string());
-        // self.pal.write_str(s.as_str());
+        let s = String::from(esc::CURSOR_COLUMN_FMT)
+            .replace("{1}", &col.to_string());
+        self.pal.write_str(s.as_str());
     }
 
     pub fn move_by(&mut self, cols: i16, rows: i16) {
-        // if cols != 0 {
-        //     let fmt;
-        //     let arg;
+        if cols != 0 {
+            let fmt;
+            let arg;
 
-        //     if cols < 0 {
-        //         fmt = esc::CURSOR_BACKWARD_FMT;
-        //         arg = -cols;
+            if cols < 0 {
+                fmt = esc::CURSOR_BACKWARD_FMT;
+                arg = -cols;
 
-        //     } 
-        //     else {
-        //         fmt = esc::CURSOR_FORWARD_FMT;
-        //         arg = cols;
-        //     }
+            }
+            else {
+                fmt = esc::CURSOR_FORWARD_FMT;
+                arg = cols;
+            }
 
-        //     let s = String::from(fmt).replace("{}", &arg.to_string());
-        //     self.pal.write_str(s.as_str());
-        // }
+            let s = String::from(fmt)
+                .replace("{1}", &arg.to_string());
+            self.pal.write_str(s.as_str());
+        }
 
-        // if rows != 0 {
-        //     let fmt;
-        //     let arg;
+        if rows != 0 {
+            let fmt;
+            let arg;
 
-        //     if rows < 0 {
-        //         fmt = esc::CURSOR_UP_FMT;
-        //         arg = -rows;
-        //     }
-        //     else {
-        //         fmt = esc::CURSOR_DOWN_FMT;
-        //         arg = rows;
-        //     }
+            if rows < 0 {
+                fmt = esc::CURSOR_UP_FMT;
+                arg = -rows;
+            }
+            else {
+                fmt = esc::CURSOR_DOWN_FMT;
+                arg = rows;
+            }
 
-        //     let s = String::from(fmt).replace("{}", &arg.to_string());
-        //     self.pal.write_str(s.as_str());
-        // }
+            let s = String::from(fmt)
+                .replace("{1}", &arg.to_string());
+            self.pal.write_str(s.as_str());
+        }
     }
 
     pub fn move_to_home(&mut self) {
@@ -123,15 +127,15 @@ impl Ctx {
     }
 
     pub fn insert_lines(&mut self, count: u16) {
-        // let s = String::from(esc::LINE_INSERT_FMT);
-        // let n = &count.to_string();
-        // let s = s.replace("{}", n);
-        // self.pal.write_str(s.as_str());
+        let s = String::from(esc::LINE_INSERT_FMT)
+            .replace("{1}", &count.to_string());
+        self.pal.write_str(s.as_str());
     }
 
     pub fn delete_lines(&mut self, count: u16) {
-        // let s = String::from(esc::LINE_DELETE_FMT).replace("{}", &count.to_string());
-        // self.pal.write_str(s.as_str());
+        let s = String::from(esc::LINE_DELETE_FMT)
+            .replace("{1}", &count.to_string());
+        self.pal.write_str(s.as_str());
     }
 
     pub fn screen_clr_above(&mut self) {

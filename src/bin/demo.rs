@@ -2,9 +2,10 @@
 
 extern crate rtwins;
 use rtwins::{esc, TWins};
-use std::{cell::RefCell, io::Write, ops::DerefMut, rc::Rc};
+use std::{io::Write, ops::DerefMut};
 
 /// Simple widget-based interface definition as const
+#[rustfmt::skip]
 mod tui {
     use rtwins::colors::{ColorBG, ColorFG};
     use rtwins::widget::WIDGET_ID_NONE;
@@ -43,8 +44,7 @@ mod tui {
             fg_color: ColorFG::White,
             bg_color: ColorBG::Blue,
             is_popup: false,
-        }
-        .into(),
+        }.into(),
         // link: &[]
         link: &[
             Widget {
@@ -56,8 +56,7 @@ mod tui {
                     title: "Name",
                     fg_color: ColorFG::White,
                     bg_color: ColorBG::Blue,
-                }
-                .into(),
+                }.into(),
                 link: &NO_CHILDS,
             },
             Widget {
@@ -146,30 +145,8 @@ impl rtwins::pal::Pal for DemoPal {
 
 // -----------------------------------------------------------------------------------------------
 
-fn main() {
-    let _p2: Rc<RefCell<dyn rtwins::pal::Pal>> = Rc::new(RefCell::new(DemoPal::new()));
-    _p2.borrow_mut().flush_buff();
-
-    let mut _p3: std::sync::Mutex<Box<dyn rtwins::pal::Pal>> =
-        std::sync::Mutex::new(Box::new(DemoPal::new()));
-    _p3.lock().unwrap().flush_buff();
-
-    {
-        let mut tw = TWins::new(Box::new(DemoPal::new()));
-        let to_invalidate = [1, 2, 3];
-        let mut ctx = tw.lock();
-        ctx.invalidate(&DEMO_WND[0], &to_invalidate);
-        ctx.invalidate(&DEMO_WND[0], &[1, 2, 3]);
-        ctx.draw_wnd(&DEMO_WND[0]);
-
-        let c = ctx.deref_mut();
-        c.insert_lines(3);
-        c.move_to_col(20);
-        c.log_w("Collumn 20 ?");
-        c.pal.write_str("\n");
-        c.pal.flush_buff();
-    }
-
+fn main() 
+{
     println!(
         "** {}{}{} ** demo; lib v{}{}{}",
         esc::BOLD,
@@ -188,6 +165,21 @@ fn main() {
         esc::ITALICS_ON,
         esc::ITALICS_OFF
     );
+
+    {
+        let mut tw = TWins::new(Box::new(DemoPal::new()));
+        let to_invalidate = [1, 2, 3];
+        let mut ctx = tw.lock();
+        ctx.invalidate(&DEMO_WND[0], &to_invalidate);
+        ctx.invalidate(&DEMO_WND[0], &[1, 2, 3]);
+        ctx.draw_wnd(&DEMO_WND[0]);
+
+        let c = ctx.deref_mut();
+        c.move_to_col(20);
+        c.log_w("Collumn 20");
+        c.pal.write_str("\n");
+        c.pal.flush_buff();
+    }
 
     let w_none = rtwins::Widget {
         id: 0,
