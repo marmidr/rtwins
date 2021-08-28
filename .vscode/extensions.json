@@ -8,6 +8,10 @@
         "shardulm94.trailing-spaces",
         "swellaby.vscode-rust-test-adapter",
         "rockingskier.copy-copy-paste",
-        "maptz.camelcasenavigation"
+        "maptz.camelcasenavigation",
+        "pkief.material-icon-theme",
+        "vadimcn.vscode-lldb",
+        "bungcip.better-toml",
+        "mhutchie.git-graph"
     ]
 }

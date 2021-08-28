@@ -4,48 +4,49 @@
 
 /// Widget screen coordinates
 #[derive(Clone, Copy)]
-pub struct Coord
-{
+pub struct Coord {
     pub col: u8,
-    pub row: u8
+    pub row: u8,
 }
 
-impl Coord
-{
+impl Coord {
     /// Returns default object; can be used in `const` initialization
-    pub const fn cdeflt()  -> Coord {
-        Coord{col: 0, row: 0}
+    pub const fn cdeflt() -> Coord {
+        Coord { col: 0, row: 0 }
     }
 }
 
 /// Widget size
 #[derive(Clone, Copy)]
-pub struct Size
-{
+pub struct Size {
     pub width: u8,
-    pub height: u8
+    pub height: u8,
 }
 
 impl Size {
     /// Returns default object; can be used in `const` initialization
     pub const fn cdeflt() -> Size {
-        Size{width: 0, height: 0}
+        Size {
+            width: 0,
+            height: 0,
+        }
     }
 }
 
 /// Rectangle area
 #[derive(Clone, Copy)]
-pub struct Rect
-{
+pub struct Rect {
     coord: Coord,
-    size : Size
+    size: Size,
 }
 
-impl Rect
-{
+impl Rect {
     /// Returns default object; can be used in `const` initialization
     const fn cdeflt() -> Rect {
-        Rect{coord: Coord::cdeflt(), size: Size::cdeflt()}
+        Rect {
+            coord: Coord::cdeflt(),
+            size: Size::cdeflt(),
+        }
     }
 
     pub fn set_max(&mut self) {
@@ -58,8 +59,7 @@ impl Rect
 
 /// Visual style of button
 #[derive(Copy, Clone)]
-pub enum ButtonStyle
-{
+pub enum ButtonStyle {
     Simple,
     Solid,
     Solid1p5,
@@ -67,8 +67,7 @@ pub enum ButtonStyle
 
 /// Visual style of Progress Bar
 #[derive(Copy, Clone)]
-pub enum PgBarStyle
-{
+pub enum PgBarStyle {
     /// #
     Hash,
     ///  ▒
@@ -76,7 +75,6 @@ pub enum PgBarStyle
     /// □
     Rectangle,
 }
-
 
 /// Widget unique identifier
 pub type WId = u16;
@@ -87,15 +85,14 @@ pub const WIDGET_ID_NONE: WId = WId::MIN;
 pub const WIDGET_ID_ALL: WId = WId::MAX;
 
 /// Widgets properties
-pub mod wp
-{
+pub mod wp {
     use super::super::colors::*;
     use super::ButtonStyle;
     use super::PgBarStyle;
 
     #[derive(Copy, Clone)]
     pub struct Window {
-        pub title   : &'static str,
+        pub title: &'static str,
         pub fg_color: ColorFG,
         pub bg_color: ColorBG,
         pub is_popup: bool,
@@ -110,10 +107,10 @@ pub mod wp
 
     #[derive(Copy, Clone)]
     pub struct Panel {
-        pub title   : &'static str,
+        pub title: &'static str,
         pub fg_color: ColorFG,
         pub bg_color: ColorBG,
-        pub no_frame: bool
+        pub no_frame: bool,
     }
 
     impl Panel {
@@ -124,7 +121,7 @@ pub mod wp
 
     #[derive(Copy, Clone)]
     pub struct Label {
-        pub title   : &'static str,
+        pub title: &'static str,
         pub fg_color: ColorFG,
         pub bg_color: ColorBG,
     }
@@ -149,7 +146,7 @@ pub mod wp
 
     #[derive(Copy, Clone)]
     pub struct CheckBox {
-        pub text    : &'static str,
+        pub text: &'static str,
         pub fg_color: ColorFG,
     }
 
@@ -161,10 +158,10 @@ pub mod wp
 
     #[derive(Copy, Clone)]
     pub struct Radio {
-        pub text    : &'static str,
+        pub text: &'static str,
         pub fg_color: ColorFG,
         pub group_id: u16,
-        pub radio_id: u16
+        pub radio_id: u16,
     }
 
     impl Radio {
@@ -175,10 +172,10 @@ pub mod wp
 
     #[derive(Copy, Clone)]
     pub struct Button {
-        pub text    : &'static str,
+        pub text: &'static str,
         pub fg_color: ColorFG,
         pub bg_color: ColorBG,
-        pub style   : ButtonStyle
+        pub style: ButtonStyle,
     }
 
     impl Button {
@@ -189,10 +186,10 @@ pub mod wp
 
     #[derive(Copy, Clone)]
     pub struct Led {
-        pub text        : &'static str,
-        pub fg_color    : ColorFG,
+        pub text: &'static str,
+        pub fg_color: ColorFG,
         pub bg_color_off: ColorBG,
-        pub bg_color_on : ColorBG
+        pub bg_color_on: ColorBG,
     }
 
     impl Led {
@@ -203,8 +200,8 @@ pub mod wp
 
     #[derive(Copy, Clone)]
     pub struct PageCtrl {
-        pub tab_width   : u8,
-        pub vert_offs   : u8
+        pub tab_width: u8,
+        pub vert_offs: u8,
     }
 
     impl PageCtrl {
@@ -215,8 +212,8 @@ pub mod wp
 
     #[derive(Copy, Clone)]
     pub struct Page {
-        pub title       : &'static str,
-        pub fg_color    : ColorFG,
+        pub title: &'static str,
+        pub fg_color: ColorFG,
     }
 
     impl Page {
@@ -227,8 +224,8 @@ pub mod wp
 
     #[derive(Copy, Clone)]
     pub struct ProgressBar {
-        pub fg_color    : ColorFG,
-        pub style       : PgBarStyle
+        pub fg_color: ColorFG,
+        pub style: PgBarStyle,
     }
 
     impl ProgressBar {
@@ -239,9 +236,9 @@ pub mod wp
 
     #[derive(Copy, Clone)]
     pub struct ListBox {
-        pub fg_color    : ColorFG,
-        pub bg_color    : ColorBG,
-        pub no_frame    : bool
+        pub fg_color: ColorFG,
+        pub bg_color: ColorBG,
+        pub no_frame: bool,
     }
 
     impl ListBox {
@@ -252,9 +249,9 @@ pub mod wp
 
     #[derive(Copy, Clone)]
     pub struct ComboBox {
-        pub fg_color        : ColorFG,
-        pub bg_color        : ColorBG,
-        pub drop_down_size  : u8
+        pub fg_color: ColorFG,
+        pub bg_color: ColorBG,
+        pub drop_down_size: u8,
     }
 
     impl ComboBox {
@@ -264,8 +261,7 @@ pub mod wp
     }
 
     #[derive(Copy, Clone)]
-    pub struct CustomWgt {
-    }
+    pub struct CustomWgt {}
 
     impl CustomWgt {
         pub const fn into(self) -> super::Type {
@@ -286,8 +282,7 @@ pub mod wp
     }
 
     #[derive(Copy, Clone)]
-    pub struct Layer {
-    }
+    pub struct Layer {}
 
     impl Layer {
         pub const fn into(self) -> super::Type {
@@ -298,8 +293,7 @@ pub mod wp
 
 /// Widget type with all specific data
 #[derive(Copy, Clone)]
-pub enum Type
-{
+pub enum Type {
     NoWgt,
     Window(wp::Window),
     Panel(wp::Panel),
@@ -321,7 +315,7 @@ pub enum Type
 
 impl Type {
     /// Returns default object; can be used in `const` initialization
-    pub const fn cdeflt()  -> Self {
+    pub const fn cdeflt() -> Self {
         Self::NoWgt
     }
 
@@ -330,7 +324,7 @@ impl Type {
     pub fn prop_wnd(&self) -> &wp::Window {
         match self {
             Self::Window(ref wp) => wp,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 
@@ -338,38 +332,37 @@ impl Type {
     pub fn prop_pnl(&self) -> &wp::Panel {
         match self {
             Self::Panel(ref wp) => wp,
-            _ => panic!()
+            _ => panic!(),
         }
     }
 }
 
 /// Widget itself
 #[derive(Copy, Clone)]
-pub struct Widget
-{
+pub struct Widget {
     /// Unique widget ID
-    pub id      : WId,
-    pub parent  : WId,
+    pub id: WId,
+    pub parent: WId,
     /// coordinates
-    pub coord   : Coord,
+    pub coord: Coord,
     /// widget size
-    pub size    : Size,
+    pub size: Size,
     /// widget type with properties
-    pub typ     : Type,
+    pub typ: Type,
     /// link to children widgets, 2x8B
-    pub link    : &'static[Widget]
+    pub link: &'static [Widget],
 }
 
 impl Widget {
     /// Returns default object; can be used in `const` initialization
-    pub const fn cdeflt()  -> Self {
-        Widget{
-            id      : WIDGET_ID_NONE,
-            parent  : WIDGET_ID_NONE,
-            coord   : Coord::cdeflt(),
-            size    : Size::cdeflt(),
-            typ     : Type::cdeflt(),
-            link    : &[]
+    pub const fn cdeflt() -> Self {
+        Widget {
+            id: WIDGET_ID_NONE,
+            parent: WIDGET_ID_NONE,
+            coord: Coord::cdeflt(),
+            size: Size::cdeflt(),
+            typ: Type::cdeflt(),
+            link: &[],
         }
     }
 }
@@ -380,50 +373,46 @@ impl Widget {
 // }
 
 #[derive(Copy, Clone)]
-struct Idx
-{
-    own_idx     : u16,
-    parent_idx  : u16,
-    childs_idx  : u16,
-    childs_cnt  : u16,
+struct Idx {
+    own_idx: u16,
+    parent_idx: u16,
+    childs_idx: u16,
+    childs_cnt: u16,
 }
 
-union Link
-{
+union Link {
     addr: u32,
-    idx : Idx
+    idx: Idx,
 }
 
 /// Widgets dynamic properties
-enum DynProp
-{
+enum DynProp {
     Chbx {
-        checked: bool
+        checked: bool,
     },
     Led {
-        lit: bool
+        lit: bool,
     },
     Lbx {
         item_idx: i16,
-        sel_idx: i16
+        sel_idx: i16,
     },
     Cbx {
         item_idx: i16,
         sel_idx: i16,
-        drop_down: bool
+        drop_down: bool,
     },
     Pgbar {
         pos: i32,
-        max: i32
+        max: i32,
     },
     Txtbx {
-        top_line: i16
-    }
+        top_line: i16,
+    },
 }
 
-pub struct WidgetDynProp
-{
-    prop    : DynProp,
+pub struct WidgetDynProp {
+    prop: DynProp,
     // applies to every widget
-    enabled : bool
+    enabled: bool,
 }

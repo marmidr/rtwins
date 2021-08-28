@@ -2,10 +2,9 @@
 
 /// Foreground colors
 #[derive(Copy, Clone)]
-pub enum ColorFG
-{
+pub enum ColorFG {
     Inherit,
-    Default,    // Reset to terminal default
+    Default, // Reset to terminal default
     Black,
     BlackIntense,
     Red,
@@ -27,10 +26,9 @@ pub enum ColorFG
 
 /// Background colors
 #[derive(Copy, Clone)]
-pub enum ColorBG
-{
+pub enum ColorBG {
     Inherit,
-    Default,    // Reset to terminal default
+    Default, // Reset to terminal default
     Black,
     BlackIntense,
     Red,
@@ -51,8 +49,7 @@ pub enum ColorBG
 }
 
 /// Font attributes
-pub enum FontAttrib
-{
+pub enum FontAttrib {
     None,
     Bold,
     Faint,
