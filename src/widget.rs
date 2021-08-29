@@ -85,7 +85,7 @@ pub const WIDGET_ID_NONE: WId = WId::MIN;
 pub const WIDGET_ID_ALL: WId = WId::MAX;
 
 /// Widgets properties
-pub mod wp {
+pub mod prop {
     use super::super::colors::*;
     use super::ButtonStyle;
     use super::PgBarStyle;
@@ -295,22 +295,49 @@ pub mod wp {
 #[derive(Copy, Clone)]
 pub enum Type {
     NoWgt,
-    Window(wp::Window),
-    Panel(wp::Panel),
-    Label(wp::Label),
-    TextEdit(wp::TextEdit),
-    CheckBox(wp::CheckBox),
-    Radio(wp::Radio),
-    Button(wp::Button),
-    Led(wp::Led),
-    PageCtrl(wp::PageCtrl),
-    Page(wp::Page),
-    ProgressBar(wp::ProgressBar),
-    ListBox(wp::ListBox),
-    ComboBox(wp::ComboBox),
-    CustomWgt(wp::CustomWgt),
-    TextBox(wp::TextBox),
-    Layer(wp::Layer),
+    Window(prop::Window),
+    Panel(prop::Panel),
+    Label(prop::Label),
+    TextEdit(prop::TextEdit),
+    CheckBox(prop::CheckBox),
+    Radio(prop::Radio),
+    Button(prop::Button),
+    Led(prop::Led),
+    PageCtrl(prop::PageCtrl),
+    Page(prop::Page),
+    ProgressBar(prop::ProgressBar),
+    ListBox(prop::ListBox),
+    ComboBox(prop::ComboBox),
+    CustomWgt(prop::CustomWgt),
+    TextBox(prop::TextBox),
+    Layer(prop::Layer),
+}
+
+use std::fmt;
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = match self {
+            Self::NoWgt         => "NoWgt",
+            Self::Window(_)     => "Window",
+            Self::Panel(_)      => "Panel",
+            Self::Label(_)      => "Label",
+            Self::TextEdit(_)   => "TextEdit",
+            Self::CheckBox(_)   => "CheckBox",
+            Self::Radio(_)      => "Radio",
+            Self::Button(_)     => "Button",
+            Self::Led(_)        => "Led",
+            Self::PageCtrl(_)   => "PageCtrl",
+            Self::Page(_)       => "Page",
+            Self::ProgressBar(_) => "ProgressBar",
+            Self::ListBox(_)    => "ListBox",
+            Self::ComboBox(_)   => "ComboBox",
+            Self::CustomWgt(_)  => "CustomWgt",
+            Self::TextBox(_)    => "TextBox",
+            Self::Layer(_)      => "Layer",
+        };
+        write!(f, "{}", name)
+    }
 }
 
 impl Type {
@@ -321,7 +348,7 @@ impl Type {
 
     /// Extract window properties from enum
     // pub fn prop_wnd<'a>(&'a self) -> &'a wp::Window {
-    pub fn prop_wnd(&self) -> &wp::Window {
+    pub fn prop_wnd(&self) -> &prop::Window {
         match self {
             Self::Window(ref wp) => wp,
             _ => panic!(),
@@ -329,7 +356,7 @@ impl Type {
     }
 
     /// Extract panel properties from enum
-    pub fn prop_pnl(&self) -> &wp::Panel {
+    pub fn prop_pnl(&self) -> &prop::Panel {
         match self {
             Self::Panel(ref wp) => wp,
             _ => panic!(),
@@ -342,7 +369,8 @@ impl Type {
 pub struct Widget {
     /// Unique widget ID
     pub id: WId,
-    pub parent: WId,
+    //
+    pub link: Link,
     /// coordinates
     pub coord: Coord,
     /// widget size
@@ -350,7 +378,7 @@ pub struct Widget {
     /// widget type with properties
     pub typ: Type,
     /// link to children widgets, 2x8B
-    pub link: &'static [Widget],
+    pub childs: &'static [Widget],
 }
 
 impl Widget {
@@ -358,11 +386,11 @@ impl Widget {
     pub const fn cdeflt() -> Self {
         Widget {
             id: WIDGET_ID_NONE,
-            parent: WIDGET_ID_NONE,
+            link: Link::cdeflt(),
             coord: Coord::cdeflt(),
             size: Size::cdeflt(),
             typ: Type::cdeflt(),
-            link: &[],
+            childs: &[],
         }
     }
 }
@@ -373,16 +401,17 @@ impl Widget {
 // }
 
 #[derive(Copy, Clone)]
-struct Idx {
-    own_idx: u16,
-    parent_idx: u16,
-    childs_idx: u16,
-    childs_cnt: u16,
+pub struct Link {
+    pub own_idx:    u16,
+    pub parent_idx: u16,
+    pub childs_idx: u16,
+    pub childs_cnt: u16,
 }
 
-union Link {
-    addr: u32,
-    idx: Idx,
+impl Link {
+    pub const fn cdeflt() -> Self {
+        Link{ own_idx: 0, parent_idx: 0, childs_idx: 0, childs_cnt: 0}
+    }
 }
 
 /// Widgets dynamic properties

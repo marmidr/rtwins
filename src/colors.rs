@@ -21,7 +21,7 @@ pub enum ColorFG {
     CyanIntense,
     White,
     WhiteIntense,
-    // Theme(u8),
+    Theme,
 }
 
 /// Background colors
@@ -45,7 +45,7 @@ pub enum ColorBG {
     CyanIntense,
     White,
     WhiteIntense,
-    // Theme(u8),
+    Theme,
 }
 
 /// Font attributes

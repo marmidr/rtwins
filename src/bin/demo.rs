@@ -8,8 +8,7 @@ use std::{io::Write, ops::DerefMut};
 #[rustfmt::skip]
 mod tui {
     use rtwins::colors::{ColorBG, ColorFG};
-    use rtwins::widget::WIDGET_ID_NONE;
-    use rtwins::{wp, Coord, Size, Type, Widget};
+    use rtwins::{prop, Coord, Size, Widget, Link, ButtonStyle};
 
     #[allow(dead_code)]
     pub enum Id {
@@ -19,7 +18,7 @@ mod tui {
         PnlGreen,
         BtnOk,
         BtnCancel,
-        PnlWhite,
+        PnlYellow,
     }
 
     /// Easy conversion from enum to Wid
@@ -29,50 +28,92 @@ mod tui {
         }
     }
 
-    pub const NO_CHILDS: [Widget; 0] = [];
-
     pub const WINDOW: Widget = Widget {
         id: Id::WndMain.into(),
-        parent: WIDGET_ID_NONE,
+        link: Link::cdeflt(),
         coord: Coord { col: 1, row: 2 },
         size: Size {
             width: 25,
             height: 12,
         },
-        typ: wp::Window {
+        typ: prop::Window {
             title: "** DEMO **",
             fg_color: ColorFG::White,
             bg_color: ColorBG::Blue,
             is_popup: false,
         }.into(),
-        // link: &[]
-        link: &[
+        childs: &[
             Widget {
-                id: Id::Lbl1.into(),
-                parent: rtwins::WIDGET_ID_NONE,
+                id: Id::PnlGreen.into(),
+                link: Link::cdeflt(),
                 coord: Coord::cdeflt(),
                 size: Size::cdeflt(),
-                typ: wp::Label {
-                    title: "Name",
+                typ: prop::Panel {
+                    title: "Panel green",
                     fg_color: ColorFG::White,
-                    bg_color: ColorBG::Blue,
+                    bg_color: ColorBG::Green,
+                    no_frame: false,
                 }.into(),
-                link: &NO_CHILDS,
+                childs: &[
+                    Widget {
+                        id: Id::Lbl1.into(),
+                        link: Link::cdeflt(),
+                        coord: Coord::cdeflt(),
+                        size: Size::cdeflt(),
+                        typ: prop::Label {
+                            title: "Label-1",
+                            fg_color: ColorFG::White,
+                            bg_color: ColorBG::Blue,
+                        }.into(),
+                        childs: &[],
+                    },
+                ],
             },
             Widget {
-                id: 2,
-                parent: rtwins::WIDGET_ID_NONE,
+                id: Id::Lbl2.into(),
+                link: Link::cdeflt(),
                 coord: Coord::cdeflt(),
                 size: Size::cdeflt(),
-                typ: Type::NoWgt,
-                link: &[],
+                typ: prop::Label {
+                    title: "Label-2",
+                    fg_color: ColorFG::Cyan,
+                    bg_color: ColorBG::Black,
+                }.into(),
+                childs: &[],
+            },
+            Widget {
+                id: Id::PnlYellow.into(),
+                link: Link::cdeflt(),
+                coord: Coord::cdeflt(),
+                size: Size::cdeflt(),
+                typ: prop::Panel {
+                    title: "Panel yellow",
+                    fg_color: ColorFG::Yellow,
+                    bg_color: ColorBG::Green,
+                    no_frame: false,
+                }.into(),
+                childs: &[
+                    Widget {
+                        id: Id::BtnCancel.into(),
+                        link: Link::cdeflt(),
+                        coord: Coord::cdeflt(),
+                        size: Size::cdeflt(),
+                        typ: prop::Button {
+                            text: "Cancel",
+                            fg_color: ColorFG::White,
+                            bg_color: ColorBG::Blue,
+                            style: ButtonStyle::Solid
+                        }.into(),
+                        childs: &[],
+                    },
+                ],
             },
         ],
     };
 }
 
 /// Example of const-evaluated and translated Widgets tree into Widgets array
-const DEMO_WND: [rtwins::Widget; rtwins::wgt_count(&tui::WINDOW)] = rtwins::wgt_translate(&tui::WINDOW);
+const DEMO_WND: [rtwins::Widget; rtwins::wgt_count(&tui::WINDOW)] = rtwins::wgt_transform_array(&tui::WINDOW);
 
 
 struct DemoPal {
@@ -107,6 +148,8 @@ impl rtwins::pal::Pal for DemoPal {
     }
 
     fn write_str_n(&mut self, s: &str, repeat: i16) {
+        self.line_buff.reserve(s.len() * repeat as usize);
+
         for _ in 0..repeat {
             self.line_buff.push_str(s);
         }
@@ -145,7 +188,7 @@ impl rtwins::pal::Pal for DemoPal {
 
 // -----------------------------------------------------------------------------------------------
 
-fn main() 
+fn main()
 {
     println!(
         "** {}{}{} ** demo; lib v{}{}{}",
@@ -168,36 +211,24 @@ fn main()
 
     {
         let mut tw = TWins::new(Box::new(DemoPal::new()));
-        let to_invalidate = [1, 2, 3];
         let mut ctx = tw.lock();
-        ctx.invalidate(&DEMO_WND[0], &to_invalidate);
-        ctx.invalidate(&DEMO_WND[0], &[1, 2, 3]);
+        ctx.invalidate(&DEMO_WND[0], &[tui::Id::Lbl1 as u16, tui::Id::BtnOk as u16, tui::Id::Lbl2 as u16]);
         ctx.draw_wnd(&DEMO_WND[0]);
 
         let c = ctx.deref_mut();
-        c.move_to_col(20);
-        c.log_w("Collumn 20");
-        c.pal.write_str("\n");
-        c.pal.flush_buff();
+        c.move_to_col(10).log_w("Column 10");
+        c.write_char('\n').flush_buff();
     }
-
-    let w_none = rtwins::Widget {
-        id: 0,
-        parent: rtwins::WIDGET_ID_NONE,
-        coord: rtwins::Coord::cdeflt(),
-        size: rtwins::Size::cdeflt(),
-        typ: rtwins::Type::NoWgt,
-        link: &tui::NO_CHILDS,
-    };
-
-    println!("w_none childs: {}", w_none.link.len());
-    println!("w_none widgets: {}", rtwins::wgt_count(&w_none));
-    println!("WINDOW childs: {}", tui::WINDOW.link.len());
 
     let title = |wgt: &rtwins::Widget| match wgt.typ {
         rtwins::Type::Window(ref wp) => wp.title,
         _ => "<?>",
     };
+
+    for (idx, w) in DEMO_WND.iter().enumerate() {
+        let w_par = rtwins::wgt_get_parent(&DEMO_WND, w);
+        println!("  {}. {}:{}, idx:{}, chidx:{}, parid {}:{}", idx, w.id, w.typ, w.link.own_idx, w.link.childs_idx, w_par.id, w_par.typ);
+    }
 
     println!("WINDOW title: {}", title(&tui::WINDOW));
     println!("WINDOW title: {}", wnd_prop(&tui::WINDOW).title);
@@ -219,7 +250,7 @@ fn main()
 }
 
 /// Extract window properties from enum
-fn wnd_prop(wgt: &rtwins::Widget) -> &rtwins::widget::wp::Window {
+fn wnd_prop(wgt: &rtwins::Widget) -> &rtwins::widget::prop::Window {
     match wgt.typ {
         rtwins::Type::Window(ref wp) => wp,
         _ => panic!(),

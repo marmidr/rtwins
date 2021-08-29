@@ -28,46 +28,69 @@ pub struct Ctx {
 }
 
 impl Ctx {
-    pub fn log_d(&mut self, s: &str) {
-        self.pal.write_str("-D- ");
-        self.pal.write_str(s);
-        self.pal.flush_buff();
+    // repeated from pal
+    pub fn write_char(&mut self, c: char) -> &mut Self {
+        self.pal.write_char(c);
+        self
     }
 
-    pub fn log_w(&mut self, s: &str) {
-        self.pal.write_str(esc::FG_YELLOW);
-        self.pal.write_str("-W- ");
-        self.pal.write_str(s);
-        self.pal.write_str(esc::FG_DEFAULT);
-        self.pal.flush_buff();
+    pub fn write_char_n(&mut self, c: char, repeat: i16) -> &mut Self {
+        self.pal.write_char_n(c, repeat);
+        self
     }
 
-    pub fn log_e(&mut self, s: &str) {
-        self.pal.write_str(esc::FG_RED);
-        self.pal.write_str("-E- ");
+    pub fn write_str(&mut self, s: &str) -> &mut Self {
         self.pal.write_str(s);
-        self.pal.write_str(esc::FG_DEFAULT);
-        self.pal.flush_buff();
+        self
+    }
+
+    pub fn write_str_n(&mut self, s: &str, repeat: i16) -> &mut Self {
+        self.pal.write_str_n(s, repeat);
+        self
     }
 
     pub fn flush_buff(&mut self) {
         self.pal.flush_buff();
     }
 
-    pub fn move_to(&mut self, col: u16, row: u16) {
+    // own
+
+    fn log(&mut self, fg: &str, prefix: &str, msg: &str) {
+        self.pal.write_str(fg);
+        self.pal.write_str(prefix);
+        self.pal.write_str(msg);
+        self.pal.write_str(esc::FG_DEFAULT);
+        self.pal.flush_buff();
+    }
+
+    pub fn log_d(&mut self, msg: &str) {
+        self.log(esc::FG_WHITE, "-D- ", msg);
+    }
+
+    pub fn log_w(&mut self, msg: &str) {
+        self.log(esc::FG_YELLOW, "-W- ", msg);
+    }
+
+    pub fn log_e(&mut self, msg: &str) {
+        self.log(esc::FG_RED, "-E- ", msg);
+    }
+
+    pub fn move_to(&mut self, col: u16, row: u16) -> &mut Self {
         let s = String::from(esc::CURSOR_GOTO_FMT)
             .replace("{1}", &col.to_string())
             .replace("{2}", &row.to_string());
         self.pal.write_str(s.as_str());
+        self
     }
 
-    pub fn move_to_col(&mut self, col: u16) {
+    pub fn move_to_col(&mut self, col: u16) -> &mut Self {
         let s = String::from(esc::CURSOR_COLUMN_FMT)
             .replace("{1}", &col.to_string());
         self.pal.write_str(s.as_str());
+        self
     }
 
-    pub fn move_by(&mut self, cols: i16, rows: i16) {
+    pub fn move_by(&mut self, cols: i16, rows: i16) -> &mut Self {
         if cols != 0 {
             let fmt;
             let arg;
@@ -104,10 +127,13 @@ impl Ctx {
                 .replace("{1}", &arg.to_string());
             self.pal.write_str(s.as_str());
         }
+
+        self
     }
 
-    pub fn move_to_home(&mut self) {
+    pub fn move_to_home(&mut self) -> &mut Self {
         self.pal.write_str(esc::CURSOR_HOME);
+        self
     }
 
     pub fn cursor_save_pos(&mut self) {
@@ -170,7 +196,7 @@ impl Ctx {
 
     pub fn draw(&mut self, wnd: &crate::Widget, wids: &[crate::WId]) {
         for id in wids.iter() {
-            for w in wnd.link.iter() {
+            for w in wnd.childs.iter() {
                 if w.id == *id {
                     // draw
                 }
