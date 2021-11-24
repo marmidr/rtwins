@@ -1,7 +1,7 @@
 //! Color definitions
 
 /// Foreground colors
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum ColorFG {
     Inherit,
     Default, // Reset to terminal default
@@ -25,7 +25,7 @@ pub enum ColorFG {
 }
 
 /// Background colors
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum ColorBG {
     Inherit,
     Default, // Reset to terminal default

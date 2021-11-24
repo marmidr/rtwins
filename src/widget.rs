@@ -76,6 +76,15 @@ pub enum PgBarStyle {
     Rectangle,
 }
 
+/// Window, panel and page control frame styles
+pub enum FrameStyle {
+    None,
+    Single,
+    Double,
+    PgControl,
+    ListBox
+}
+
 /// Widget unique identifier
 pub type WId = u16;
 
@@ -414,8 +423,8 @@ impl Link {
     }
 }
 
-/// Widgets dynamic properties
-enum DynProp {
+/// Widgets mutable properties
+enum MutProp {
     Chbx {
         checked: bool,
     },
@@ -440,8 +449,8 @@ enum DynProp {
     },
 }
 
-pub struct WidgetDynProp {
-    prop: DynProp,
+pub struct WidgetMutProp {
+    prop: MutProp,
     // applies to every widget
     enabled: bool,
 }

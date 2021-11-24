@@ -10,6 +10,7 @@ pub mod esc;
 pub mod pal;
 pub mod widget;
 pub mod widget_impl;
+pub mod widget_draw;
 
 pub use widget::*;
 pub use widget_impl::*;
