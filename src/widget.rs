@@ -369,7 +369,7 @@ impl Type {
 pub struct Widget {
     /// Unique widget ID
     pub id: WId,
-    //
+    /// indexes used after flattening widget tree to array
     pub link: Link,
     /// coordinates
     pub coord: Coord,

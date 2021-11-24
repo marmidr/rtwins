@@ -13,6 +13,7 @@ pub const fn wgt_count(wgt: &Widget) -> usize {
     n
 }
 
+/// Checks if given widget is parent-type
 pub const fn wgt_is_parent(wgt: &Widget) -> bool {
     match wgt.typ {
         Type::Window(_) |
@@ -26,6 +27,7 @@ pub fn wgt_get_parent<'a>(wnd: &'a [Widget], wgt: &Widget) -> &'a Widget {
     &wnd[wgt.link.parent_idx as usize]
 }
 
+/// Flattens tree-like TUI definition into array of widgets
 pub const fn wgt_transform_array<const N: usize>(wgt: &Widget) -> [Widget; N] {
     let out: [Widget; N] = [Widget::cdeflt(); N];
     let (_, out) = wgt_transform(out, wgt, 0, 1);

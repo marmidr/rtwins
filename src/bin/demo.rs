@@ -23,7 +23,7 @@ mod tui {
 
     /// Easy conversion from enum to Wid
     impl Id {
-        const fn into(self) -> rtwins::WId {
+        pub const fn into(self) -> rtwins::WId {
             self as rtwins::WId
         }
     }
@@ -133,18 +133,10 @@ impl DemoPal {
 }
 
 impl rtwins::pal::Pal for DemoPal {
-    fn write_char(&mut self, c: char) {
-        self.line_buff.push(c);
-    }
-
     fn write_char_n(&mut self, c: char, repeat: i16) {
         for _ in 0..repeat {
             self.line_buff.push(c);
         }
-    }
-
-    fn write_str(&mut self, s: &str) {
-        self.line_buff.push_str(s);
     }
 
     fn write_str_n(&mut self, s: &str, repeat: i16) {
@@ -169,10 +161,6 @@ impl rtwins::pal::Pal for DemoPal {
 
     fn sleep(&mut self, ms: u16) {
         std::thread::sleep(std::time::Duration::from_millis(ms as u64));
-    }
-
-    fn get_logs_row(&mut self) -> u16 {
-        0
     }
 
     fn get_time_stamp(&mut self) -> u32 {
@@ -212,7 +200,12 @@ fn main()
     {
         let mut tw = TWins::new(Box::new(DemoPal::new()));
         let mut ctx = tw.lock();
-        ctx.invalidate(&DEMO_WND[0], &[tui::Id::Lbl1 as u16, tui::Id::BtnOk as u16, tui::Id::Lbl2 as u16]);
+        {
+            use tui::Id::*;
+            ctx.invalidate(&DEMO_WND[0],
+                &[Lbl1.into(), BtnOk.into(), Lbl2.into()]
+            );
+        }
         ctx.draw_wnd(&DEMO_WND[0]);
 
         let c = ctx.deref_mut();

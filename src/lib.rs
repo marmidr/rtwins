@@ -14,17 +14,21 @@ pub mod widget_impl;
 pub use widget::*;
 pub use widget_impl::*;
 
-pub const VER: &str = "0.1.0";
+/// Library version
+pub const VER: &str = env!("CARGO_PKG_VERSION");
 
-use std::sync::{Mutex, MutexGuard};
+use std::sync::{Mutex, MutexGuard, TryLockResult};
 
 // -----------------------------------------------------------------------------------------------
 
 pub type PalBox = Box<dyn crate::pal::Pal>;
 
+// TODO: static Pal instead of PalBox
+// pub struct Ctx<P: crate::pal::Pal>
+
 pub struct Ctx {
     pub pal: PalBox,
-    // invalidated: Vec<crate::WId>
+    invalidated: Vec<crate::WId>
 }
 
 impl Ctx {
@@ -77,15 +81,15 @@ impl Ctx {
 
     pub fn move_to(&mut self, col: u16, row: u16) -> &mut Self {
         let s = String::from(esc::CURSOR_GOTO_FMT)
-            .replace("{1}", &col.to_string())
-            .replace("{2}", &row.to_string());
+            .replace("{0}", &col.to_string())
+            .replace("{1}", &row.to_string());
         self.pal.write_str(s.as_str());
         self
     }
 
     pub fn move_to_col(&mut self, col: u16) -> &mut Self {
         let s = String::from(esc::CURSOR_COLUMN_FMT)
-            .replace("{1}", &col.to_string());
+            .replace("{0}", &col.to_string());
         self.pal.write_str(s.as_str());
         self
     }
@@ -98,7 +102,6 @@ impl Ctx {
             if cols < 0 {
                 fmt = esc::CURSOR_BACKWARD_FMT;
                 arg = -cols;
-
             }
             else {
                 fmt = esc::CURSOR_FORWARD_FMT;
@@ -106,7 +109,7 @@ impl Ctx {
             }
 
             let s = String::from(fmt)
-                .replace("{1}", &arg.to_string());
+                .replace("{0}", &arg.to_string());
             self.pal.write_str(s.as_str());
         }
 
@@ -124,7 +127,7 @@ impl Ctx {
             }
 
             let s = String::from(fmt)
-                .replace("{1}", &arg.to_string());
+                .replace("{0}", &arg.to_string());
             self.pal.write_str(s.as_str());
         }
 
@@ -154,13 +157,13 @@ impl Ctx {
 
     pub fn insert_lines(&mut self, count: u16) {
         let s = String::from(esc::LINE_INSERT_FMT)
-            .replace("{1}", &count.to_string());
+            .replace("{0}", &count.to_string());
         self.pal.write_str(s.as_str());
     }
 
     pub fn delete_lines(&mut self, count: u16) {
         let s = String::from(esc::LINE_DELETE_FMT)
-            .replace("{1}", &count.to_string());
+            .replace("{0}", &count.to_string());
         self.pal.write_str(s.as_str());
     }
 
@@ -186,10 +189,12 @@ impl Ctx {
 
     // -----------------
 
-    pub fn invalidate(&mut self, wnd: &crate::Widget, _wids: &[crate::WId]) {
-        if let widget::Type::Window(_w) = wnd.typ {
-            // self.invalidated.extend_from_slice(wid);
-        } else {
+    pub fn invalidate(&mut self, wnd: &crate::Widget, wids: &[crate::WId]) {
+        if let widget::Type::Window(ref _w) = wnd.typ {
+            // TODO: check for duplication in self.invalidated
+            self.invalidated.extend_from_slice(wids);
+        }
+        else {
             self.log_w(format!("Widget id {} is not a Window", wnd.id).as_str());
         }
     }
@@ -203,7 +208,7 @@ impl Ctx {
             }
         }
 
-        // self.invalidated.retain(|x| !wids.contains(x));
+        self.invalidated.retain(|x| !wids.contains(x));
     }
 
     pub fn draw_wnd(&mut self, wnd: &crate::Widget) {
@@ -211,7 +216,7 @@ impl Ctx {
             _ => {}
         }
 
-        // self.invalidated.clear();
+        self.invalidated.clear();
     }
 }
 
@@ -222,11 +227,18 @@ pub struct TWins {
 impl TWins {
     pub fn new(p: PalBox) -> TWins {
         TWins {
-            ctx: Mutex::new(Ctx { pal: p }),
+            ctx: Mutex::new(Ctx {
+                pal: p,
+                invalidated: vec![]
+            }),
         }
     }
 
     pub fn lock(&mut self) -> MutexGuard<Ctx> {
         self.ctx.lock().unwrap()
+    }
+
+    pub fn try_lock(&mut self) -> TryLockResult<MutexGuard<Ctx>> {
+        self.ctx.try_lock()
     }
 }

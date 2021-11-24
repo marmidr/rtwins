@@ -1,13 +1,21 @@
 //! # RTWins ESC tests
 
 extern crate rtwins;
+
 use rtwins::esc::*;
 
+fn count_esc(s: &str) -> u32
+{
+    let n_esc = s.chars().fold(
+        0u32, |acc, item| if item == '\x1B' { acc + 1 } else { acc }
+    );
+    n_esc
+}
 
 #[test]
 fn test_esc_macros() {
-    assert_eq!("\x1b[{1}G", rtwins::cursor_column!());
-    assert_eq!("\x1b[{1}G", CURSOR_COLUMN_FMT);
+    assert_eq!("\x1b[{0}G", rtwins::cursor_column!());
+    assert_eq!("\x1b[{0}G", CURSOR_COLUMN_FMT);
     assert_eq!("\x1b[42G", rtwins::cursor_column!(42));
 
     assert_eq!("\x1b[48;5;123m", rtwins::bg_color!(123));
@@ -39,7 +47,7 @@ fn test_colors_attributes() {
         + STRIKETHROUGH_OFF
         + ATTRIBUTES_DEFAULT;
 
-    assert!(s.len() > 0);
+    assert_eq!(count_esc(&s), 18);
 }
 
 /// Check if all colors are available
@@ -187,7 +195,7 @@ fn test_colors_fg() {
         + FG_DARK_SLATE_GRAY
         + FG_BLACK_RGB;
 
-    assert!(s.len() > 0);
+    assert_eq!(count_esc(&s), 140);
 }
 
 /// Check if all constants are available
@@ -335,7 +343,7 @@ fn test_colors_bg() {
         + BG_DARK_SLATE_GRAY
         + BG_BLACK_RGB;
 
-    assert!(s.len() > 0);
+    assert_eq!(count_esc(&s), 140);
 }
 
 /// Check cursor navigation
@@ -349,15 +357,17 @@ fn test_cursor() {
         + rtwins::cursor_column!(45)
         + rtwins::cursor_goto!(3, 14);
 
-    assert!(s.len() > 0);
+    assert_eq!(count_esc(&s), 6);
 }
 
 /// Check lines manipulation
 #[test]
 fn test_line() {
-    let s = String::new() + rtwins::line_insert!(1) + rtwins::line_delete!(1);
+    let s = String::new()
+        + rtwins::line_insert!(1)
+        + rtwins::line_delete!(1);
 
-    assert!(s.len() > 0);
+    assert_eq!(count_esc(&s), 2);
 }
 
 /// Check character manipulation
@@ -369,15 +379,17 @@ fn test_character() {
         + rtwins::char_delete!(1)
         + rtwins::char_insert!(1);
 
-    assert!(s.len() > 0);
+    assert_eq!(count_esc(&s), 4);
 }
 
 /// Check screen manipulation
 #[test]
 fn test_screen() {
-    let s = String::new() + rtwins::screen_scroll_up!(1) + rtwins::screen_scroll_down!(1);
+    let s = String::new()
+        + rtwins::screen_scroll_up!(1)
+        + rtwins::screen_scroll_down!(1);
 
-    assert!(s.len() > 0);
+    assert_eq!(count_esc(&s), 2);
 }
 
 #[test]
