@@ -2,6 +2,8 @@
 
 #![allow(dead_code)]
 
+use super::input::*;
+
 /// Widget screen coordinates
 #[derive(Clone, Copy)]
 pub struct Coord {
@@ -409,6 +411,8 @@ impl Widget {
 //     f: f32,
 // }
 
+/// Structure used in flattened widgets structure navigation
+/// Filled up in compile time
 #[derive(Copy, Clone)]
 pub struct Link {
     pub own_idx:    u16,
@@ -418,6 +422,7 @@ pub struct Link {
 }
 
 impl Link {
+    /// Returns default object; can be used in `const` initialization
     pub const fn cdeflt() -> Self {
         Link{ own_idx: 0, parent_idx: 0, childs_idx: 0, childs_cnt: 0}
     }
@@ -453,4 +458,60 @@ pub struct WidgetMutProp {
     prop: MutProp,
     // applies to every widget
     enabled: bool,
+}
+
+/// Window state and event handler
+pub trait WindowState {
+    fn init(&self, wgts: &[Widget]);
+    fn get_widgets(&self, ) -> &[Widget];
+
+    /// events
+    fn on_button_down(&mut self, wgt: &Widget, kc: &KeyCode) {}
+    fn on_button_up(&mut self, wgt: &Widget, kc: &KeyCode) {}
+    fn on_button_click(&mut self, wgt: &Widget, kc: &KeyCode) {}
+    fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {}
+    fn on_text_edit_input_evt(&mut self, wgt: &Widget, kc: &KeyCode, txt: &mut String, cursor_pos: &mut i16) -> bool { return false; }
+    fn on_checkbox_toggle(&mut self, wgt: &Widget) {}
+    fn on_page_control_page_change(&mut self, wgt: &Widget, new_page_idx: u8) {}
+    fn on_list_box_select(&mut self, wgt: &Widget, sel_idx: i16) {}
+    fn on_list_box_change(&mut self, wgt: &Widget, new_idx: i16) {}
+    fn on_combo_box_select(&mut self, wgt: &Widget, sel_idx: i16) {}
+    fn on_combo_box_change(&mut self, wgt: &Widget, new_idx: i16) {}
+    fn on_combo_box_drop(&mut self, wgt: &Widget, drop_state: bool) {}
+    fn on_radio_select(&mut self, wgt: &Widget) {}
+    fn on_text_box_scroll(&mut self, wgt: &Widget, top_line: i16) {}
+    fn on_custom_widget_draw(&mut self, wgt: &Widget) {}
+    fn on_custom_widget_input_evt(&mut self, wgt: &Widget, kc: &KeyCode) -> bool { return false; }
+    fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, kc: &KeyCode) -> bool { return false; }
+
+    /// common state queries
+    fn is_enabled(wgt: &Widget) -> bool { return true; }
+    fn is_focused(wgt: &Widget) -> bool { return false; }
+    fn is_visible(wgt: &Widget) -> bool { return true; }
+    fn get_focused_id() -> WId;
+
+    /// widget-specific queries; all mutable params are outputs
+    fn get_window_coord(wgt: &Widget, coord: &mut Coord) {}
+    fn get_window_title(wgt: &Widget, title: &mut String) {}
+    fn get_checkbox_checked(wgt: &Widget) -> bool { return false; }
+    fn get_label_text(wgt: &Widget, txt: &mut String) {}
+    fn get_text_edit_text(wgt: &Widget, txt: &mut String, edit_mode: bool) {}
+    fn get_led_lit(wgt: &Widget) -> bool { return false; }
+    fn get_led_text(wgt: &Widget, txt: &mut String) {}
+    fn get_progress_bar_state(wgt: &Widget, pos: &mut i32, max: &mut i32) {}
+    fn get_page_ctrl_page_index(wgt: &Widget) -> i8 { return 0; }
+    fn get_list_box_state(wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16) {}
+    fn get_list_box_item(wgt: &Widget, item_idx: &mut i16, txt: &mut String) {}
+    fn get_combo_box_state(wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16, drop_down: &mut bool) {}
+    fn get_combo_box_item(wgt: &Widget, item_idx: &mut i16, txt: &mut String) {}
+    fn get_radio_index(wgt: &Widget) -> i32 { return -1; }
+    fn get_text_box_state(wgt: &Widget, lines: &[&str], top_line: &mut i16) {}
+    fn get_button_text(wgt: &Widget, txt: &mut String) {}
+
+    /// requests
+    fn invalidate(&self, id: WId, instantly: bool) { self.invalidate_impl(&[id], instantly); }
+    // fn invalidate_many(const std::initializer_list<twins::WID> &ids, bool instantly = false) { invalidate_impl(ids.begin(), ids.size(), instantly); }
+
+    // private fn
+    fn invalidate_impl(&self, ids: &[WId], instantly: bool) {}
 }

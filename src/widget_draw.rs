@@ -1,5 +1,7 @@
 //! # RTWins Widget drawing
 
+#![allow(dead_code)]
+
 use super::widget::*;
 use super::colors::{ColorBG, ColorFG};
 use super::Ctx;

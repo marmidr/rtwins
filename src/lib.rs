@@ -8,6 +8,7 @@
 pub mod colors;
 pub mod esc;
 pub mod pal;
+pub mod input;
 pub mod widget;
 pub mod widget_impl;
 pub mod widget_draw;
