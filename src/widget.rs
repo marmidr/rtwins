@@ -88,6 +88,8 @@ pub enum FrameStyle {
     ListBox
 }
 
+// -----------------------------------------------------------------------------------------------
+
 /// Widget unique identifier
 pub type WId = u16;
 
@@ -95,6 +97,8 @@ pub type WId = u16;
 pub const WIDGET_ID_NONE: WId = WId::MIN;
 /// Used as a special function parameter
 pub const WIDGET_ID_ALL: WId = WId::MAX;
+
+// -----------------------------------------------------------------------------------------------
 
 /// Widgets properties
 pub mod prop {
@@ -376,6 +380,8 @@ impl Type {
     }
 }
 
+// -----------------------------------------------------------------------------------------------
+
 /// Widget itself
 #[derive(Copy, Clone)]
 pub struct Widget {
@@ -412,7 +418,7 @@ impl Widget {
 //     f: f32,
 // }
 
-/// Structure used in flattened widgets structure navigation
+/// Structure used in flattened widgets structure navigation.
 /// Filled up in compile time
 #[derive(Copy, Clone)]
 pub struct Link {
@@ -429,8 +435,10 @@ impl Link {
     }
 }
 
-/// Widgets mutable properties
-pub enum MutProp {
+// -----------------------------------------------------------------------------------------------
+
+/// Widget runtime state
+pub enum RuntimeState {
     None,
     Chbx {
         checked: bool,
@@ -454,19 +462,25 @@ pub enum MutProp {
     Txtbx {
         top_line: i16,
     },
+    Pgctrl {
+        page: u8
+    }
 }
 
-pub struct WidgetMutProp {
-    pub prop: MutProp,
+pub struct WidgetState {
+    // particular widget type state
+    pub state: RuntimeState,
     // applies to every widget
     pub enabled: bool,
 }
 
-impl WidgetMutProp {
+impl WidgetState {
     pub fn new() -> Self {
-        WidgetMutProp{prop: MutProp::None, enabled: true}
+        WidgetState{state: RuntimeState::None, enabled: true}
     }
 }
+
+// -----------------------------------------------------------------------------------------------
 
 /// Window state and event handler
 pub trait WindowState {
@@ -481,13 +495,13 @@ pub trait WindowState {
     fn on_text_edit_input_evt(&mut self, wgt: &Widget, kc: &KeyCode, txt: &mut String, cursor_pos: &mut i16) -> bool { return false; }
     fn on_checkbox_toggle(&mut self, wgt: &Widget) {}
     fn on_page_control_page_change(&mut self, wgt: &Widget, new_page_idx: u8) {}
-    fn on_list_box_select(&mut self, wgt: &Widget, sel_idx: i16) {}
+    fn on_list_box_select(&mut self, wgt: &Widget, new_sel_idx: i16) {}
     fn on_list_box_change(&mut self, wgt: &Widget, new_idx: i16) {}
-    fn on_combo_box_select(&mut self, wgt: &Widget, sel_idx: i16) {}
+    fn on_combo_box_select(&mut self, wgt: &Widget, new_sel_idx: i16) {}
     fn on_combo_box_change(&mut self, wgt: &Widget, new_idx: i16) {}
     fn on_combo_box_drop(&mut self, wgt: &Widget, drop_state: bool) {}
     fn on_radio_select(&mut self, wgt: &Widget) {}
-    fn on_text_box_scroll(&mut self, wgt: &Widget, top_line: i16) {}
+    fn on_text_box_scroll(&mut self, wgt: &Widget, new_top_line: i16) {}
     fn on_custom_widget_draw(&mut self, wgt: &Widget) {}
     fn on_custom_widget_input_evt(&mut self, wgt: &Widget, kc: &KeyCode) -> bool { return false; }
     fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, kc: &KeyCode) -> bool { return false; }
@@ -501,7 +515,7 @@ pub trait WindowState {
 
     /// widget-specific queries; all mutable params are outputs
     fn get_window_coord(&mut self, wgt: &Widget, coord: &mut Coord) {}
-    fn get_window_title(&mut self, wgt: &Widget, title: &mut String) {}
+    fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {}
     fn get_checkbox_checked(&mut self, wgt: &Widget) -> bool { return false; }
     fn get_label_text(&mut self, wgt: &Widget, txt: &mut String) {}
     fn get_text_edit_text(&mut self, wgt: &Widget, txt: &mut String, edit_mode: bool) {}
