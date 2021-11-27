@@ -1,6 +1,7 @@
 //! # RTWins Widget drawing
 
 #![allow(dead_code)]
+#![allow(unused_variables)]
 
 use crate::widget::*;
 use crate::colors::{ColorBG, ColorFG};

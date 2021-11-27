@@ -425,7 +425,7 @@ pub struct Link {
 impl Link {
     /// Returns default object; can be used in `const` initialization
     pub const fn cdeflt() -> Self {
-        Link{ own_idx: 0, parent_idx: 0, childs_idx: 0, childs_cnt: 0}
+        Link{ own_idx: 0, parent_idx: 0, childs_idx: 0, childs_cnt: 0 }
     }
 }
 
