@@ -22,9 +22,8 @@ Implementation is based on:
 - reading input
     - [ ] regular characters (a..z)
     - [ ] control codes (Up/Down, Del, Ctrl, Home, ...)
-- [ ] buffered terminal output
-- [ ] platform abstraction layer (PAL) to ease porting
-- [ ] make it compile in clang
+- [x] buffered terminal output
+- [x] platform abstraction layer (PAL) to ease porting
 - [ ] command line interface with history (CLI)
 
 ## Secondary goals
@@ -63,15 +62,16 @@ Implementation is based on:
 
 # Prerequisites
 
+rustc + cargo
 
-# How to build demo
+### Build and run GUI demo:
 
+```bash
+cargo r
+```
 
-### Run GUI demo:
+## How to build and run unit tests
 
-
-## How to build unit tests
-
-
-### Build and run the tests
-
+```bash
+cargo t
+```

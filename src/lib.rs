@@ -52,18 +52,6 @@ pub type PalBox = Box<dyn crate::pal::Pal>;
 // TODO: static Pal instead of PalBox
 // pub struct Ctx<P: crate::pal::Pal>
 
-struct WindowStateStub;
-
-impl WindowStateStub {
-    fn new() -> Self {
-        WindowStateStub
-    }
-}
-
-impl WindowState for WindowStateStub {
-    //
-}
-
 pub struct Ctx {
     pub pal: PalBox,
 
@@ -71,11 +59,10 @@ pub struct Ctx {
     current_cl_fg: ColorFG,
     current_cl_bg: ColorBG,
     attr_faint: i8,
+    _log_raw_font_memento: FontMementoManual,
     pub(crate) stack_cl_fg: Vec<ColorFG>,
     pub(crate) stack_cl_bg: Vec<ColorBG>,
     pub(crate) stack_attr: Vec<FontAttrib>,
-
-    // FontMementoManual log_raw_font_memento;
 }
 
 ///
@@ -90,6 +77,7 @@ impl Ctx {
             current_cl_fg: ColorFG::Default,
             current_cl_bg: ColorBG::Default,
             attr_faint: 0,
+            _log_raw_font_memento: FontMementoManual::new(),
             stack_cl_fg: vec![],
             stack_cl_bg: vec![],
             stack_attr: vec![],
@@ -426,13 +414,28 @@ impl Ctx {
 
 // -----------------------------------------------------------------------------------------------
 
+/// Font attributes
+#[derive(Clone, Copy)]
+pub enum FontAttrib {
+    None,
+    Bold,
+    Faint,
+    Italics,
+    Underline,
+    Blink,
+    Inverse,
+    Invisible,
+    StrikeThrough,
+}
 
+#[allow(unused_variables)]
 struct FontMementoManual {
     sz_fg : i8,
     sz_bg : i8,
     sz_attr : i8,
 }
 
+#[allow(dead_code)]
 impl FontMementoManual {
     fn new() -> Self {
         FontMementoManual {
@@ -462,6 +465,7 @@ struct FontMemento<'a> {
     ctx: &'a mut Ctx
 }
 
+#[allow(dead_code)]
 impl <'a> FontMemento<'a> {
     fn new(ctx: &'a mut Ctx) -> Self {
         FontMemento{

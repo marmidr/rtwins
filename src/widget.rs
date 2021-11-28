@@ -484,9 +484,6 @@ impl WidgetState {
 
 /// Window state and event handler
 pub trait WindowState {
-    fn init(&self, wgts: &[Widget]) {}
-    fn get_widgets(&self) -> &[Widget] { return &[]; }
-
     /// events
     fn on_button_down(&mut self, wgt: &Widget, kc: &KeyCode) {}
     fn on_button_up(&mut self, wgt: &Widget, kc: &KeyCode) {}
@@ -512,6 +509,7 @@ pub trait WindowState {
     fn is_visible(&mut self, wgt: &Widget) -> bool { return true; }
     fn get_focused_id(&mut self) -> WId { return WIDGET_ID_NONE; }
     fn set_focused_id(&mut self, wid: WId) {}
+    fn get_widgets(&self) -> &[Widget] { return &[]; }
 
     /// widget-specific queries; all mutable params are outputs
     fn get_window_coord(&mut self, wgt: &Widget, coord: &mut Coord) {}
@@ -537,4 +535,19 @@ pub trait WindowState {
 
     // private fn
     fn invalidate_impl(&self, ids: &[WId], instantly: bool) {}
+}
+
+// -----------------------------------------------------------------------------------------------
+
+
+struct WindowStateStub;
+
+impl WindowStateStub {
+    fn new() -> Self {
+        WindowStateStub
+    }
+}
+
+impl WindowState for WindowStateStub {
+    //
 }

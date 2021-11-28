@@ -1,7 +1,10 @@
 //! Color definitions
 
+use enum_iterator::IntoEnumIterator;
+use crate::esc::*;
+
 /// Foreground colors
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, IntoEnumIterator)]
 pub enum ColorFG {
     Inherit,
     Default, // Reset to terminal default
@@ -25,7 +28,7 @@ pub enum ColorFG {
 }
 
 /// Background colors
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, IntoEnumIterator)]
 pub enum ColorBG {
     Inherit,
     Default, // Reset to terminal default
@@ -48,21 +51,6 @@ pub enum ColorBG {
     // Theme,
 }
 
-/// Font attributes
-#[derive(Clone, Copy)]
-pub enum FontAttrib {
-    None,
-    Bold,
-    Faint,
-    Italics,
-    Underline,
-    Blink,
-    Inverse,
-    Invisible,
-    StrikeThrough,
-}
-
-use crate::esc::*;
 
 const MAP_CL_FG: [&'static str; 18] =
 [
@@ -116,10 +104,8 @@ pub fn encode_cl_fg(cl: ColorFG) -> &'static str {
         return MAP_CL_FG[cl as usize];
     }
 
-    // #ifdef TWINS_THEMES
     // if (INRANGE(cl, ColorFG::ThemeBegin, ColorFG::ThemeEnd))
     //     return encodeClTheme(cl);
-    // #endif
 
     ""
 }
@@ -130,10 +116,8 @@ pub fn encode_cl_bg(cl: ColorBG) -> &'static str {
         return MAP_CL_BG[cl as usize];
     }
 
-    // #ifdef TWINS_THEMES
     // if (INRANGE(cl, ColorBG::ThemeBegin, ColorBG::ThemeEnd))
     //     return encodeClTheme(cl);
-    // #endif
 
     ""
 }
@@ -142,78 +126,80 @@ pub fn encode_cl_bg(cl: ColorBG) -> &'static str {
 // const char* encodeClTheme(ColorFG cl);
 // const char* encodeClTheme(ColorBG cl);
 
+/// For given background color, returns matching foreground color
+///
+/// \e[4?m               --> \e[3?m
+/// \e[48;2;000;111;222m --> \e[38;2;000;111;222m
+/// \e[48;5;253m         --> \e[38;5;253m
+/// \e[10?m              --> \e[9?m
 ///
 pub fn transcode_cl_bg_2_fg(bg_color_code: &str) -> String {
-    let mut cl_buff = bg_color_code.to_string();
 
-    if !cl_buff.starts_with("\x1B[") {
-        return cl_buff;
+    if !bg_color_code.as_bytes().starts_with(b"\x1B[") || bg_color_code.len() < 5 {
+        return String::new();
     }
 
-/*
-    strncpy(clCodeBuffer, bgColorCode, sizeof(clCodeBuffer));
-    clCodeBuffer[sizeof(clCodeBuffer)-1] = '\0';
+    let mut out = String::from(bg_color_code);
 
-    // \e[4?m               --> \e[3?m
-    // \e[48;2;000;111;222m --> \e[38;2;000;111;222m
-    // \e[48;5;253m         --> \e[38;5;253m
-    // \e[10?m              --> \e[9?m
-    char c2 = clCodeBuffer[2];
-    char c3 = clCodeBuffer[3];
-
-    // lazy, lazy check...
-    if (c2 == '4')
+    unsafe
     {
-        clCodeBuffer[2] = '3';
-    }
-    else if (c2 == '1' && c3 == '0')
-    {
-        memmove(clCodeBuffer+3, clCodeBuffer+4, sizeof(clCodeBuffer)-4);
-        clCodeBuffer[2] = '9';
+        // `out` length is known, so we can safely use unchecked versions of `get`
+        let c3 = *out.as_bytes().get_unchecked(3);
+        let c2 = out.as_bytes_mut().get_unchecked_mut(2);
+
+        if *c2 == b'4' {
+            *c2 = b'3';
+        }
+        else if *c2 == b'1' && c3 == b'0' {
+            *c2 = b'9';
+            out.remove(3);
+        }
     }
 
-    return clCodeBuffer;
-*/
-    "".to_string()
+    out
 }
 
-///
+/// Convert Normal into Intense color
 pub fn intensify_cl_fg(cl: ColorFG) -> ColorFG {
-/*
-    // normal -> intense
-    if (cl > ColorFG::Default && cl < ColorFG::WhiteIntense)
-        return ColorFG((int)cl + 1);
-
-    if (cl == ColorFG::Default) // may not be correct
+    // TODO: try this instead https://crates.io/crates/num_enum
+    if cl > ColorFG::Default && cl < ColorFG::WhiteIntense {
+        let mut it = ColorFG::into_enum_iter();
+        while let Some(c) = it.next() {
+            if c == cl {
+                return it.next().unwrap();
+            }
+        }
+    }
+    else if cl == ColorFG::Default {
+        // force something bright
         return ColorFG::WhiteIntense;
+    }
 
-    #ifdef TWINS_THEMES
+/*
     if (INRANGE(cl, ColorFG::ThemeBegin, ColorFG::ThemeEnd))
         return intensifyClTheme(cl);
-    #endif
-
-    return cl;
 */
     cl
 }
 
-///
+/// Convert Normal into Intense color
 pub fn intensify_cl_bg(cl: ColorBG) -> ColorBG {
-    // unimplemented!();
+    if cl > ColorBG::Default && cl < ColorBG::WhiteIntense {
+        let mut it = ColorBG::into_enum_iter();
+        while let Some(c) = it.next() {
+            if c == cl {
+                return it.next().unwrap();
+            }
+        }
+    }
+    else if cl == ColorBG::Default {
+        // force something bright
+        return ColorBG::WhiteIntense;
+    }
+
 /*
-    // normal -> intense
-    if (cl > ColorBG::Default && cl < ColorBG::WhiteIntense)
-        return ColorBG((int)cl + 1);
-
-    if (cl == ColorBG::Default) // may not be correct
-        return ColorBG::BlackIntense;
-
-    #ifdef TWINS_THEMES
     if (INRANGE(cl, ColorBG::ThemeBegin, ColorBG::ThemeEnd))
         return intensifyClTheme(cl);
-    #endif
-
-    return cl;
 */
     cl
 }

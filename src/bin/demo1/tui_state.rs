@@ -32,10 +32,6 @@ impl DemoWndState {
 // -----------------------------------------------------------------------------------------------
 
 impl WindowState for DemoWndState {
-    fn get_widgets(&self) -> &'static [Widget] {
-        self.wnd
-    }
-
     /** events **/
 
     fn on_button_down(&mut self, wgt: &Widget, kc: &KeyCode) {
@@ -147,6 +143,10 @@ impl WindowState for DemoWndState {
 
     fn set_focused_id(&mut self, wid: WId) {
         self.focused_id = wid;
+    }
+
+    fn get_widgets(&self) -> &'static [Widget] {
+        self.wnd
     }
 
     /** widget-specific queries; all mutable params are outputs **/

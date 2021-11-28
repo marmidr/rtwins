@@ -77,7 +77,7 @@ fn main()
     test_esc_codes();
 
     {
-        let mut ws = tui_state::DemoWndState::new(&tui_def::DEMO_WND[..]);
+        let mut _ws = tui_state::DemoWndState::new(&tui_def::DEMO_WND[..]);
 
         let mut tw = TWins::new(Box::new(DemoPal::new()));
         let mut ctx = tw.lock();
