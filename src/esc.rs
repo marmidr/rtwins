@@ -61,7 +61,7 @@ macro_rules! st {
 macro_rules! fg_rgb {
     // r,g,b: 0..255
     ($r:literal, $g:literal, $b:literal) => {
-        $crate::csi!(concat!("38;2;", $r, ";", $g, ";", $b, "m"));
+        $crate::csi!(concat!("38;2;", $r, ";", $g, ";", $b, "m"))
     };
 }
 
@@ -70,7 +70,7 @@ macro_rules! fg_rgb {
 macro_rules! fg_color {
     // clno: 1..255, 232..255=black->white
     ($clno:literal) => {
-        $crate::csi!(concat!("38;5;", $clno, "m"));
+        $crate::csi!(concat!("38;5;", $clno, "m"))
     };
 }
 
@@ -79,7 +79,7 @@ macro_rules! fg_color {
 macro_rules! bg_rgb {
     // r,g,b: 0..255
     ($r:literal, $g:literal, $b:literal) => {
-        $crate::csi!(concat!("48;2;", $r, ";", $g, ";", $b, "m"));
+        $crate::csi!(concat!("48;2;", $r, ";", $g, ";", $b, "m"))
     };
 }
 
@@ -88,7 +88,7 @@ macro_rules! bg_rgb {
 macro_rules! bg_color {
     // clno: 1..255, 232..255=black->white
     ($clno:literal) => {
-        $crate::csi!(concat!("48;5;", $clno, "m"));
+        $crate::csi!(concat!("48;5;", $clno, "m"))
     };
 }
 
@@ -466,37 +466,37 @@ pub const CURSOR_HOME           : &str = csi!("H");
 
 #[macro_export]
 macro_rules! cursor_column {
-    () =>           { $crate::csi!("{0}G"); };
+    () =>           { $crate::csi!("{0}G") };
     ($col:literal) =>  { $crate::csi!(concat!(stringify!($col), "G")); };
 }
 
 #[macro_export]
 macro_rules! cursor_goto {
-    () =>                           { $crate::csi!("{0};{1}H"); };
+    () =>                           { $crate::csi!("{0};{1}H") };
     ($row:literal, $col:literal) => { $crate::csi!(concat!(stringify!($row), ";", stringify!($col), "H")); };
 }
 
 #[macro_export]
 macro_rules! cursor_up {
-    () =>           { $crate::csi!("{0}A"); };
+    () =>           { $crate::csi!("{0}A") };
     ($n:literal) => { $crate::csi!(concat!($n, "A")); };
 }
 
 #[macro_export]
 macro_rules! cursor_down {
-    () =>           { $crate::csi!("{0}B"); };
+    () =>           { $crate::csi!("{0}B") };
     ($n:literal) => { $crate::csi!(concat!($n, "B")); };
 }
 
 #[macro_export]
 macro_rules! cursor_forward {
-    () =>           { $crate::csi!("{0}C"); };
+    () =>           { $crate::csi!("{0}C") };
     ($n:literal) => { $crate::csi!(concat!($n, "C")); };
 }
 
 #[macro_export]
 macro_rules! cursor_backward {
-    () =>           { $crate::csi!("{0}D"); };
+    () =>           { $crate::csi!("{0}D") };
     ($n:literal) => { $crate::csi!(concat!($n, "D")); };
 }
 
@@ -518,14 +518,14 @@ pub const LINE_ERASE_LEFT   : &str = csi!("1K");
 /// Insert `n` lines
 #[macro_export]
 macro_rules! line_insert {
-    () =>           { $crate::csi!("{0}L"); };
+    () =>           { $crate::csi!("{0}L") };
     ($n:literal) => { $crate::csi!(concat!($n, "L")); };
 }
 
 /// Delete `n` lines
 #[macro_export]
 macro_rules! line_delete {
-    () =>           { $crate::csi!("{0}M"); };
+    () =>           { $crate::csi!("{0}M") };
     ($n:literal) => { $crate::csi!(concat!($n, "M")); };
 }
 
@@ -538,28 +538,28 @@ pub const LINE_DELETE_FMT: &str = line_delete!();
 /// Repeat last character `n` times - not supported on every platform
 #[macro_export]
 macro_rules! char_repeat_last {
-    () =>           { $crate::csi!("{0}b"); };
+    () =>           { $crate::csi!("{0}b") };
     ($n:literal) => { $crate::csi!(concat!($n, "b")); };
 }
 
 /// Erase `n` characters (replace with space)
 #[macro_export]
 macro_rules! char_erase {
-    () =>           { $crate::csi!("{0}X"); };
+    () =>           { $crate::csi!("{0}X") };
     ($n:literal) => { $crate::csi!(concat!($n, "X")); };
 }
 
 /// Delete `n` characters
 #[macro_export]
 macro_rules! char_delete {
-    () =>           { $crate::csi!("{0}P"); };
+    () =>           { $crate::csi!("{0}P") };
     ($n:literal) => { $crate::csi!(concat!($n, "P")); };
 }
 
 /// Insert `n` characters
 #[macro_export]
 macro_rules! char_insert {
-    () =>           { $crate::csi!("{0}L"); };
+    () =>           { $crate::csi!("{0}L") };
     ($n:literal) => { $crate::csi!(concat!($n, "L")); };
 }
 
@@ -587,14 +587,14 @@ pub const SCREEN_REVERSE_OFF  : &str = csi!("?5l");
 /// Scrool screen up `n' lines
 #[macro_export]
 macro_rules! screen_scroll_up {
-    () =>           { $crate::csi!("{0}S"); };
+    () =>           { $crate::csi!("{0}S") };
     ($n:literal) => { $crate::csi!(concat!($n, "S")); };
 }
 
 /// Scrool screen down `n' lines
 #[macro_export]
 macro_rules! screen_scroll_down {
-    () =>           { $crate::csi!("{0}T"); };
+    () =>           { $crate::csi!("{0}T") };
     ($n:literal) => { $crate::csi!(concat!($n, "T")); };
 }
 

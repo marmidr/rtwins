@@ -62,7 +62,7 @@ Implementation is based on:
 
 # Prerequisites
 
-rustc + cargo
+[Install Rust](https://www.rust-lang.org/tools/install)
 
 ### Build and run GUI demo:
 
@@ -75,3 +75,36 @@ cargo r
 ```bash
 cargo t
 ```
+
+## Test coverage
+
+Coverage generation tools [grcov](https://github.com/mozilla/grcov) is provided by Mozzilla.
+
+First, [nightly](https://rust-lang.github.io/rustup/concepts/channels.html) version of Rust is needed:
+
+```bash
+rustup show
+rustup toolchain install nightly
+rustup show
+rustup default nightly
+```
+
+Now install dependencies:
+
+```bash
+cargo install grcov
+rustup component add llvm-tools-preview
+```
+
+Build and test
+
+```bash
+export LLVM_PROFILE_FILE="your_name-%p-%m.profraw"
+export CARGO_INCREMENTAL=0
+export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+export RUSTDOCFLAGS="-Cpanic=abort"
+cargo test
+grcov . -s . --binary-path ./target/debug/ -t html --branch --ignore-not-existing -o ./target/debug/coverage/
+```
+
+Open the `target/debug/coverage/index.html` to see the report
