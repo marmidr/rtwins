@@ -46,24 +46,28 @@ fn test_transcode_cl_bg_2_fg() {
 
 #[test]
 fn test_intensify_cl_fg() {
-    // test invalid values
+    // test unsupported values
     assert_eq!(colors::ColorFG::Inherit, colors::intensify_cl_fg(colors::ColorFG::Inherit));
+    assert_eq!(colors::ColorFG::WhiteIntense, colors::intensify_cl_fg(colors::ColorFG::Default));
 
     // test correct values
-    assert_eq!(colors::ColorFG::WhiteIntense, colors::intensify_cl_fg(colors::ColorFG::Default));
     assert_eq!(colors::ColorFG::WhiteIntense, colors::intensify_cl_fg(colors::ColorFG::White));
     assert_eq!(colors::ColorFG::MagentaIntense, colors::intensify_cl_fg(colors::ColorFG::Magenta));
-    assert_eq!(colors::ColorFG::Cyan, colors::intensify_cl_fg(colors::ColorFG::MagentaIntense));
+
+    // try to intensify intense color
+    assert_eq!(colors::ColorFG::MagentaIntense, colors::intensify_cl_fg(colors::ColorFG::MagentaIntense));
 }
 
 #[test]
 fn test_intensify_cl_bg() {
-    // test invalid values
+    // test unsupported values
     assert_eq!(colors::ColorBG::Inherit, colors::intensify_cl_bg(colors::ColorBG::Inherit));
+    assert_eq!(colors::ColorBG::WhiteIntense, colors::intensify_cl_bg(colors::ColorBG::Default));
 
     // test correct values
-    assert_eq!(colors::ColorBG::WhiteIntense, colors::intensify_cl_bg(colors::ColorBG::Default));
     assert_eq!(colors::ColorBG::WhiteIntense, colors::intensify_cl_bg(colors::ColorBG::White));
     assert_eq!(colors::ColorBG::MagentaIntense, colors::intensify_cl_bg(colors::ColorBG::Magenta));
-    assert_eq!(colors::ColorBG::Cyan, colors::intensify_cl_bg(colors::ColorBG::MagentaIntense));
+
+    // try to intensify intense color
+    assert_eq!(colors::ColorBG::MagentaIntense, colors::intensify_cl_bg(colors::ColorBG::MagentaIntense));
 }

@@ -1,10 +1,12 @@
 //! Color definitions
 
-use enum_iterator::IntoEnumIterator;
+use num_enum::TryFromPrimitive;
+use std::convert::TryFrom;
 use crate::esc::*;
 
 /// Foreground colors
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, IntoEnumIterator)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, TryFromPrimitive)]
+#[repr(u8)]
 pub enum ColorFG {
     Inherit,
     Default, // Reset to terminal default
@@ -28,7 +30,8 @@ pub enum ColorFG {
 }
 
 /// Background colors
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, IntoEnumIterator)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, TryFromPrimitive)]
+#[repr(u8)]
 pub enum ColorBG {
     Inherit,
     Default, // Reset to terminal default
@@ -127,14 +130,11 @@ pub fn encode_cl_bg(cl: ColorBG) -> &'static str {
 // const char* encodeClTheme(ColorBG cl);
 
 /// For given background color, returns matching foreground color
-///
-/// \e[4?m               --> \e[3?m
-/// \e[48;2;000;111;222m --> \e[38;2;000;111;222m
-/// \e[48;5;253m         --> \e[38;5;253m
-/// \e[10?m              --> \e[9?m
-///
 pub fn transcode_cl_bg_2_fg(bg_color_code: &str) -> String {
-
+    // \e[4?m               --> \e[3?m
+    // \e[48;2;000;111;222m --> \e[38;2;000;111;222m
+    // \e[48;5;253m         --> \e[38;5;253m
+    // \e[10?m              --> \e[9?m
     if !bg_color_code.as_bytes().starts_with(b"\x1B[") || bg_color_code.len() < 5 {
         return String::new();
     }
@@ -161,13 +161,12 @@ pub fn transcode_cl_bg_2_fg(bg_color_code: &str) -> String {
 
 /// Convert Normal into Intense color
 pub fn intensify_cl_fg(cl: ColorFG) -> ColorFG {
-    // TODO: try this instead https://crates.io/crates/num_enum
     if cl > ColorFG::Default && cl < ColorFG::WhiteIntense {
-        let mut it = ColorFG::into_enum_iter();
-        while let Some(c) = it.next() {
-            if c == cl {
-                return it.next().unwrap();
-            }
+        let cl_next_val = (cl as u8) + 1;
+        // intensified has odd value
+        if cl_next_val & 0x01 != 0 {
+            let cl_new = ColorFG::try_from(cl_next_val).unwrap_or(cl);
+            return cl_new;
         }
     }
     else if cl == ColorFG::Default {
@@ -185,11 +184,11 @@ pub fn intensify_cl_fg(cl: ColorFG) -> ColorFG {
 /// Convert Normal into Intense color
 pub fn intensify_cl_bg(cl: ColorBG) -> ColorBG {
     if cl > ColorBG::Default && cl < ColorBG::WhiteIntense {
-        let mut it = ColorBG::into_enum_iter();
-        while let Some(c) = it.next() {
-            if c == cl {
-                return it.next().unwrap();
-            }
+        let cl_next_val = (cl as u8) + 1;
+        // intensified has odd value
+        if cl_next_val & 0x01 != 0 {
+            let cl_new = ColorBG::try_from(cl_next_val).unwrap_or(cl);
+            return cl_new;
         }
     }
     else if cl == ColorBG::Default {

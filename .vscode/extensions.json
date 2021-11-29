@@ -11,7 +11,11 @@
         "maptz.camelcasenavigation",
         "pkief.material-icon-theme",
         "vadimcn.vscode-lldb",
-        "bungcip.better-toml",
-        "mhutchie.git-graph"
+        "mhutchie.git-graph",
+        "kevinkassimo.cargo-toml-snippets",
+        "serayuzgur.crates",
+        "tamasfe.even-better-toml",
+        "eamodio.gitlens",
+        "panicbit.cargo"
     ]
 }
