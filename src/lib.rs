@@ -458,30 +458,46 @@ impl FontMementoManual {
 }
 
 /// Helper for automatic restoring terminal font attributes
-// #[derive(Default)]
-struct FontMemento<'a> {
-    sz_fg : i8,
-    sz_bg : i8,
-    sz_attr : i8,
-    ctx: &'a mut Ctx
+// https://doc.rust-lang.org/stable/rust-by-example/scope/lifetime/lifetime_coercion.html
+// lifetime of `a` is >= lifetime of `b`
+struct FontMemento<'b, 'a: 'b> {
+    fg_stack_len : i8,
+    bg_stack_len : i8,
+    at_stack_len : i8,
+    ctx: &'b std::cell::RefCell<&'a mut Ctx>,
 }
 
 #[allow(dead_code)]
-impl <'a> FontMemento<'a> {
-    fn new(ctx: &'a mut Ctx) -> Self {
+impl <'b, 'a> FontMemento<'b, 'a> {
+    fn new(ctx: &'b std::cell::RefCell<&'a mut Ctx>) -> Self {
+        let fg;
+        let bg;
+        let at;
+
+        {
+            let ref_ctx = ctx.borrow();
+            fg = ref_ctx.stack_cl_fg.len() as i8;
+            bg = ref_ctx.stack_cl_bg.len() as i8;
+            at = ref_ctx.stack_attr.len() as i8;
+        }
+
         FontMemento{
-            sz_fg: ctx.stack_cl_fg.len() as i8,
-            sz_bg: ctx.stack_cl_bg.len() as i8,
-            sz_attr: ctx.stack_attr.len() as i8,
+            fg_stack_len: fg,
+            bg_stack_len: bg,
+            at_stack_len: at,
             ctx
         }
     }
 }
 
-impl <'a> Drop for FontMemento<'a> {
+impl <'b, 'a> Drop for FontMemento<'b, 'a> {
     fn drop(&mut self) {
-        self.ctx.pop_cl_fg_n(self.ctx.stack_cl_fg.len() as i8 - self.sz_fg);
-        self.ctx.pop_cl_bg_n(self.ctx.stack_cl_bg.len() as i8 - self.sz_bg);
-        self.ctx.pop_attr_n(self.ctx.stack_cl_bg.len() as i8 - self.sz_attr);
+        let mut ctx = self.ctx.borrow_mut();
+        let new_fg = ctx.stack_cl_fg.len() as i8 - self.fg_stack_len;
+        let new_bg = ctx.stack_cl_bg.len() as i8 - self.bg_stack_len;
+        let new_at = ctx.stack_cl_bg.len() as i8 - self.at_stack_len;
+        ctx.pop_cl_fg_n(new_fg);
+        ctx.pop_cl_bg_n(new_bg);
+        ctx.pop_attr_n(new_at);
     }
 }

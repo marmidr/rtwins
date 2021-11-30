@@ -3,7 +3,10 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use std::cell::RefCell;
+
 use crate::FontMementoManual;
+use crate::FontMemento;
 use crate::FontAttrib;
 use crate::WidgetSearchStruct;
 use crate::widget::*;
@@ -14,13 +17,13 @@ use crate::Ctx;
 
 struct DrawCtx<'a>
 {
-    //
-    ctx: &'a mut Ctx,
-    //
+    /// Reference to a drawer instance
+    ctx: RefCell<&'a mut Ctx>,
+    /// Reference to a widget to be drawn
     wgt: &'a Widget,
-    //
+    /// Reference to window state that relates to the widget
     wnd_state: &'a mut dyn crate::WindowState,
-    // current widget's parent left-top position
+    /// Current widget's parent left-top position
     parent_coord: Coord,
 }
 
@@ -42,7 +45,7 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
 
     if wids.len() == 1 && wids[0] == WIDGET_ID_ALL {
         let wgt = ws.get_widgets().get(0).unwrap();
-        let mut dctx = DrawCtx{ ctx, wgt, wnd_state: ws, parent_coord: Coord::cdeflt() };
+        let mut dctx = DrawCtx{ ctx: RefCell::new(ctx), wgt, wnd_state: ws, parent_coord: Coord::cdeflt() };
         draw_widget_internal(&mut dctx);
     }
     else {
@@ -81,7 +84,7 @@ fn draw_widget_internal(dctx: &mut DrawCtx)
     }
 
     let en = dctx.wnd_state.is_enabled(dctx.wgt);
-    if !en { dctx.ctx.push_attr(FontAttrib::Faint); }
+    if !en { dctx.ctx.borrow_mut().push_attr(FontAttrib::Faint); }
 
     match dctx.wgt.typ
     {
@@ -104,8 +107,8 @@ fn draw_widget_internal(dctx: &mut DrawCtx)
         _ => {}
     }
 
-    if !en { dctx.ctx.pop_attr(); }
-    dctx.ctx.flush_buff();
+    if !en { dctx.ctx.borrow_mut().pop_attr(); }
+    dctx.ctx.borrow_mut().flush_buff();
 }
 
 // -----------------------------------------------------------------------------------------------
@@ -132,12 +135,11 @@ fn draw_list_scroll_bar_v(const Coord coord, int height, int max, int pos)
 
 fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
 {
-    // let wnd_coord = dctx.wgt.coord;
-    // dctx.parent_coord = Coord::cdeflt();
+    dctx.parent_coord = Coord::cdeflt(); // necessary?
+    let mut wnd_coord = Coord::cdeflt();
+    dctx.wnd_state.get_window_coord(dctx.wgt, &mut wnd_coord);
 
 /*
-    env.pState->getWindowCoord(pWgt, wnd_coord);
-
     drawArea(wnd_coord, pWgt->size,
         pWgt->window.bgColor, pWgt->window.fgColor, FrameStyle::Double, true, pWgt->window.isPopup);
 
@@ -171,7 +173,9 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
 
 fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
 {
-    /* FontMemento _m;
+    let _fm = FontMemento::new(&dctx.ctx);
+
+    /*
     const auto my_coord = env.parentCoord + pWgt->coord;
 
     drawArea(my_coord, pWgt->size,
@@ -949,6 +953,7 @@ fn get_widget_bg_color(wgt: &Widget) -> ColorBG
     let cl = match wgt.typ
     {
         Type::Window(ref p) => { p.bg_color },
+        // TODO: rethink the implementation if it is correct
         Type::Panel(ref p) => { if ColorBG::Inherit == p.bg_color { ColorBG::Inherit } else { p.bg_color } },
         Type::Label(ref p) => { if ColorBG::Inherit == p.bg_color { ColorBG::Inherit } else { p.bg_color } },
         Type::TextEdit(ref p) => { if ColorBG::Inherit == p.bg_color { ColorBG::Inherit } else { p.bg_color } },
