@@ -3,11 +3,12 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use crate::FontMementoManual;
+use crate::FontAttrib;
+use crate::WidgetSearchStruct;
 use crate::widget::*;
 use crate::colors::{ColorBG, ColorFG};
 use crate::Ctx;
-// use crate::FontAttrib;
-// use crate::FontMemento;
 
 // -----------------------------------------------------------------------------------------------
 
@@ -17,38 +18,37 @@ struct DrawCtx<'a>
     ctx: &'a mut Ctx,
     //
     wgt: &'a Widget,
+    //
+    wnd_state: &'a mut dyn crate::WindowState,
     // current widget's parent left-top position
     parent_coord: Coord,
-    //
-    // wstat: std::rc::Rc<dyn crate::WindowState>,
 }
 
-pub fn draw_widgets(ctx: &mut Ctx, wnd: &Widget, wids: &[WId])
+pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
 {
-    if wids.len() == 0 { return; }
+    if wids.len() == 0 {
+        return;
+    }
 
-    let mut dctx = DrawCtx{
-        ctx, wgt: wnd, parent_coord: Coord::cdeflt(),
-        // wstat:
-        };
-
-    // let fm = FontMemento::new(ctx);
+    let mut fm = FontMementoManual::new();
+    fm.store(ctx);
 
 /*
     CallEnv env(pWindowWidgets);
     g_ws.pFocusedWgt = getWidgetByWID(env, ctx.stat.getFocusedID());
 */
-    dctx.ctx.cursor_hide();
-    dctx.ctx.flush_buff();
+    ctx.cursor_hide();
+    ctx.flush_buff();
 
     if wids.len() == 1 && wids[0] == WIDGET_ID_ALL {
+        let wgt = ws.get_widgets().get(0).unwrap();
+        let mut dctx = DrawCtx{ ctx, wgt, wnd_state: ws, parent_coord: Coord::cdeflt() };
         draw_widget_internal(&mut dctx);
     }
     else {
         for i in 0..wids.len() {
+            let _wss = WidgetSearchStruct::new(wids[i]);
  /*
-            WidgetSearchStruct wss { searchedID : pWidgetIds[i] };
-
             if (getWidgetWSS(env, wss) && wss.isVisible)
             {
                 env.parentCoord = wss.parentCoord;
@@ -61,26 +61,27 @@ pub fn draw_widgets(ctx: &mut Ctx, wnd: &Widget, wids: &[WId])
         }
     }
 
-    dctx.ctx.reset_attr();
-    dctx.ctx.reset_cl_bg();
-    dctx.ctx.reset_cl_fg();
+    ctx.reset_attr();
+    ctx.reset_cl_bg();
+    ctx.reset_cl_fg();
 /*
     setCursorAt(env, g_ws.pFocusedWgt);
 */
-    dctx.ctx.cursor_show();
-    dctx.ctx.flush_buff();
+    ctx.cursor_show();
+    fm.restore(ctx);
+    ctx.flush_buff();
 }
 
 // -----------------------------------------------------------------------------------------------
 
 fn draw_widget_internal(dctx: &mut DrawCtx)
 {
-    // if !dctx.wstat.is_visible(dctx.wgt) {
-    //     return;
-    // }
+    if !dctx.wnd_state.is_visible(dctx.wgt) {
+        return;
+    }
 
-    // let en = dctx.ctx.stat.is_enabled(dctx.wgt);
-    // if !en { dctx.ctx.push_attr(FontAttrib::Faint); }
+    let en = dctx.wnd_state.is_enabled(dctx.wgt);
+    if !en { dctx.ctx.push_attr(FontAttrib::Faint); }
 
     match dctx.wgt.typ
     {
@@ -103,7 +104,7 @@ fn draw_widget_internal(dctx: &mut DrawCtx)
         _ => {}
     }
 
-    // if !en { dctx.ctx.pop_attr(); }
+    if !en { dctx.ctx.pop_attr(); }
     dctx.ctx.flush_buff();
 }
 
@@ -131,8 +132,8 @@ fn draw_list_scroll_bar_v(const Coord coord, int height, int max, int pos)
 
 fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
 {
-    let wnd_coord = dctx.wgt.coord;
-    dctx.parent_coord = Coord::cdeflt();
+    // let wnd_coord = dctx.wgt.coord;
+    // dctx.parent_coord = Coord::cdeflt();
 
 /*
     env.pState->getWindowCoord(pWgt, wnd_coord);

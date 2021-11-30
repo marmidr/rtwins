@@ -7,16 +7,21 @@ use rtwins::input::*;
 
 use super::tui_def;
 
+/// State of all the DemoWindow widget dynamic properties
 pub struct DemoWndState {
-    wnd: &'static [rtwins::Widget],
-    wstate: HashMap<rtwins::WId, WidgetState>,
+    /// all window widgets, starting with the window widget itself
+    widgets: &'static [Widget],
+    /// widgets state
+    wstate: HashMap<WId, WidgetState>,
+    /// currently focused widget
     focused_id: WId,
+    /// text of focused text edit widget
     text_edit_txt: String,
 }
 
 impl DemoWndState {
-    pub fn new(wnd: &'static [rtwins::Widget]) -> Self {
-        let mut ws = DemoWndState{wnd,
+    pub fn new(widgets: &'static [Widget]) -> Self {
+        let mut ws = DemoWndState{widgets,
             wstate: HashMap::new(),
             focused_id: WIDGET_ID_NONE,
             text_edit_txt: String::new(),
@@ -35,7 +40,7 @@ impl WindowState for DemoWndState {
     /** events **/
 
     fn on_button_down(&mut self, wgt: &Widget, kc: &KeyCode) {
-        // file!();
+        // self.ctx.flush_buff();
     }
 
     fn on_button_up(&mut self, wgt: &Widget, kc: &KeyCode) {
@@ -55,7 +60,6 @@ impl WindowState for DemoWndState {
     }
 
     fn on_checkbox_toggle(&mut self, wgt: &Widget) {
-        use widget::*;
         let rs = WidgetState{state: RuntimeState::Chbx{ checked: false }, enabled: true };
         let ws = self.wstate.entry(wgt.id).or_insert(rs);
 
@@ -146,7 +150,7 @@ impl WindowState for DemoWndState {
     }
 
     fn get_widgets(&self) -> &'static [Widget] {
-        self.wnd
+        self.widgets
     }
 
     /** widget-specific queries; all mutable params are outputs **/

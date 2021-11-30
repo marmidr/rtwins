@@ -509,7 +509,7 @@ pub trait WindowState {
     fn is_visible(&mut self, wgt: &Widget) -> bool { return true; }
     fn get_focused_id(&mut self) -> WId { return WIDGET_ID_NONE; }
     fn set_focused_id(&mut self, wid: WId) {}
-    fn get_widgets(&self) -> &[Widget] { return &[]; }
+    fn get_widgets(&self) -> &'static [Widget] { return &[]; }
 
     /// widget-specific queries; all mutable params are outputs
     fn get_window_coord(&mut self, wgt: &Widget, coord: &mut Coord) {}

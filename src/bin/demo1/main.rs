@@ -72,53 +72,23 @@ impl rtwins::pal::Pal for DemoPal {
 
 // -----------------------------------------------------------------------------------------------
 
-fn main()
-{
+fn main() {
     test_esc_codes();
+    test_property_access();
 
-    {
-        let mut _ws = tui_state::DemoWndState::new(&tui_def::DEMO_WND[..]);
+    let mut demo_wnd_state = tui_state::DemoWndState::new(&tui_def::DEMO_WND[..]);
 
-        let mut tw = TWins::new(Box::new(DemoPal::new()));
-        let mut ctx = tw.lock();
-        use tui_def::Id::*;
-        ctx.invalidate(&tui_def::DEMO_WND[0],
-            &[Lbl1.into(), BtnOk.into(), Lbl2.into()]
-        );
-        ctx.draw_wnd(&tui_def::DEMO_WND[0]);
-
-        let c = ctx.deref_mut();
-        c.move_to_col(10).log_w("Column 10");
-        c.write_char('\n').flush_buff();
-    }
-
-    let title = |wgt: &rtwins::Widget| match wgt.typ {
-        rtwins::Type::Window(ref wp) => wp.title,
-        _ => "<?>",
-    };
-
-    for (idx, w) in tui_def::DEMO_WND.iter().enumerate() {
-        let w_par = rtwins::wgt_get_parent(&tui_def::DEMO_WND, w);
-        println!("  {}. {}:{}, idx:{}, chidx:{}, parid {}:{}", idx, w.id, w.typ, w.link.own_idx, w.link.childs_idx, w_par.id, w_par.typ);
-    }
-
-    println!("WINDOW title: {}", title(&tui_def::WINDOW));
-    println!("WINDOW title: {}", wnd_prop(&tui_def::WINDOW).title);
-    println!("WINDOW title: {}", tui_def::WINDOW.typ.prop_wnd().title);
-    println!("WINDOW widgets: {}", rtwins::wgt_count(&tui_def::WINDOW));
-    println!(
-        "sizeof Widget: {}",
-        std::mem::size_of::<rtwins::widget::Widget>()
+    let mut tw = TWins::new(Box::new(DemoPal::new()));
+    let mut ctx = tw.lock();
+    use tui_def::Id::*;
+    ctx.invalidate(&tui_def::DEMO_WND[0],
+        &[Lbl1.into(), BtnOk.into(), Lbl2.into()]
     );
-    println!(
-        "sizeof Type: {}",
-        std::mem::size_of::<rtwins::widget::Type>()
-    );
-    println!("sizeof Id: {}", std::mem::size_of::<tui_def::Id>());
+    ctx.draw_wnd(&mut demo_wnd_state);
 
-    if let rtwins::Type::Window(ref wp) = tui_def::WINDOW.typ {
-        println!("WINDOW title: {}", wp.title);
-    }
+    let c = ctx.deref_mut();
+    c.move_to_col(10).log_w("Column 10");
+    c.write_char('\n').flush_buff();
 }
 
 // -----------------------------------------------------------------------------------------------
@@ -152,4 +122,34 @@ fn test_esc_codes() {
         esc::ITALICS_ON,
         esc::ITALICS_OFF
     );
+}
+
+fn test_property_access() {
+    let title = |wgt: &rtwins::Widget| match wgt.typ {
+        rtwins::Type::Window(ref wp) => wp.title,
+        _ => "<?>",
+    };
+
+    for (idx, w) in tui_def::DEMO_WND.iter().enumerate() {
+        let w_par = rtwins::wgt_get_parent(&tui_def::DEMO_WND, w);
+        println!("  {}. {}:{}, idx:{}, chidx:{}, parid {}:{}", idx, w.id, w.typ, w.link.own_idx, w.link.childs_idx, w_par.id, w_par.typ);
+    }
+
+    println!("WINDOW title: {}", title(&tui_def::WINDOW));
+    println!("WINDOW title: {}", wnd_prop(&tui_def::WINDOW).title);
+    println!("WINDOW title: {}", tui_def::WINDOW.typ.prop_wnd().title);
+    println!("WINDOW widgets: {}", rtwins::wgt_count(&tui_def::WINDOW));
+    println!(
+        "sizeof Widget: {}",
+        std::mem::size_of::<rtwins::widget::Widget>()
+    );
+    println!(
+        "sizeof Type: {}",
+        std::mem::size_of::<rtwins::widget::Type>()
+    );
+    println!("sizeof Id: {}", std::mem::size_of::<tui_def::Id>());
+
+    if let rtwins::Type::Window(ref wp) = tui_def::WINDOW.typ {
+        println!("WINDOW title: {}", wp.title);
+    }
 }

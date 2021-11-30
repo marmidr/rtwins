@@ -66,7 +66,6 @@ pub struct Ctx {
 }
 
 ///
-///
 impl Ctx {
     ///
     pub fn new(p: PalBox) -> Self {
@@ -126,7 +125,12 @@ impl Ctx {
 
     ///
     pub fn log_d(&mut self, msg: &str) {
-        self.log(esc::FG_WHITE, "-D- ", msg);
+        self.log(esc::FG_BLACK_INTENSE, "-D- ", msg);
+    }
+
+    ///
+    pub fn log_i(&mut self, msg: &str) {
+        self.log(esc::FG_WHITE, "-I- ", msg);
     }
 
     ///
@@ -402,11 +406,8 @@ impl Ctx {
         self.invalidated.retain(|x| !wids.contains(x));
     }
 
-    pub fn draw_wnd(&mut self, wnd: &crate::Widget) {
-        match wnd.typ {
-            _ => {}
-        }
-
+    pub fn draw_wnd(&mut self, ws: &mut dyn crate::WindowState) {
+        widget_draw::draw_widgets(self, ws, &[WIDGET_ID_ALL]);
         self.invalidated.clear();
     }
 }

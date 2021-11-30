@@ -1,6 +1,40 @@
 //! # RTWins Widget
 
-use super::widget::{Widget, Type};
+use crate::input;
+use crate::{WId, Coord, WIDGET_ID_NONE};
+use crate::widget::{Widget, Type};
+
+pub struct WidgetSearchStruct
+{
+    searched_id: WId,       // given
+    parent_coord: Coord,    // expected
+    is_visible: bool,       // expected
+    // p_widget: &Widget    // expected
+}
+
+impl WidgetSearchStruct {
+    pub fn new(searched_id: WId) -> Self {
+        WidgetSearchStruct{searched_id, parent_coord: Coord::cdeflt(), is_visible: true}
+    }
+}
+
+/** Widget drawing state object */
+struct WidgetState
+{
+    buff: String,                        // common string buff for widget drawers
+    // p_focused_wgt: Option<&Widget>,
+    // p_mouse_down_wgt: Option<&Widget>,
+    // p_drop_down_combo: Option<&Widget>,
+    mouse_down_key_code: input::KeyCode,
+    // struct                              // state of Edit being modified
+    // {
+    //     const Widget *pWgt = nullptr;
+    //     int16_t cursorPos = 0;
+    //     String  str;
+    // } textEditState;
+}
+
+// -----------------------------------------------------------------------------------------------
 
 /// Counts total number of widgets in tree-like definition
 pub const fn wgt_count(wgt: &Widget) -> usize {
@@ -21,10 +55,6 @@ pub const fn wgt_is_parent(wgt: &Widget) -> bool {
         Type::Page(_)   => true,
         _               => false
     }
-}
-
-pub fn wgt_get_parent<'a>(wnd: &'a [Widget], wgt: &Widget) -> &'a Widget {
-    &wnd[wgt.link.parent_idx as usize]
 }
 
 /// Flattens tree-like TUI definition into array of widgets
@@ -59,4 +89,58 @@ const fn wgt_transform<const N: usize>(mut out: [Widget; N], wgt: &Widget, out_i
     }
 
     (next_free_idx, out)
+}
+
+///
+pub fn wgt_get_wss(/* CallCtx &ctx,*/ wss: &mut WidgetSearchStruct) -> bool
+{
+    if wss.searched_id == WIDGET_ID_NONE {
+        return false;
+    }
+
+/*
+    const Widget *p_wgt = ctx.pWidgets;
+
+    for (;; p_wgt++)
+    {
+        if (p_wgt->id == wss.searchedID)
+            break;
+
+        // pWndArray is terminated by empty entry
+        if (p_wgt->id == WIDGET_ID_NONE)
+            return false;
+    }
+
+    wss.pWidget = p_wgt;
+    wss.isVisible = ctx.pState->isVisible(p_wgt);
+
+    // go up the widgets hierarchy
+    int parent_idx = p_wgt->link.parentIdx;
+
+    for (;;)
+    {
+        const auto *p_parent = ctx.pWidgets + parent_idx;
+        wss.isVisible &= ctx.pState->isVisible(p_parent);
+
+        Coord coord = p_parent->coord;
+        if (p_parent->type == Widget::Type::Window)
+            ctx.pState->getWindowCoord(p_parent, coord);
+        wss.parentCoord += coord;
+
+        if (p_parent->type == Widget::Type::PageCtrl)
+            wss.parentCoord.col += p_parent->pagectrl.tabWidth;
+
+        if (parent_idx == 0)
+            break;
+
+        parent_idx = p_parent->link.parentIdx;
+    }
+     true;
+ */
+    false
+}
+
+/// Get `wgt` parent in `wnd` array; for Window, return window itself
+pub fn wgt_get_parent<'a>(wnd: &'a [Widget], wgt: &Widget) -> &'a Widget {
+    &wnd[wgt.link.parent_idx as usize]
 }
