@@ -22,7 +22,7 @@ impl DemoPal {
     fn new() -> Self {
         DemoPal {
             line_buff: String::with_capacity(1000),
-            logging: false,
+            logging: true,
             started_at: std::time::Instant::now(),
         }
     }
@@ -94,9 +94,9 @@ fn main() {
 // -----------------------------------------------------------------------------------------------
 
 /// Extract window properties from enum
-fn wnd_prop(wgt: &rtwins::Widget) -> &rtwins::widget::prop::Window {
+fn wnd_prop(wgt: &rtwins::widget::Widget) -> &rtwins::widget::prop::Window {
     match wgt.typ {
-        rtwins::Type::Window(ref wp) => wp,
+        rtwins::widget::Type::Window(ref wp) => wp,
         _ => panic!(),
     }
 }
@@ -125,20 +125,20 @@ fn test_esc_codes() {
 }
 
 fn test_property_access() {
-    let title = |wgt: &rtwins::Widget| match wgt.typ {
-        rtwins::Type::Window(ref wp) => wp.title,
+    let title = |wgt: &rtwins::widget::Widget| match wgt.typ {
+        rtwins::widget::Type::Window(ref wp) => wp.title,
         _ => "<?>",
     };
 
     for (idx, w) in tui_def::DEMO_WND.iter().enumerate() {
-        let w_par = rtwins::wgt_get_parent(&tui_def::DEMO_WND, w);
+        let w_par = rtwins::widget_impl::wgt_get_parent(&tui_def::DEMO_WND, w);
         println!("  {}. {}:{}, idx:{}, chidx:{}, parid {}:{}", idx, w.id, w.typ, w.link.own_idx, w.link.childs_idx, w_par.id, w_par.typ);
     }
 
     println!("WINDOW title: {}", title(&tui_def::WINDOW));
     println!("WINDOW title: {}", wnd_prop(&tui_def::WINDOW).title);
     println!("WINDOW title: {}", tui_def::WINDOW.typ.prop_wnd().title);
-    println!("WINDOW widgets: {}", rtwins::wgt_count(&tui_def::WINDOW));
+    println!("WINDOW widgets: {}", rtwins::widget_impl::wgt_count(&tui_def::WINDOW));
     println!(
         "sizeof Widget: {}",
         std::mem::size_of::<rtwins::widget::Widget>()
@@ -149,7 +149,7 @@ fn test_property_access() {
     );
     println!("sizeof Id: {}", std::mem::size_of::<tui_def::Id>());
 
-    if let rtwins::Type::Window(ref wp) = tui_def::WINDOW.typ {
+    if let rtwins::widget::Type::Window(ref wp) = tui_def::WINDOW.typ {
         println!("WINDOW title: {}", wp.title);
     }
 }

@@ -2,7 +2,7 @@
 
 #![allow(dead_code)]
 
-/// ANSI codes
+/// ANSI control codes
 #[derive(PartialEq)]
 pub enum AnsiCodes
 {
@@ -42,7 +42,7 @@ pub enum AnsiCodes
 }
 
 
-/// Special keys
+/// Special keyboard keys
 #[derive(PartialEq)]
 pub enum Key
 {

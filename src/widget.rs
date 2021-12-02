@@ -3,9 +3,11 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use super::input::*;
+use crate::input::KeyCode;
 
-/// Widget screen coordinates
+// ---------------------------------------------------------------------------------------------- //
+
+/// Widget coordinates on screen or on parent widget
 #[derive(Clone, Copy)]
 pub struct Coord {
     pub col: u8,
@@ -102,7 +104,7 @@ pub const WIDGET_ID_ALL: WId = WId::MAX;
 
 /// Widgets properties
 pub mod prop {
-    use super::super::colors::*;
+    use crate::colors::*;
     use super::ButtonStyle;
     use super::PgBarStyle;
 

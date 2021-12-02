@@ -5,15 +5,13 @@
 
 use std::cell::RefCell;
 
-use crate::FontMementoManual;
-use crate::FontMemento;
-use crate::FontAttrib;
-use crate::WidgetSearchStruct;
+use crate::{FontMementoManual, FontMemento, FontAttrib};
+use crate::widget_impl::WidgetSearchStruct;
 use crate::widget::*;
-use crate::colors::{ColorBG, ColorFG};
+use crate::colors::*;
 use crate::Ctx;
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
 struct DrawCtx<'a>
 {
@@ -22,11 +20,13 @@ struct DrawCtx<'a>
     /// Reference to a widget to be drawn
     wgt: &'a Widget,
     /// Reference to window state that relates to the widget
-    wnd_state: &'a mut dyn crate::WindowState,
+    wnd_state: &'a mut dyn WindowState,
     /// Current widget's parent left-top position
     parent_coord: Coord,
 }
 
+/// Draw `wids` widgets offor given window.
+/// If `wids` contains only `WIDGET_ID_ALL`, draw entire window
 pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
 {
     if wids.len() == 0 {

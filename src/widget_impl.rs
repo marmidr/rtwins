@@ -1,9 +1,9 @@
 //! # RTWins Widget
 
 use crate::input;
-use crate::{WId, Coord, WIDGET_ID_NONE};
-use crate::widget::{Widget, Type};
+use crate::widget::{Coord, WId, Widget, Type, WIDGET_ID_NONE};
 
+#[allow(dead_code)]
 pub struct WidgetSearchStruct
 {
     searched_id: WId,       // given

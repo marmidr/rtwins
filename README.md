@@ -7,64 +7,67 @@ It provides basic facilities required by interactive applications such as screen
 
 Implementation is based on:
 
-* https://github.com/marmidr/twins
+* <https://github.com/marmidr/twins>
 * [Wiki: reference color tables for different terminals](https://en.m.wikipedia.org/wiki/ANSI_escape_code)
 
 ## Primary goals
 
-- text properties
-    - [x] foreground and background color codes
-    - [x] attributes (bold, inversion)
-- operations
-    - [x] clear screen
-    - [x] go to home
-    - [x] go to location
-- reading input
-    - [ ] regular characters (a..z)
-    - [ ] control codes (Up/Down, Del, Ctrl, Home, ...)
-- [x] buffered terminal output
-- [x] platform abstraction layer (PAL) to ease porting
-- [ ] command line interface with history (CLI)
+* text properties
+  * [x] foreground and background color codes
+  * [x] attributes (bold, inversion)
+* operations
+  * [x] clear screen
+  * [x] go to home
+  * [x] go to location
+* reading input
+  * [ ] regular characters (a..z)
+  * [ ] control codes (Up/Down, Del, Ctrl, Home, ...)
+* [x] buffered terminal output
+* [x] platform abstraction layer (PAL) to ease porting
+* [ ] command line interface with history (CLI)
 
 ## Secondary goals
 
-- widgets (controls) to implement
-    - [ ] window
-    - [ ] panel
-    - [ ] static label / led
-    - [ ] check box
-    - [ ] edit field (text/number)
-    - [ ] radio button
-    - [ ] page control
-    - [ ] progress bar
-    - [ ] list box
-    - [ ] combo box
-    - [ ] scrollable text box
-    - [ ] custom widget base
-    - [ ] scrollbar
-    - [ ] horizontal page control
-    - [ ] popup windows
-    - [ ] layers - to control visibility of groups of widgets
-    - [ ] password input
-- navigation
-    - [ ] widgets navigation by Tab/Esc key
-    - [ ] render focused widget state
-    - [ ] blinking cursor instead of inversed colors
-    - [ ] select widget by mouse
-- notifications
-    - [ ] notify event per widget type (button clicked, checkbox toggled)
-- [ ] color theme for window
-- [ ] keyboard handler returns if key was handled by active widget
-- [ ] support for mouse click
-- [ ] double-width character support (emoticons 😁)
-- [ ] multiline solid button
+* widgets (controls) to implement
+  * [ ] window
+  * [ ] panel
+  * [ ] static label / led
+  * [ ] check box
+  * [ ] edit field (text/number)
+  * [ ] radio button
+  * [ ] page control
+  * [ ] progress bar
+  * [ ] list box
+  * [ ] combo box
+  * [ ] scrollable text box
+  * [ ] custom widget base
+  * [ ] scrollbar
+  * [ ] horizontal page control
+  * [ ] popup windows
+  * [ ] layers - to control visibility of groups of widgets
+  * [ ] password input
+* navigation
+  * [ ] widgets navigation by Tab/Esc key
+  * [ ] render focused widget state
+  * [ ] blinking cursor instead of inversed colors
+  * [ ] select widget by mouse
+* notifications
+  * [ ] notify event per widget type (button clicked, checkbox toggled)
+* [ ] color theme for window
+* [ ] keyboard handler returns if key was handled by active widget
+* [ ] support for mouse click
+* [ ] double-width character support (emoticons 😁)
+* [ ] multiline solid button
 
+## Prerequisites
 
-# Prerequisites
+[Install Rust 📖](https://www.rust-lang.org/tools/install)
 
-[Install Rust](https://www.rust-lang.org/tools/install)
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
 
-### Build and run GUI demo:
+### Build and run GUI demo
 
 ```bash
 cargo r

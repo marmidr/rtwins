@@ -101,7 +101,7 @@ const MAP_CL_BG: [&'static str; 18] =
 
 // -----------------------------------------------------------------------------
 
-/// Convert color identifier to ASCII ESC code
+/// Convert color identifier to ANSI escape code
 pub fn encode_cl_fg(cl: ColorFG) -> &'static str {
     if (cl as usize) < MAP_CL_FG.len() {
         return MAP_CL_FG[cl as usize];
@@ -113,7 +113,7 @@ pub fn encode_cl_fg(cl: ColorFG) -> &'static str {
     ""
 }
 
-/// Convert color identifier to ASCII ESC code
+/// Convert color identifier to ANSI escape code
 pub fn encode_cl_bg(cl: ColorBG) -> &'static str {
     if (cl as usize) < MAP_CL_BG.len() {
         return MAP_CL_BG[cl as usize];

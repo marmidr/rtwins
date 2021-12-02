@@ -1,11 +1,11 @@
 //! Simple widget-based interface definition as const
 
 use rtwins::colors::{ColorBG, ColorFG};
-use rtwins::{prop, Coord, Size, Widget, Link, ButtonStyle};
+use rtwins::widget::{prop, Coord, Size, Widget, Link, ButtonStyle, WId, WIDGET_ID_NONE};
 
 #[allow(dead_code)]
 pub enum Id {
-    WndMain = rtwins::WIDGET_ID_NONE as isize + 1,
+    WndMain = WIDGET_ID_NONE as isize + 1,
     Lbl1,
     Lbl2,
     PnlGreen,
@@ -16,8 +16,8 @@ pub enum Id {
 
 /// Easy conversion from enum to Wid
 impl Id {
-    pub const fn into(self) -> rtwins::WId {
-        self as rtwins::WId
+    pub const fn into(self) -> WId {
+        self as WId
     }
 }
 
@@ -106,4 +106,4 @@ pub const WINDOW: Widget = Widget {
 };
 
 /// Example of const-evaluated and translated Widgets tree into Widgets array
-pub const DEMO_WND: [rtwins::Widget; rtwins::wgt_count(&WINDOW)] = rtwins::wgt_transform_array(&WINDOW);
+pub const DEMO_WND: [Widget; rtwins::widget_impl::wgt_count(&WINDOW)] = rtwins::widget_impl::wgt_transform_array(&WINDOW);

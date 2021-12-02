@@ -1,4 +1,4 @@
-//!
+//! Demo - window state
 
 use std::collections::HashMap;
 use rtwins::widget;
