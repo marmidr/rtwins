@@ -17,6 +17,8 @@ pub struct DemoWndState {
     focused_id: WId,
     /// text of focused text edit widget
     text_edit_txt: String,
+    /// list of widgets to redraw
+    invalidated: Vec<widget::WId>,
 }
 
 impl DemoWndState {
@@ -25,6 +27,7 @@ impl DemoWndState {
             wstate: HashMap::new(),
             focused_id: WIDGET_ID_NONE,
             text_edit_txt: String::new(),
+            invalidated: vec![],
         };
 
         use tui_def::Id;
@@ -156,7 +159,7 @@ impl WindowState for DemoWndState {
     /** widget-specific queries; all mutable params are outputs **/
 
     fn get_window_coord(&mut self, wgt: &Widget, coord: &mut Coord) {
-
+        *coord = wgt.coord;
     }
 
     fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {
@@ -236,5 +239,23 @@ impl WindowState for DemoWndState {
 
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {
 
+    }
+
+    /* */
+
+    fn invalidate(&mut self, wids: &[widget::WId]) {
+        self.invalidated.extend(wids.iter());
+        // self.invalidated.sort();
+        // self.invalidated.dedup();
+    }
+
+    fn invalidate_clear(&mut self) {
+        self.invalidated.clear();
+    }
+
+    fn get_invalidated(&mut self) -> Vec<WId> {
+        let mut ret = vec![];
+        std::mem::swap(&mut self.invalidated, &mut ret);
+        ret
     }
 }

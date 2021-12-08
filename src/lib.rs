@@ -57,8 +57,6 @@ pub type PalBox = Box<dyn crate::pal::Pal>;
 ///
 pub struct Ctx {
     pub pal: PalBox,
-
-    invalidated: Vec<widget::WId>,
     current_cl_fg: ColorFG,
     current_cl_bg: ColorBG,
     attr_faint: i8,
@@ -73,7 +71,6 @@ impl Ctx {
     pub fn new(p: PalBox) -> Self {
         Ctx{
             pal: p,
-            invalidated: vec![],
             current_cl_fg: ColorFG::Default,
             current_cl_bg: ColorBG::Default,
             attr_faint: 0,
@@ -153,8 +150,8 @@ impl Ctx {
     /// Move cursor to given `col`:`row`
     pub fn move_to(&mut self, col: u16, row: u16) -> &mut Self {
         let s = String::from(esc::CURSOR_GOTO_FMT)
-            .replace("{0}", &col.to_string())
-            .replace("{1}", &row.to_string());
+            .replace("{0}", &row.to_string())
+            .replace("{1}", &col.to_string());
         self.pal.write_str(s.as_str());
         self
     }
@@ -386,34 +383,20 @@ impl Ctx {
 
     // -----------------
 
-    /// Mark given range of widgets as invalidated (to redraw)
-    pub fn invalidate(&mut self, wnd: &widget::Widget, wids: &[widget::WId]) {
-        if let widget::Type::Window(ref _w) = wnd.typ {
-            // TODO: check for duplication in self.invalidated
-            self.invalidated.extend_from_slice(wids);
-        }
-        else {
-            self.log_w(format!("Widget id {} is not a Window", wnd.id).as_str());
-        }
+    /// Draw given widgets
+    pub fn draw(&mut self, ws: &mut dyn widget::WindowState, wids: &[widget::WId]) {
+        widget_draw::draw_widgets(self, ws, wids);
     }
 
-    /// Draw given widgets
-    pub fn draw(&mut self, wnd: &widget::Widget, wids: &[widget::WId]) {
-        for id in wids.iter() {
-            for w in wnd.childs.iter() {
-                if w.id == *id {
-                    // draw
-                }
-            }
-        }
-
-        self.invalidated.retain(|x| !wids.contains(x));
+    pub fn draw_invalidated(&mut self, ws: &mut dyn widget::WindowState) {
+        let wids = ws.get_invalidated();
+        widget_draw::draw_widgets(self, ws, &wids[..]);
     }
 
     /// Draw entire window
     pub fn draw_wnd(&mut self, ws: &mut dyn widget::WindowState) {
         widget_draw::draw_widgets(self, ws, &[widget::WIDGET_ID_ALL]);
-        self.invalidated.clear();
+        ws.invalidate_clear();
     }
 }
 

@@ -4,12 +4,35 @@
 #![allow(unused_variables)]
 
 use std::cell::RefCell;
+use std::fmt::Write;
 
-use crate::{FontMementoManual, FontMemento, FontAttrib};
-use crate::widget_impl::WidgetSearchStruct;
+use crate::{FontMementoManual, FontMemento, FontAttrib, colors};
+use crate::widget_impl::{WidgetSearchStruct, wgt_get_parent};
 use crate::widget::*;
 use crate::colors::*;
 use crate::Ctx;
+use crate::esc;
+
+// ---------------------------------------------------------------------------------------------- //
+
+trait PushEscFmt {
+    fn push_esc_fmt(&mut self, escfmt: &str, val: i16);
+    fn push_n(&mut self, c: char, n: i16);
+}
+
+impl PushEscFmt for String {
+    fn push_esc_fmt(&mut self, escfmt: &str, val: i16) {
+        if let Some((a, b)) = escfmt.split_once("{0}") {
+            self.write_fmt(format_args!("{}{}{}", a, val, b)).unwrap_or_default();
+        }
+    }
+
+    fn push_n(&mut self, c: char, n: i16) {
+        for i in 0..n {
+            self.push(c);
+        }
+    }
+}
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -23,6 +46,8 @@ struct DrawCtx<'a>
     wnd_state: &'a mut dyn WindowState,
     /// Current widget's parent left-top position
     parent_coord: Coord,
+    ///
+    wnd_widgets: &'a [Widget]
 }
 
 /// Draw `wids` widgets offor given window.
@@ -44,8 +69,9 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
     ctx.flush_buff();
 
     if wids.len() == 1 && wids[0] == WIDGET_ID_ALL {
-        let wgt = ws.get_widgets().get(0).unwrap();
-        let mut dctx = DrawCtx{ ctx: RefCell::new(ctx), wgt, wnd_state: ws, parent_coord: Coord::cdeflt() };
+        let wgts = ws.get_widgets();
+        let wgt = wgts.get(0).unwrap(); // window is at index 0
+        let mut dctx = DrawCtx{ ctx: RefCell::new(ctx), wgt, wnd_state: ws, parent_coord: Coord::cdeflt(), wnd_widgets: wgts };
         draw_widget_internal(&mut dctx);
     }
     else {
@@ -86,8 +112,9 @@ fn draw_widget_internal(dctx: &mut DrawCtx)
     let en = dctx.wnd_state.is_enabled(dctx.wgt);
     if !en { dctx.ctx.borrow_mut().push_attr(FontAttrib::Faint); }
 
-    match dctx.wgt.typ
-    {
+    // println!("drawing {}", dctx.wgt.typ);
+
+    match dctx.wgt.typ {
         Type::Window(ref p) => draw_window(dctx, p),
         Type::Panel(ref p) => draw_panel(dctx, p),
         Type::Label(ref p) => draw_label(dctx, p),
@@ -113,62 +140,51 @@ fn draw_widget_internal(dctx: &mut DrawCtx)
 
 // -----------------------------------------------------------------------------------------------
 
-/*
-fn draw_list_scroll_bar_v(const Coord coord, int height, int max, int pos)
-{
-    if (pos > max)
-    {
-        // TWINS_LOG_D("pos (%d) > max (%d)", pos, max);
-        return;
-    }
-
-    const int slider_at = ((height-1) * pos) / max;
-    // "▲▴ ▼▾ ◄◂ ►▸ ◘ █";
-
-    for (int i = 0; i < height; i++)
-    {
-        moveTo(coord.col, coord.row + i);
-        writeStr(i == slider_at ? "◘" : "▒");
-    }
-}
-*/
-
 fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
 {
-    dctx.parent_coord = Coord::cdeflt(); // necessary?
     let mut wnd_coord = Coord::cdeflt();
     dctx.wnd_state.get_window_coord(dctx.wgt, &mut wnd_coord);
 
-/*
-    drawArea(wnd_coord, pWgt->size,
-        pWgt->window.bgColor, pWgt->window.fgColor, FrameStyle::Double, true, pWgt->window.isPopup);
+    draw_area(&mut dctx.ctx.borrow_mut(), wnd_coord, dctx.wgt.size,
+            prp.bg_color, prp.fg_color, FrameStyle::Double, true, prp.is_popup);
 
     // title
-    String wnd_title;
-    if (pWgt->window.title)
-        wnd_title << pWgt->window.title;
-    else
-        env.pState->getWindowTitle(pWgt, wnd_title);
+    let mut wnd_title = String::new();
 
-    if (wnd_title.size())
-    {
-        auto title_width = wnd_title.width();
-        moveTo(wnd_coord.col + (pWgt->size.width - title_width - 4)/2, wnd_coord.row);
-        pushAttr(FontAttrib::Bold);
-        writeStrFmt("╡ %s ╞", wnd_title.cstr());
-        popAttr();
+    if !prp.title.is_empty() {
+        wnd_title = prp.title.to_string();
+    }
+    else {
+        dctx.wnd_state.get_window_title(&dctx.wgt, &mut wnd_title);
     }
 
-    flushBuffer();
-    env.parentCoord = wnd_coord;
+    if !wnd_title.is_empty() {
+        let title_width = wnd_title.chars().count() as u16 + 4;
+        let mut ctx = dctx.ctx.borrow_mut();
+        ctx.move_to(wnd_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width) / 2, wnd_coord.row as u16);
+        ctx.push_attr(FontAttrib::Bold);
+        ctx.write_str(format!("╡ {} ╞", wnd_title.as_str()).as_str());
+        ctx.pop_attr();
+    }
 
-    for (int i = pWgt->link.childsIdx; i < pWgt->link.childsIdx + pWgt->link.childsCnt; i++)
-        drawWidgetInternal(env, &env.pWidgets[i]);
+    dctx.ctx.borrow_mut().flush_buff();
+    dctx.parent_coord = wnd_coord;
+
+    {
+        let wgt_backup = dctx.wgt;
+        let link = &dctx.wgt.link;
+        for i in link.childs_idx..link.childs_idx + link.childs_cnt {
+            dctx.wgt = &dctx.wnd_widgets[i as usize];
+            draw_widget_internal(dctx);
+        }
+
+        dctx.wgt = wgt_backup;
+    }
 
     // reset colors set by frame drawer
-    popClBg();
-    popClFg();
-    moveTo(0, wnd_coord.row + pWgt->size.height); */
+    dctx.ctx.borrow_mut().pop_cl_bg();
+    dctx.ctx.borrow_mut().pop_cl_fg();
+    dctx.ctx.borrow_mut().move_to(0, wnd_coord.row as u16 + dctx.wgt.size.height as u16);
 }
 
 fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
@@ -808,162 +824,197 @@ fn draw_layer(dctx: &mut DrawCtx, prp: &prop::Layer)
 
 // -----------------------------------------------------------------------------------------------
 
-const FRAME_NONE: [&str; 9] =
+const FRAME_NONE: [char; 9] =
 [
-    " ", " ", " ",
-    " ", " ", " ",
-    " ", " ", " ",
+    ' ', ' ', ' ',
+    ' ', ' ', ' ',
+    ' ', ' ', ' ',
 ];
 
-const FRAME_SINGLE: [&str; 9] =
+const FRAME_SINGLE: [char; 9] =
 [
-    "┌", "─", "┐",
-    "│", " ", "│",
-    "└", "─", "┘",
+    '┌', '─', '┐',
+    '│', ' ', '│',
+    '└', '─', '┘',
 ];
 
-const FRAME_LISTBOX: [&str; 9] =
+const FRAME_LISTBOX: [char; 9] =
 [
-    "┌", "─", "┐",
-    "│", " ", "▒",
-    "└", "─", "┘",
+    '┌', '─', '┐',
+    '│', ' ', '▒',
+    '└', '─', '┘',
 ];
 
-const FRAME_PGCONTROL: [&str; 9] =
+const FRAME_PGCONTROL: [char; 9] =
 [
-    "├", "─", "┐",
-    "│", " ", "│",
-    "├", "─", "┘",
+    '├', '─', '┐',
+    '│', ' ', '│',
+    '├', '─', '┘',
 ];
 
-const FRAME_DOUBLE: [&str; 9] =
+const FRAME_DOUBLE: [char; 9] =
 [
-    "╔", "═", "╗",
-    "║", " ", "║",
-    "╚", "═", "╝",
+    '╔', '═', '╗',
+    '║', ' ', '║',
+    '╚', '═', '╝',
 ];
 
-fn draw_area(coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: ColorFG, style: FrameStyle, filled: bool, shadow: bool)
+fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: ColorFG, style: FrameStyle, filled: bool, shadow: bool)
 {
-    /*
-    moveTo(coord.col, coord.row);
+    ctx.move_to(coord.col.into(), coord.row.into());
 
-    const char * const * frame = frame_none;
-    switch (style)
-    {
-    case FrameStyle::Single:    frame = frame_single; break;
-    case FrameStyle::Double:    frame = frame_double; break;
-    case FrameStyle::PgControl: frame = frame_pgcontrol; break;
-    case FrameStyle::ListBox:   frame = frame_listbox; break;
-    default: break;
-    }
+    let frame =
+    match style {
+        FrameStyle::Single => FRAME_SINGLE,
+        FrameStyle::Double => FRAME_DOUBLE,
+        FrameStyle::PgControl => FRAME_PGCONTROL,
+        FrameStyle::ListBox => FRAME_LISTBOX,
+        _ => FRAME_NONE
+    };
 
     // background and frame color
-    if (clBg != ColorBG::Inherit) pushClBg(clBg);
-    if (clFg != ColorFG::Inherit) pushClFg(clFg);
+    if cl_bg != ColorBG::Inherit { ctx.push_cl_bg(cl_bg); }
+    if cl_fg != ColorFG::Inherit { ctx.push_cl_fg(cl_fg); }
+
+    let mut strbuff = String::with_capacity(500);
 
     // top line
-    g_ws.str.clear();
-    g_ws.str.append(frame[0]);
-#if TWINS_FAST_FILL
-    g_ws.str.append(frame[1]);
-    g_ws.str.appendFmt(ESC_CHAR_REPEAT_LAST_FMT, size.width - 3);
-#else
-    g_ws.str.append(frame[1], size.width - 2);
-#endif
-    g_ws.str.append(frame[2]);
-    writeStrLen(g_ws.str.cstr(), g_ws.str.size());
-    moveBy(-size.width, 1);
-    flushBuffer();
+    strbuff.push(frame[0]);
+
+    #[cfg(feature = "fast_fill")]
+    {
+        strbuff.push(frame[1]);
+        strbuff.push_esc_fmt(esc::CHAR_REPEAT_LAST_FMT, size.width as i16 - 3);
+    }
+
+    #[cfg(not(feature = "fast_fill"))]
+    {
+        strbuff.push_n(frame[1], size.width as i16 - 2);
+    }
+
+    strbuff.push(frame[2]);
+
+    ctx.write_str(strbuff.as_str());
+    ctx.move_by(-(size.width as i16), 1);
+    ctx.flush_buff();
 
     // lines in the middle
-    g_ws.str.clear();
-    g_ws.str.append(frame[3]);
-    if (filled)
-    {
-    #if TWINS_FAST_FILL
-        g_ws.str.append(frame[4]);
-        g_ws.str.appendFmt(ESC_CHAR_REPEAT_LAST_FMT, size.width - 3);
-    #else
-        g_ws.str.append(frame[4], size.width - 2);
-    #endif
+    strbuff.clear();
+    strbuff.push(frame[3]);
+
+    if filled {
+        #[cfg(feature = "fast_fill")]
+        {
+            strbuff.push(frame[4]);
+            strbuff.push_esc_fmt(esc::CHAR_REPEAT_LAST_FMT, size.width as i16 - 3);
+        }
+
+        #[cfg(not(feature = "fast_fill"))]
+        {
+            strbuff.push_n(frame[4], size.width as i16 - 2);
+        }
     }
-    else
-    {
-        g_ws.str.appendFmt(ESC_CURSOR_FORWARD_FMT, size.width - 2);
+    else {
+        strbuff.push_esc_fmt(esc::CURSOR_FORWARD_FMT, size.width as i16 - 2);
     }
-    g_ws.str.append(frame[5]);
-    if (shadow)
-    {
+    strbuff.push(frame[5]);
+
+    if shadow {
         // trailing shadow
-        g_ws.str << ESC_FG_BLACK;
-        g_ws.str << "█";
-        g_ws.str << encodeCl(clFg);
+        strbuff.push_str(esc::FG_BLACK);
+        strbuff.push_str("█");
+        strbuff.push_str(colors::encode_cl_fg(cl_fg));
     }
 
-    for (int r = coord.row + 1; r < coord.row + size.height - 1; r++)
-    {
-        writeStrLen(g_ws.str.cstr(), g_ws.str.size());
-        moveBy(-(size.width + shadow), 1);
-        flushBuffer();
+    for r in coord.row + 1 .. coord.row + size.height - 1 {
+        ctx.write_str(strbuff.as_str());
+        ctx.move_by(-(size.width as i16 + shadow as i16), 1);
+        ctx.flush_buff();
     }
 
     // bottom line
-    g_ws.str.clear();
-    g_ws.str.append(frame[6]);
-#if TWINS_FAST_FILL
-    g_ws.str.append(frame[7]);
-    g_ws.str.appendFmt(ESC_CHAR_REPEAT_LAST_FMT, size.width - 3);
-#else
-    g_ws.str.append(frame[7], size.width - 2);
-#endif
-    g_ws.str.append(frame[8]);
-    if (shadow)
-    {
-        // trailing shadow
-        g_ws.str << ESC_FG_BLACK;
-        g_ws.str << "█";
-    }
-    writeStrLen(g_ws.str.cstr(), g_ws.str.size());
-    flushBuffer();
+    strbuff.clear();
+    strbuff.push(frame[6]);
 
-    if (shadow)
+    #[cfg(feature = "fast_fill")]
     {
-        moveBy(-size.width, 1);
-        g_ws.str.clear();
+        strbuff.push(frame[7]);
+        strbuff.push_esc_fmt(esc::CHAR_REPEAT_LAST_FMT, size.width as i16 - 3);
+    }
+
+    #[cfg(not(feature = "fast_fill"))]
+    {
+        strbuff.push_n(frame[7], size.width as i16 - 2);
+    }
+
+    strbuff.push(frame[8]);
+    if shadow {
         // trailing shadow
-        // g_ws.str = ESC_FG_BLACK;
-    #if TWINS_FAST_FILL
-        g_ws.str.append("█");
-        g_ws.str.appendFmt(ESC_CHAR_REPEAT_LAST_FMT, size.width - 1);
-    #else
-        g_ws.str.append("█", size.width);
-    #endif
-        writeStrLen(g_ws.str.cstr(), g_ws.str.size());
-        writeStr(encodeCl(clFg));
-        flushBuffer();
+        strbuff.push_str(esc::FG_BLACK);
+        strbuff.push_str("█");
+    }
+
+    ctx.write_str(strbuff.as_str());
+    ctx.flush_buff();
+
+    if shadow {
+        ctx.move_by(-(size.width as i16), 1);
+        strbuff.clear();
+        // trailing shadow
+        // strbuff = ESC_FG_BLACK;
+
+        #[cfg(feature = "fast_fill")]
+        {
+            strbuff.push('█');
+            strbuff.push_esc_fmt(esc::CHAR_REPEAT_LAST_FMT, size.width as i16 - 1);
+        }
+
+        #[cfg(not(feature = "fast_fill"))]
+        {
+            strbuff.push_n('█', size.width as i16);
+        }
+
+        ctx.write_str(strbuff.as_str());
+        ctx.write_str(colors::encode_cl_fg(cl_fg));
+        ctx.flush_buff();
     }
 
     // here the Fg and Bg colors are not restored
-*/
+}
+
+fn draw_list_scroll_bar_v(ctx: &mut Ctx, coord: Coord, height: i8, max: i32, pos: i32) {
+    if pos > max {
+        ctx.log_d(format!("pos ({}) > max ({})", pos, max).as_str());
+        return;
+    }
+
+    let slider_at = (((height-1) as i32) * pos) / max;
+    // "▲▴ ▼▾ ◄◂ ►▸ ◘ █";
+
+    for i in 0..height {
+        ctx.move_to(coord.col.into(), (coord.row as u16) + i as u16);
+        ctx.write_str(if i as i32 == slider_at {"◘"} else {"▒"});
+    }
 }
 
 fn get_widget_bg_color(wgt: &Widget) -> ColorBG
 {
     let cl = match wgt.typ
     {
-        Type::Window(ref p) => { p.bg_color },
-        // TODO: rethink the implementation if it is correct
-        Type::Panel(ref p) => { if ColorBG::Inherit == p.bg_color { ColorBG::Inherit } else { p.bg_color } },
-        Type::Label(ref p) => { if ColorBG::Inherit == p.bg_color { ColorBG::Inherit } else { p.bg_color } },
-        Type::TextEdit(ref p) => { if ColorBG::Inherit == p.bg_color { ColorBG::Inherit } else { p.bg_color } },
-        Type::Button(ref p) => { if ColorBG::Inherit == p.bg_color { ColorBG::Inherit } else { p.bg_color } },
-        Type::ListBox(ref p) => { if ColorBG::Inherit == p.bg_color { ColorBG::Inherit } else { p.bg_color } },
-        Type::ComboBox(ref p) => { if ColorBG::Inherit == p.bg_color { ColorBG::Inherit } else { p.bg_color } },
-        // _ => get_widget_bg_color(wgt_get_parent(wgt))
+        Type::Window(ref p) => p.bg_color,
+        Type::Panel(ref p) => p.bg_color,
+        Type::Label(ref p) => p.bg_color,
+        Type::TextEdit(ref p) => p.bg_color,
+        Type::Button(ref p) => p.bg_color,
+        Type::ListBox(ref p) => p.bg_color,
+        Type::ComboBox(ref p) => p.bg_color,
         _ => ColorBG::Inherit
     };
 
+    if cl == ColorBG::Inherit {
+        // let parent = wgt_get_parent(wgt);
+        // cl = get_widget_bg_color(parent);
+    }
     return cl;
 }
 
@@ -971,16 +1022,20 @@ fn get_widget_fg_color(wgt: &Widget) -> ColorFG
 {
     let cl = match wgt.typ
     {
-        Type::Window(ref p) => { p.fg_color },
-        Type::Panel(ref p) => { if ColorFG::Inherit == p.fg_color { ColorFG::Inherit } else { p.fg_color } },
-        Type::Label(ref p) => { if ColorFG::Inherit == p.fg_color { ColorFG::Inherit } else { p.fg_color } },
-        Type::TextEdit(ref p) => { if ColorFG::Inherit == p.fg_color { ColorFG::Inherit } else { p.fg_color } },
-        Type::Button(ref p) => { if ColorFG::Inherit == p.fg_color { ColorFG::Inherit } else { p.fg_color } },
-        Type::ListBox(ref p) => { if ColorFG::Inherit == p.fg_color { ColorFG::Inherit } else { p.fg_color } },
-        Type::ComboBox(ref p) => { if ColorFG::Inherit == p.fg_color { ColorFG::Inherit } else { p.fg_color } },
-        // _ => get_widget_fg_color(wgt_get_parent(wgt))
+        Type::Window(ref p) => p.fg_color,
+        Type::Panel(ref p) => p.fg_color,
+        Type::Label(ref p) => p.fg_color,
+        Type::TextEdit(ref p) => p.fg_color,
+        Type::Button(ref p) => p.fg_color,
+        Type::ListBox(ref p) => p.fg_color,
+        Type::ComboBox(ref p) => p.fg_color,
         _ => ColorFG::Inherit
     };
+
+    if cl == ColorFG::Inherit {
+        // let parent = wgt_get_parent(wgt);
+        // cl = get_widget_fg_color(parent);
+    }
 
     return cl;
 }

@@ -3,7 +3,7 @@
 #![allow(unused_variables)]
 
 extern crate rtwins;
-use rtwins::TWins;
+use rtwins::{TWins, widget::WindowState};
 use std::{io::Write, ops::DerefMut};
 
 // https://doc.rust-lang.org/cargo/guide/project-layout.html
@@ -44,10 +44,15 @@ impl rtwins::pal::Pal for DemoPal {
     }
 
     fn flush_buff(&mut self) {
+        if self.logging {
+            // write to logs.txt
+        }
+
         std::io::stdout()
             .lock()
             .write(self.line_buff.as_bytes())
             .expect("Error writing to stdout");
+
         self.line_buff.clear();
     }
 
@@ -76,19 +81,25 @@ fn main() {
     test_esc_codes();
     test_property_access();
 
-    let mut demo_wnd_state = tui_state::DemoWndState::new(&tui_def::DEMO_WND[..]);
-
+    let mut dws = tui_state::DemoWndState::new(&tui_def::DEMO_WND[..]);
     let mut tw = TWins::new(Box::new(DemoPal::new()));
-    let mut ctx = tw.lock();
-    use tui_def::Id::*;
-    ctx.invalidate(&tui_def::DEMO_WND[0],
-        &[Lbl1.into(), BtnOk.into(), Lbl2.into()]
-    );
-    ctx.draw_wnd(&mut demo_wnd_state);
 
-    let c = ctx.deref_mut();
-    c.move_to_col(10).log_w("Column 10");
-    c.write_char('\n').flush_buff();
+    {
+        let mut ctx = tw.lock();
+        ctx.draw_wnd(&mut dws);
+    }
+
+    {
+        // let mut ctx = tw.lock();
+        // use tui_def::Id::*;
+        // dws.invalidate(&[Lbl1.into(), BtnOk.into(), Lbl2.into()]);
+        // ctx.draw_invalidated(&mut dws);
+        // ctx.flush_buff();
+    }
+
+    // let c = ctx.deref_mut();
+    // c.move_to_col(10).log_w("Column 10");
+    // c.write_char('\n').flush_buff();
 }
 
 // -----------------------------------------------------------------------------------------------

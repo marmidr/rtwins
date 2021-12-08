@@ -25,9 +25,9 @@ impl Id {
 pub const WINDOW: Widget = Widget {
     id: Id::WndMain.into(),
     link: Link::cdeflt(),
-    coord: Coord { col: 1, row: 2 },
+    coord: Coord { col: 5, row: 2 },
     size: Size {
-        width: 25,
+        width: 40,
         height: 12,
     },
     typ: prop::Window {

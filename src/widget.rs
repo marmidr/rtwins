@@ -532,11 +532,9 @@ pub trait WindowState {
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {}
 
     /// requests
-    fn invalidate(&self, id: WId, instantly: bool) { self.invalidate_impl(&[id], instantly); }
-    // fn invalidate_many(const std::initializer_list<twins::WID> &ids, bool instantly = false) { invalidate_impl(ids.begin(), ids.size(), instantly); }
-
-    // private fn
-    fn invalidate_impl(&self, ids: &[WId], instantly: bool) {}
+    fn invalidate(&mut self, wids: &[WId]) {}
+    fn invalidate_clear(&mut self) {}
+    fn get_invalidated(&mut self) -> Vec<WId> { vec![] }
 }
 
 // -----------------------------------------------------------------------------------------------
