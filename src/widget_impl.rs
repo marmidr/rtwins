@@ -19,6 +19,7 @@ impl WidgetSearchStruct {
 }
 
 /** Widget drawing state object */
+#[allow(dead_code)]
 struct WidgetState
 {
     buff: String,                        // common string buff for widget drawers

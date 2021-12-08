@@ -90,16 +90,20 @@ fn main() {
     }
 
     {
-        // let mut ctx = tw.lock();
-        // use tui_def::Id::*;
-        // dws.invalidate(&[Lbl1.into(), BtnOk.into(), Lbl2.into()]);
-        // ctx.draw_invalidated(&mut dws);
-        // ctx.flush_buff();
+        let mut ctx = tw.lock();
+        use tui_def::Id::*;
+        dws.invalidate(&[Lbl1.into(), BtnOk.into(), Lbl2.into()]);
+        ctx.draw_invalidated(&mut dws);
+        ctx.flush_buff();
     }
 
-    // let c = ctx.deref_mut();
-    // c.move_to_col(10).log_w("Column 10");
-    // c.write_char('\n').flush_buff();
+    {
+        let mut ctx = tw.lock();
+        let c = ctx.deref_mut();
+        c.write_str(rtwins::esc::LINE_ERASE_ALL);
+        c.move_to_col(10).log_w("Column 10");
+        c.write_char('\n').flush_buff();
+    }
 }
 
 // -----------------------------------------------------------------------------------------------

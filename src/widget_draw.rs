@@ -7,7 +7,7 @@ use std::cell::RefCell;
 use std::fmt::Write;
 
 use crate::{FontMementoManual, FontMemento, FontAttrib, colors};
-use crate::widget_impl::{WidgetSearchStruct, wgt_get_parent};
+use crate::widget_impl::{WidgetSearchStruct};
 use crate::widget::*;
 use crate::colors::*;
 use crate::Ctx;
