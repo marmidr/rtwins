@@ -15,20 +15,23 @@ use crate::esc;
 
 // ---------------------------------------------------------------------------------------------- //
 
-trait PushEscFmt {
+/// Trait extending base `String` functionality
+trait StrExt {
+    /// Push ANSI escape sequence, replacing `{0}` with the `val`
     fn push_esc_fmt(&mut self, escfmt: &str, val: i16);
+    /// Push `repeat` copies of `c`
     fn push_n(&mut self, c: char, n: i16);
 }
 
-impl PushEscFmt for String {
+impl StrExt for String {
     fn push_esc_fmt(&mut self, escfmt: &str, val: i16) {
         if let Some((a, b)) = escfmt.split_once("{0}") {
             self.write_fmt(format_args!("{}{}{}", a, val, b)).unwrap_or_default();
         }
     }
 
-    fn push_n(&mut self, c: char, n: i16) {
-        for i in 0..n {
+    fn push_n(&mut self, c: char, repeat: i16) {
+        for i in 0..repeat {
             self.push(c);
         }
     }
@@ -112,7 +115,7 @@ fn draw_widget_internal(dctx: &mut DrawCtx)
     let en = dctx.wnd_state.is_enabled(dctx.wgt);
     if !en { dctx.ctx.borrow_mut().push_attr(FontAttrib::Faint); }
 
-    // println!("drawing {}", dctx.wgt.typ);
+    // dctx.ctx.borrow_mut().log_d(format!("drawing {}", dctx.wgt.typ).as_str());
 
     match dctx.wgt.typ {
         Type::Window(ref p) => draw_window(dctx, p),
@@ -863,8 +866,7 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
 {
     ctx.move_to(coord.col.into(), coord.row.into());
 
-    let frame =
-    match style {
+    let frame = match style {
         FrameStyle::Single => FRAME_SINGLE,
         FrameStyle::Double => FRAME_DOUBLE,
         FrameStyle::PgControl => FRAME_PGCONTROL,
@@ -948,6 +950,7 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
     }
 
     strbuff.push(frame[8]);
+
     if shadow {
         // trailing shadow
         strbuff.push_str(esc::FG_BLACK);
@@ -961,7 +964,6 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
         ctx.move_by(-(size.width as i16), 1);
         strbuff.clear();
         // trailing shadow
-        // strbuff = ESC_FG_BLACK;
 
         #[cfg(feature = "fast_fill")]
         {

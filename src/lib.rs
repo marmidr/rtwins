@@ -383,17 +383,19 @@ impl Ctx {
 
     // -----------------
 
-    /// Draw given widgets
+    /// Draw given widgets; flushes the buffer
     pub fn draw(&mut self, ws: &mut dyn widget::WindowState, wids: &[widget::WId]) {
         widget_draw::draw_widgets(self, ws, wids);
     }
 
+    /// Draw widgets marked as invalidated; flushes the buffer.
+    /// Clears the invalidated widgets list
     pub fn draw_invalidated(&mut self, ws: &mut dyn widget::WindowState) {
         let wids = ws.get_invalidated();
         widget_draw::draw_widgets(self, ws, &wids[..]);
     }
 
-    /// Draw entire window
+    /// Draw entire window; flushes the buffer
     pub fn draw_wnd(&mut self, ws: &mut dyn widget::WindowState) {
         widget_draw::draw_widgets(self, ws, &[widget::WIDGET_ID_ALL]);
         ws.invalidate_clear();

@@ -81,7 +81,7 @@ fn main() {
     test_esc_codes();
     test_property_access();
 
-    let mut dws = tui_state::DemoWndState::new(&tui_def::DEMO_WND[..]);
+    let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN[..]);
     let mut tw = TWins::new(Box::new(DemoPal::new()));
 
     {
@@ -92,9 +92,8 @@ fn main() {
     {
         let mut ctx = tw.lock();
         use tui_def::Id::*;
-        dws.invalidate(&[Lbl1.into(), BtnOk.into(), Lbl2.into()]);
+        dws.invalidate(&[LabelDate.into(), BtnYes.into(), Prgbar3.into()]);
         ctx.draw_invalidated(&mut dws);
-        ctx.flush_buff();
     }
 
     {
@@ -145,15 +144,15 @@ fn test_property_access() {
         _ => "<?>",
     };
 
-    for (idx, w) in tui_def::DEMO_WND.iter().enumerate() {
-        let w_par = rtwins::widget_impl::wgt_get_parent(&tui_def::DEMO_WND, w);
+    for (idx, w) in tui_def::WND_MAIN.iter().enumerate() {
+        let w_par = rtwins::widget_impl::wgt_get_parent(&tui_def::WND_MAIN, w);
         println!("  {}. {}:{}, idx:{}, chidx:{}, parid {}:{}", idx, w.id, w.typ, w.link.own_idx, w.link.childs_idx, w_par.id, w_par.typ);
     }
 
-    println!("WINDOW title: {}", title(&tui_def::WINDOW));
-    println!("WINDOW title: {}", wnd_prop(&tui_def::WINDOW).title);
-    println!("WINDOW title: {}", tui_def::WINDOW.typ.prop_wnd().title);
-    println!("WINDOW widgets: {}", rtwins::widget_impl::wgt_count(&tui_def::WINDOW));
+    println!("WINDOW title: {}", title(&tui_def::WINDOW_MAIN));
+    println!("WINDOW title: {}", wnd_prop(&tui_def::WINDOW_MAIN).title);
+    println!("WINDOW title: {}", tui_def::WINDOW_MAIN.typ.prop_wnd().title);
+    println!("WINDOW widgets: {}", rtwins::widget_impl::wgt_count(&tui_def::WINDOW_MAIN));
     println!(
         "sizeof Widget: {}",
         std::mem::size_of::<rtwins::widget::Widget>()
@@ -164,7 +163,7 @@ fn test_property_access() {
     );
     println!("sizeof Id: {}", std::mem::size_of::<tui_def::Id>());
 
-    if let rtwins::widget::Type::Window(ref wp) = tui_def::WINDOW.typ {
+    if let rtwins::widget::Type::Window(ref wp) = tui_def::WINDOW_MAIN.typ {
         println!("WINDOW title: {}", wp.title);
     }
 }

@@ -16,8 +16,12 @@ pub struct Coord {
 
 impl Coord {
     /// Returns default object; can be used in `const` initialization
-    pub const fn cdeflt() -> Coord {
+    pub const fn cdeflt() -> Self {
         Coord { col: 0, row: 0 }
+    }
+
+    pub const fn new(c: u8, r: u8) -> Self {
+        Coord { col: c, row: r }
     }
 }
 

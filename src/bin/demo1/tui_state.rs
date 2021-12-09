@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 use rtwins::widget;
+use rtwins::esc;
 use rtwins::widget::*;
 use rtwins::input::*;
 
@@ -31,8 +32,8 @@ impl DemoWndState {
         };
 
         use tui_def::Id;
-        ws.wstate.insert(Id::Lbl2.into(), WidgetState::new());
-        ws.wstate.get_mut(&Id::Lbl2.into()).unwrap().enabled = false;
+        ws.wstate.insert(Id::LabelFwVersion.into(), WidgetState::new());
+        ws.wstate.get_mut(&Id::LabelFwVersion.into()).unwrap().enabled = false;
         return ws;
     }
 }
@@ -163,9 +164,12 @@ impl WindowState for DemoWndState {
     }
 
     fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {
-        if let widget::Type::Window(ref p) = wgt.typ {
-            *txt = p.title.to_string();
-        }
+        txt.push_str(esc::BOLD);
+        txt.push_str("** Service Menu **");
+        txt.push_str(esc::NORMAL);
+        txt.push_str(esc::UNDERLINE_ON);
+        txt.push_str(" (Ctrl+D quit)");
+        txt.push_str(esc::UNDERLINE_OFF);
     }
 
     fn get_checkbox_checked(&mut self, wgt: &Widget) -> bool {
@@ -255,6 +259,7 @@ impl WindowState for DemoWndState {
 
     fn get_invalidated(&mut self) -> Vec<WId> {
         let mut ret = vec![];
+        ret.reserve(8);
         std::mem::swap(&mut self.invalidated, &mut ret);
         ret
     }
