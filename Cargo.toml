@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 # enum-iterator = "0.7.0"
 num_enum = "0.5.4"
+unicode-width = "0.1"
 
 [profile.release]
 # https://jamesmunns.com/blog/tinyrocket/

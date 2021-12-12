@@ -3,6 +3,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use std::ops::{Add, Sub};
 use crate::input::KeyCode;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -25,6 +26,16 @@ impl Coord {
     }
 }
 
+impl Add for Coord {
+    type Output = Self;
+    fn add(self, other: Coord) -> Coord {
+        Coord {
+            col: self.col + other.col,
+            row: self.row + other.row,
+        }
+    }
+}
+
 /// Widget size
 #[derive(Clone, Copy)]
 pub struct Size {
@@ -35,9 +46,20 @@ pub struct Size {
 impl Size {
     /// Returns default object; can be used in `const` initialization
     pub const fn cdeflt() -> Size {
+        Size { width: 0, height: 0 }
+    }
+
+    pub const fn new(w: u8, h: u8) -> Self {
+        Size { width: w, height: h }
+    }
+}
+
+impl Sub for Size {
+    type Output = Self;
+    fn sub(self, other: Size) -> Size {
         Size {
-            width: 0,
-            height: 0,
+            width:  self.width - other.width,
+            height: self.height - other.height,
         }
     }
 }

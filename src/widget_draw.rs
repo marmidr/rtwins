@@ -5,6 +5,7 @@
 
 use std::cell::RefCell;
 use std::fmt::Write;
+use unicode_width::UnicodeWidthStr;
 
 use crate::{FontMementoManual, FontMemento, FontAttrib, colors};
 use crate::widget_impl::{WidgetSearchStruct};
@@ -21,6 +22,8 @@ trait StrExt {
     fn push_esc_fmt(&mut self, escfmt: &str, val: i16);
     /// Push `repeat` copies of `c`
     fn push_n(&mut self, c: char, n: i16);
+    /// Set displayed width to `w` according to Unicode Standard
+    fn set_width(&mut self, w: i16);
 }
 
 impl StrExt for String {
@@ -34,6 +37,11 @@ impl StrExt for String {
         for i in 0..repeat {
             self.push(c);
         }
+    }
+
+    fn set_width(&mut self, w: i16) {
+        let n = UnicodeWidthStr::width(self.as_str());
+        self.push_n(' ', w - n as i16);
     }
 }
 
@@ -185,9 +193,12 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
     }
 
     // reset colors set by frame drawer
-    dctx.ctx.borrow_mut().pop_cl_bg();
-    dctx.ctx.borrow_mut().pop_cl_fg();
-    dctx.ctx.borrow_mut().move_to(0, wnd_coord.row as u16 + dctx.wgt.size.height as u16);
+    {
+        let mut ctx = dctx.ctx.borrow_mut();
+        ctx.pop_cl_bg();
+        ctx.pop_cl_fg();
+        ctx.move_to(0, wnd_coord.row as u16 + dctx.wgt.size.height as u16);
+    }
 }
 
 fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
@@ -511,83 +522,119 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
 
 fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
 {
-  /*   const auto my_coord = env.parentCoord + pWgt->coord;
-    FontMemento _m;
-    pushClBg(getWidgetBgColor(pWgt));
-    pushClFg(getWidgetFgColor(pWgt));
-    drawArea(my_coord + Coord{pWgt->pagectrl.tabWidth, 0}, pWgt->size - Size{pWgt->pagectrl.tabWidth, 0},
-        ColorBG::Inherit, ColorFG::Inherit, FrameStyle::PgControl);
-    flushBuffer();
+    let mut fm = FontMementoManual::new();
+    fm.store(&dctx.ctx.borrow());
+    let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
-    auto coord_bkp = env.parentCoord;
-    env.parentCoord = my_coord;
+    dctx.ctx.borrow_mut().push_cl_bg(get_widget_bg_color(dctx.wgt));
+    dctx.ctx.borrow_mut().push_cl_fg(get_widget_fg_color(dctx.wgt));
+
+    draw_area(&mut dctx.ctx.borrow_mut(),
+        my_coord + Coord::new(prp.tab_width, 0),
+        dctx.wgt.size - Size::new(prp.tab_width, 0),
+        ColorBG::Inherit,
+        ColorFG::Inherit,
+        FrameStyle::PgControl,
+        true, false);
+
+    dctx.ctx.borrow_mut().flush_buff();
+
+    let coord_bkp = dctx.parent_coord;
+    dctx.parent_coord = my_coord;
+
     // tabs title
-    g_ws.str.clear();
-    g_ws.str.append(' ', (pWgt->pagectrl.tabWidth-8) / 2);
-    g_ws.str.append("≡ MENU ≡");
-    g_ws.str.setWidth(pWgt->pagectrl.tabWidth);
-    moveTo(my_coord.col, my_coord.row + pWgt->pagectrl.vertOffs);
-    pushAttr(FontAttrib::Inverse);
-    writeStrLen(g_ws.str.cstr(), g_ws.str.size());
-    popAttr();
+    {
+        let mut strbuff = String::with_capacity(100);
+        strbuff.push_n(' ', (prp.tab_width as i16 -8) / 2);
+        strbuff.push_str("≡ MENU ≡");
+        strbuff.set_width(prp.tab_width as i16);
+
+        let mut ctx = dctx.ctx.borrow_mut();
+        ctx.move_to(my_coord.col as u16, my_coord.row as u16 + prp.vert_offs as u16);
+        ctx.push_attr(FontAttrib::Inverse);
+        ctx.write_str(strbuff.as_str());
+        ctx.pop_attr();
+    }
 
     // draw tabs and pages
-    const int pg_idx = env.pState->getPageCtrlPageIndex(pWgt);
-    // const bool focused = env.pState->isFocused(pWgt);
+    let pg_idx = dctx.wnd_state.get_page_ctrl_page_index(&dctx.wgt);
+    let focused = dctx.wnd_state.is_focused(&dctx.wgt);
+
     // moveTo(env.parentCoord.col + pWgt->coord.col, env.parentCoord.row + pWgt->coord.row);
-    flushBuffer();
+    dctx.ctx.borrow_mut().flush_buff();
 
-    for (int i = 0; i < pWgt->link.childsCnt; i++)
-    {
-        if (i == pWgt->size.height - 1 - pWgt->pagectrl.vertOffs)
+    for i in 0..dctx.wgt.link.childs_cnt {
+        if i == dctx.wgt.size.height as u16 - 1 - prp.vert_offs as u16 {
             break;
+        }
 
-        const auto *p_page = &env.pWidgets[pWgt->link.childsIdx + i];
+        let page = &dctx.wnd_widgets[dctx.wgt.link.childs_idx as usize + i as usize];
+        let page_prp = match page.typ {
+            Type::Page(ref p) => p,
+            _ => panic!()
+        };
 
         // draw page title
-        g_ws.str.clear();
-        g_ws.str.appendFmt("%s%s", i == pg_idx ? "►" : " ", p_page->page.title);
-        g_ws.str.setWidth(pWgt->pagectrl.tabWidth, true);
+        let mut strbuff = String::with_capacity(100);
 
-        moveTo(my_coord.col, my_coord.row + pWgt->pagectrl.vertOffs + i + 1);
+        if i as i8 == pg_idx {
+            strbuff.push_str("►");
+        }
+        else {
+            strbuff.push_str(page_prp.title);
+        }
+
+        strbuff.set_width(prp.tab_width as i16);
 
         // for Page we do not want inherit after it's title color
-        auto clfg = p_page->page.fgColor;
-        if (clfg == ColorFG::Inherit)
-            clfg = getWidgetFgColor(p_page);
-
-        pushClFg(clfg);
-        if (i == pg_idx) pushAttr(FontAttrib::Inverse);
-        writeStrLen(g_ws.str.cstr(), g_ws.str.size());
-        if (i == pg_idx) popAttr();
-        popClFg();
-
-        if (env.pState->isVisible(p_page))
         {
-            flushBuffer();
-            env.parentCoord.col += pWgt->pagectrl.tabWidth;
-            drawPage(env, p_page);
-            env.parentCoord.col -= pWgt->pagectrl.tabWidth;
+            let mut clfg = page_prp.fg_color;
+            if clfg == ColorFG::Inherit { clfg = get_widget_fg_color(&page); }
+            let mut ctx = dctx.ctx.borrow_mut();
+            ctx.move_to(my_coord.col as u16, my_coord.row as u16 + prp.vert_offs as u16 + i + 1);
+            ctx.push_cl_fg(clfg);
+            if i as i8 == pg_idx  { ctx.push_attr(FontAttrib::Inverse); }
+            ctx.write_str(strbuff.as_str());
+            if i as i8 == pg_idx { ctx.pop_attr(); }
+            ctx.pop_cl_fg();
+        }
+
+        if dctx.wnd_state.is_visible(&page) {
+            dctx.ctx.borrow_mut().flush_buff();
+            dctx.parent_coord.col += prp.tab_width;
+            let w = dctx.wgt;
+            dctx.wgt = page;
+            draw_page(dctx, page_prp, false);
+            dctx.wgt = w;
+            dctx.parent_coord.col -= prp.tab_width;
         }
     }
 
-    env.parentCoord = coord_bkp; */
+    dctx.parent_coord = coord_bkp;
+    fm.restore(&mut dctx.ctx.borrow_mut());
 }
 
-fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool)
+fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/)
 {
-/*     if (eraseBg)
-    {
-        const Widget *p_pgctrl = getParent(pWgt);
-        auto page_coord = getScreenCoord(p_pgctrl);
-        page_coord.col += p_pgctrl->pagectrl.tabWidth;
-        drawArea(page_coord, p_pgctrl->size - Size{p_pgctrl->pagectrl.tabWidth, 0},
-            ColorBG::Inherit, ColorFG::Inherit, FrameStyle::PgControl);
+    if erase_bg {
+        // TODO:
+        // const Widget *p_pgctrl = getParent(pWgt);
+        // auto page_coord = getScreenCoord(p_pgctrl);
+        // page_coord.col += p_pgctrl->pagectrl.tabWidth;
+        // drawArea(page_coord, p_pgctrl->size - Size{p_pgctrl->pagectrl.tabWidth, 0},
+        //     ColorBG::Inherit, ColorFG::Inherit, FrameStyle::PgControl);
     }
 
     // draw childrens
-    for (int i = pWgt->link.childsIdx; i < pWgt->link.childsIdx + pWgt->link.childsCnt; i++)
-        drawWidgetInternal(env, &env.pWidgets[i]); */
+    let page = dctx.wgt;
+
+    for i in 0..dctx.wgt.link.childs_cnt {
+        let wgt_to_draw = &dctx.wnd_widgets[page.link.childs_idx as usize + i as usize];
+        dctx.wgt = wgt_to_draw;
+        draw_widget_internal(dctx);
+    }
+
+    dctx.wgt = page;
 }
 
 fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar)
