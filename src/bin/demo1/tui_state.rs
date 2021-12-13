@@ -34,6 +34,15 @@ impl DemoWndState {
         use tui_def::Id;
         ws.wstate.insert(Id::LabelFwVersion.into(), WidgetState::new());
         ws.wstate.get_mut(&Id::LabelFwVersion.into()).unwrap().enabled = false;
+
+        ws.wstate.insert(Id::Prgbar1.into(), WidgetState{state: RuntimeState::Pgbar{ pos:5, max: 10 }, enabled: true});
+        ws.wstate.insert(Id::Prgbar2.into(), WidgetState{state: RuntimeState::Pgbar{ pos:2, max: 10 }, enabled: true});
+        ws.wstate.insert(Id::Prgbar3.into(), WidgetState{state: RuntimeState::Pgbar{ pos:8, max: 10 }, enabled: true});
+
+        ws.wstate.insert(Id::LedLock.into(), WidgetState{state: RuntimeState::Led{ lit: true }, enabled: true});
+
+        ws.wstate.insert(Id::ChbxEnbl.into(), WidgetState{state: RuntimeState::Chbx{ checked: true }, enabled: true});
+
         return ws;
     }
 }
@@ -233,7 +242,7 @@ impl WindowState for DemoWndState {
 
     }
 
-    fn get_radio_index(&mut self, wgt: &Widget) -> i32 {
+    fn get_radio_index(&mut self, wgt: &Widget) -> i16 {
         return -1;
     }
 

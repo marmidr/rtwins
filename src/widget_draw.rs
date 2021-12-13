@@ -202,34 +202,50 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
 
 fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
 {
-    let _fm = FontMemento::new(&dctx.ctx);
+    let mut fm = FontMementoManual::new();
+    fm.store(&dctx.ctx.borrow());
+    let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
-    /*
-    const auto my_coord = env.parentCoord + pWgt->coord;
-
-    drawArea(my_coord, pWgt->size,
-        pWgt->panel.bgColor, pWgt->panel.fgColor,
-        pWgt->panel.noFrame ? FrameStyle::None : FrameStyle::Single);
-    flushBuffer();
+    draw_area(&mut dctx.ctx.borrow_mut(),
+        my_coord,
+        dctx.wgt.size,
+        prp.bg_color,
+        prp.fg_color,
+        if prp.no_frame { FrameStyle::None } else { FrameStyle::Single },
+        true, false);
 
     // title
-    if (pWgt->panel.title)
-    {
-        auto title_width = String::width(pWgt->panel.title);
-        moveTo(my_coord.col + (pWgt->size.width - title_width - 2)/2, my_coord.row);
-        pushAttr(FontAttrib::Bold);
-        writeStrFmt(" %s ", pWgt->panel.title);
-        popAttr();
+    if !prp.title.is_empty() {
+        let title_width = UnicodeWidthStr::width(prp.title) as u16;
+        let mut ctx = dctx.ctx.borrow_mut();
+        ctx.move_to(my_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width - 2)/2,
+            my_coord.row as u16);
+        ctx.push_attr(FontAttrib::Bold);
+        ctx.write_char(' ').write_str(prp.title).write_char(' ');
+        ctx.pop_attr();
     }
 
-    flushBuffer();
-    auto coord_bkp = env.parentCoord;
-    env.parentCoord = my_coord;
+    dctx.ctx.borrow_mut().flush_buff();
 
-    for (int i = pWgt->link.childsIdx; i < pWgt->link.childsIdx + pWgt->link.childsCnt; i++)
-        drawWidgetInternal(env, &env.pWidgets[i]);
+    // draw childrens
+    {
+        let coord_bkp = dctx.parent_coord;
+        dctx.parent_coord = my_coord;
+        let pnl = dctx.wgt;
 
-    env.parentCoord = coord_bkp; */
+        // TODO: create iterator over childs
+        for i in 0..pnl.link.childs_cnt {
+            let wgt_to_draw = &dctx.wnd_widgets[pnl.link.childs_idx as usize + i as usize];
+            dctx.wgt = wgt_to_draw;
+            draw_widget_internal(dctx);
+        }
+
+        dctx.wgt = pnl;
+        dctx.parent_coord = coord_bkp;
+    }
+
+    // fm.restore(&mut dctx.ctx.borrow_mut());
+    dctx.ctx.borrow_mut().pop_cl_bg();
 }
 
 fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label)
@@ -344,50 +360,73 @@ fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit)
 
 fn draw_led(dctx: &mut DrawCtx, prp: &prop::Led)
 {
-   /*  auto clbg = env.pState->getLedLit(pWgt) ? pWgt->led.bgColorOn : pWgt->led.bgColorOff;
-    g_ws.str.clear();
+    let clbg = if dctx.wnd_state.get_led_lit(dctx.wgt) { prp.bg_color_on } else { prp.bg_color_off };
+    let mut strbuff = String::with_capacity(100);
 
-    if (pWgt->led.text)
-        g_ws.str = pWgt->led.text;
-    else
-        env.pState->getLedText(pWgt, g_ws.str);
+    if !prp.text.is_empty() {
+        strbuff.push_str(prp.text);
+    }
+    else {
+        dctx.wnd_state.get_led_text(dctx.wgt, &mut strbuff);
+    }
 
     // led text
-    FontMemento _m;
-    moveTo(env.parentCoord.col + pWgt->coord.col, env.parentCoord.row + pWgt->coord.row);
-    pushClBg(clbg);
-    pushClFg(getWidgetFgColor(pWgt));
-    writeStrLen(g_ws.str.cstr(), g_ws.str.size()); */
+    let _fm = FontMemento::new(&dctx.ctx);
+
+    let mut ctx = dctx.ctx.borrow_mut();
+    ctx.move_to(dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
+        dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
+    ctx.push_cl_bg(clbg);
+    ctx.push_cl_fg(get_widget_fg_color(dctx.wgt));
+    ctx.write_str(strbuff.as_str());
 }
 
 fn draw_checkbox(dctx: &mut DrawCtx, prp: &prop::CheckBox)
 {
-/*     const char *s_chk_state = env.pState->getCheckboxChecked(pWgt) ? "[■] " : "[ ] ";
-    bool focused = env.pState->isFocused(pWgt);
-    auto clfg = getWidgetFgColor(pWgt);
-    intensifyClIf(focused, clfg);
+    let chk_state = if dctx.wnd_state.get_checkbox_checked(dctx.wgt) { "[■] " } else { "[ ] " };
+    let focused = dctx.wnd_state.is_focused(dctx.wgt);
+    let clfg = {
+        let cl = get_widget_fg_color(dctx.wgt);
+        if focused { intensify_cl_fg(cl) } else { cl }
+    };
 
-    FontMemento _m;
-    moveTo(env.parentCoord.col + pWgt->coord.col, env.parentCoord.row + pWgt->coord.row);
-    if (focused) pushAttr(FontAttrib::Bold);
-    pushClFg(clfg);
-    writeStr(s_chk_state);
-    writeStr(pWgt->checkbox.text); */
+    let _fm = FontMemento::new(&dctx.ctx);
+    let mut ctx = dctx.ctx.borrow_mut();
+    ctx.move_to(
+        dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
+        dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
+    if focused {
+        ctx.push_attr(FontAttrib::Bold);
+    }
+    ctx.push_cl_fg(clfg);
+    ctx.write_str(chk_state);
+    ctx.write_str(prp.text);
 }
 
 fn draw_radio(dctx: &mut DrawCtx, prp: &prop::Radio)
 {
-/*     const char *s_radio_state = pWgt->radio.radioId == env.pState->getRadioIndex(pWgt) ? "(●) " : "( ) ";
-    bool focused = env.pState->isFocused(pWgt);
-    auto clfg = getWidgetFgColor(pWgt);
-    intensifyClIf(focused, clfg);
+    let radio_state = {
+        let ridx = dctx.wnd_state.get_radio_index(dctx.wgt);
+        if prp.radio_id == ridx { "(●) " } else { "( ) " }
+    };
 
-    FontMemento _m;
-    moveTo(env.parentCoord.col + pWgt->coord.col, env.parentCoord.row + pWgt->coord.row);
-    if (focused) pushAttr(FontAttrib::Bold);
-    pushClFg(clfg);
-    writeStr(s_radio_state);
-    writeStr(pWgt->radio.text); */
+    let focused = dctx.wnd_state.is_focused(dctx.wgt);
+    let clfg = {
+        let cl = get_widget_fg_color(dctx.wgt);
+        if focused { colors::intensify_cl_fg(cl) } else { cl }
+    };
+
+    let _fm = FontMemento::new(&dctx.ctx);
+    let mut ctx = dctx.ctx.borrow_mut();
+    ctx.move_to(
+        dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
+        dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
+    if focused {
+        ctx.push_attr(FontAttrib::Bold);
+    }
+    ctx.push_cl_fg(clfg);
+    ctx.write_str(radio_state);
+    ctx.write_str(prp.text);
 }
 
 fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
@@ -555,61 +594,65 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
         ctx.pop_attr();
     }
 
-    // draw tabs and pages
-    let pg_idx = dctx.wnd_state.get_page_ctrl_page_index(&dctx.wgt);
-    let focused = dctx.wnd_state.is_focused(&dctx.wgt);
-
     // moveTo(env.parentCoord.col + pWgt->coord.col, env.parentCoord.row + pWgt->coord.row);
     dctx.ctx.borrow_mut().flush_buff();
 
-    for i in 0..dctx.wgt.link.childs_cnt {
-        if i == dctx.wgt.size.height as u16 - 1 - prp.vert_offs as u16 {
-            break;
-        }
+    // draw tabs and pages
+    {
+        let pgctrl = dctx.wgt;
+        let pg_idx = dctx.wnd_state.get_page_ctrl_page_index(pgctrl);
+        let focused = dctx.wnd_state.is_focused(pgctrl);
+        dctx.parent_coord.col += prp.tab_width;
 
-        let page = &dctx.wnd_widgets[dctx.wgt.link.childs_idx as usize + i as usize];
-        let page_prp = match page.typ {
-            Type::Page(ref p) => p,
-            _ => panic!()
-        };
+        for i in 0..pgctrl.link.childs_cnt {
+            // check if page is below lower border
+            if i == pgctrl.size.height as u16 - 1 - prp.vert_offs as u16 {
+                break;
+            }
 
-        // draw page title
-        let mut strbuff = String::with_capacity(100);
+            let page = &dctx.wnd_widgets[pgctrl.link.childs_idx as usize + i as usize];
+            let page_prp = match page.typ {
+                Type::Page(ref p) => p,
+                _ => panic!()
+            };
 
-        if i as i8 == pg_idx {
-            strbuff.push_str("►");
-        }
-        else {
+            // draw tab title
+            let mut strbuff = String::with_capacity(100);
+
+            if i as i8 == pg_idx {
+                strbuff.push_str("►");
+            }
+            else {
+                strbuff.push_str(" ");
+            }
+
             strbuff.push_str(page_prp.title);
+            strbuff.set_width(prp.tab_width as i16);
+
+            // for Page we do not want inherit after it's title color
+            {
+                let mut clfg = page_prp.fg_color;
+                if clfg == ColorFG::Inherit { clfg = get_widget_fg_color(page); }
+                let mut ctx = dctx.ctx.borrow_mut();
+                ctx.move_to(my_coord.col as u16, my_coord.row as u16 + prp.vert_offs as u16 + i + 1);
+                ctx.push_cl_fg(clfg);
+                if i as i8 == pg_idx { ctx.push_attr(FontAttrib::Inverse); }
+                ctx.write_str(strbuff.as_str());
+                if i as i8 == pg_idx { ctx.pop_attr(); }
+                ctx.pop_cl_fg();
+            }
+
+            if dctx.wnd_state.is_visible(page) {
+                dctx.ctx.borrow_mut().flush_buff();
+                dctx.wgt = page;
+                draw_page(dctx, page_prp, false);
+            }
         }
 
-        strbuff.set_width(prp.tab_width as i16);
-
-        // for Page we do not want inherit after it's title color
-        {
-            let mut clfg = page_prp.fg_color;
-            if clfg == ColorFG::Inherit { clfg = get_widget_fg_color(&page); }
-            let mut ctx = dctx.ctx.borrow_mut();
-            ctx.move_to(my_coord.col as u16, my_coord.row as u16 + prp.vert_offs as u16 + i + 1);
-            ctx.push_cl_fg(clfg);
-            if i as i8 == pg_idx  { ctx.push_attr(FontAttrib::Inverse); }
-            ctx.write_str(strbuff.as_str());
-            if i as i8 == pg_idx { ctx.pop_attr(); }
-            ctx.pop_cl_fg();
-        }
-
-        if dctx.wnd_state.is_visible(&page) {
-            dctx.ctx.borrow_mut().flush_buff();
-            dctx.parent_coord.col += prp.tab_width;
-            let w = dctx.wgt;
-            dctx.wgt = page;
-            draw_page(dctx, page_prp, false);
-            dctx.wgt = w;
-            dctx.parent_coord.col -= prp.tab_width;
-        }
+        dctx.wgt = pgctrl;
+        dctx.parent_coord = coord_bkp;
     }
 
-    dctx.parent_coord = coord_bkp;
     fm.restore(&mut dctx.ctx.borrow_mut());
 }
 
@@ -625,42 +668,44 @@ fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/)
     }
 
     // draw childrens
-    let page = dctx.wgt;
+    {
+        let page = dctx.wgt;
 
-    for i in 0..dctx.wgt.link.childs_cnt {
-        let wgt_to_draw = &dctx.wnd_widgets[page.link.childs_idx as usize + i as usize];
-        dctx.wgt = wgt_to_draw;
-        draw_widget_internal(dctx);
+        for i in 0..page.link.childs_cnt {
+            dctx.wgt = &dctx.wnd_widgets[page.link.childs_idx as usize + i as usize];
+            draw_widget_internal(dctx);
+        }
     }
-
-    dctx.wgt = page;
 }
 
 fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar)
 {
-   /*  const char* style_data[][2] =
-    {
-        {"#", "."},
-        {"█", "▒"},
-        {"■", "□"}
-    };
+    const STYLE_DATA: [[char;2];3] = [
+        ['#', '.'],
+        ['█', '▒'],
+        ['■', '□']
+    ];
 
-    int32_t pos = 0, max = 1;
-    auto style = (short)pWgt->progressbar.style;
-    env.pState->getProgressBarState(pWgt, pos, max);
+    let mut pos = 0i32;
+    let mut max = 1i32;
+    let style = prp.style as usize;
+    dctx.wnd_state.get_progress_bar_state(&dctx.wgt, &mut pos, &mut max);
 
-    if (max <= 0) max = 1;
-    if (pos > max) pos = max;
+    if max <= 0 { max = 1; }
+    if pos > max { pos = max; }
 
-    moveTo(env.parentCoord.col + pWgt->coord.col, env.parentCoord.row + pWgt->coord.row);
-    g_ws.str.clear();
-    int fill = pos * pWgt->size.width / max;
-    g_ws.str.append(style_data[style][0], fill);
-    g_ws.str.append(style_data[style][1], pWgt->size.width - fill);
+    let mut ctx = dctx.ctx.borrow_mut();
+    ctx.move_to(dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
+        dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
+    let mut strbuff = String::with_capacity(100);
 
-    pushClFg(getWidgetFgColor(pWgt));
-    writeStrLen(g_ws.str.cstr(), g_ws.str.size());
-    popClFg(); */
+    let fill_len = (pos * dctx.wgt.size.width as i32 / max) as i16;
+    strbuff.push_n(STYLE_DATA[style][0], fill_len);
+    strbuff.push_n(STYLE_DATA[style][1], dctx.wgt.size.width as i16 - fill_len);
+
+    ctx.push_cl_fg(get_widget_fg_color(dctx.wgt));
+    ctx.write_str(strbuff.as_str());
+    ctx.pop_cl_fg();
 
     // ████░░░░░░░░░░░
     // [####.........]
@@ -788,9 +833,9 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox)
     } */
 }
 
-fn draw_custom_wgt(dctx: &mut DrawCtx, prp: &prop::CustomWgt)
+fn draw_custom_wgt(dctx: &mut DrawCtx, _: &prop::CustomWgt)
 {
-    // env.pState->onCustomWidgetDraw(pWgt);
+    dctx.wnd_state.on_custom_widget_draw(dctx.wgt);
 }
 
 fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
@@ -864,11 +909,18 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
     flushBuffer(); */
 }
 
-fn draw_layer(dctx: &mut DrawCtx, prp: &prop::Layer)
+fn draw_layer(dctx: &mut DrawCtx, _: &prop::Layer)
 {
     // draw only childrens; to erase, redraw layer's parent
-    // for (int i = pWgt->link.childsIdx; i < pWgt->link.childsIdx + pWgt->link.childsCnt; i++)
-    //     drawWidgetInternal(env, &env.pWidgets[i]);
+    let layer = dctx.wgt;
+
+    for i in 0..layer.link.childs_cnt {
+        let wgt_to_draw = &dctx.wnd_widgets[layer.link.childs_idx as usize + i as usize];
+        dctx.wgt = wgt_to_draw;
+        draw_widget_internal(dctx);
+    }
+
+    dctx.wgt = layer;
 }
 
 // -----------------------------------------------------------------------------------------------
@@ -994,7 +1046,7 @@ fn draw_line(strbuff: &mut String, c: char, len: u8) {
         strbuff.push_esc_fmt(esc::CHAR_REPEAT_LAST_FMT, len as i16 - 3);
     }
     else {
-        // in case the 'g' code is not supported
+        // in case the code is not supported
         strbuff.push_n(c, len as i16 - 2);
     }
 }
@@ -1023,6 +1075,7 @@ fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
         Type::Button(ref p) => p.bg_color,
         Type::ListBox(ref p) => p.bg_color,
         Type::ComboBox(ref p) => p.bg_color,
+        Type::TextBox(ref p) => p.bg_color,
         _ => ColorBG::Inherit
     };
 
@@ -1039,9 +1092,15 @@ fn get_widget_fg_color(wgt: &Widget) -> ColorFG {
         Type::Panel(ref p) => p.fg_color,
         Type::Label(ref p) => p.fg_color,
         Type::TextEdit(ref p) => p.fg_color,
+        Type::CheckBox(ref p) => p.fg_color,
+        Type::Radio(ref p) => p.fg_color,
         Type::Button(ref p) => p.fg_color,
+        Type::Led(ref p) => p.fg_color,
+        Type::Page(ref p) => p.fg_color,
+        Type::ProgressBar(ref p) => p.fg_color,
         Type::ListBox(ref p) => p.fg_color,
         Type::ComboBox(ref p) => p.fg_color,
+        Type::TextBox(ref p) => p.fg_color,
         _ => ColorFG::Inherit
     };
 

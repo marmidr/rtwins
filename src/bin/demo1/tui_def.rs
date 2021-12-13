@@ -106,8 +106,8 @@ pub const PNL_STATE_CHILDS: &[Widget] = &[
         id: Id::LedPump.into(),
         coord: Coord { col: 16, row: 1 },
         typ: prop::Led {
-            text: "(LOCK)",
-            fg_color: ColorFG::Black,
+            text: "(PUMP)",
+            fg_color: ColorFG::Red,
             bg_color_off: ColorBG::White,
             bg_color_on: ColorBG::Yellow,
         }.into(),
@@ -288,7 +288,7 @@ pub const PAGE_VER_CHILDS: &[Widget] = &[
         coord: Coord { col: 43, row: 10 },
         size: Size { width: 12, height: 1 },
         typ: prop::ProgressBar {
-            fg_color: ColorFG::White,
+            fg_color: ColorFG::Black,
             style: PgBarStyle::Rectangle
         }.into(),
         ..Widget::cdeflt()

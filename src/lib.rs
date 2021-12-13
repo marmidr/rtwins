@@ -443,16 +443,18 @@ impl FontMementoManual {
         }
     }
 
+    // TODO: fn new_from_ctx()
+
     fn store(&mut self, ctx: &Ctx) {
         self.fg_stack_len = ctx.stack_cl_fg.len() as i8;
         self.bg_stack_len = ctx.stack_cl_bg.len() as i8;
-        self.at_stack_len = ctx.stack_attr.len() as i8;
+        self.at_stack_len = ctx.stack_attr.len()  as i8;
     }
 
     fn restore(&mut self, ctx: &mut Ctx) {
         ctx.pop_cl_fg_n(ctx.stack_cl_fg.len() as i8 - self.fg_stack_len);
         ctx.pop_cl_bg_n(ctx.stack_cl_bg.len() as i8 - self.bg_stack_len);
-        ctx.pop_attr_n(ctx.stack_cl_bg.len() as i8 - self.at_stack_len);
+        ctx.pop_attr_n(ctx.stack_attr.len()   as i8 - self.at_stack_len);
     }
 }
 
@@ -476,10 +478,10 @@ impl <'b, 'a> FontMemento<'b, 'a> {
             let ref_ctx = ctx.borrow();
             fg = ref_ctx.stack_cl_fg.len() as i8;
             bg = ref_ctx.stack_cl_bg.len() as i8;
-            at = ref_ctx.stack_attr.len() as i8;
+            at = ref_ctx.stack_attr.len()  as i8;
         }
 
-        FontMemento{
+        FontMemento {
             fg_stack_len: fg,
             bg_stack_len: bg,
             at_stack_len: at,
@@ -493,7 +495,7 @@ impl <'b, 'a> Drop for FontMemento<'b, 'a> {
         let mut ctx = self.ctx.borrow_mut();
         let new_fg = ctx.stack_cl_fg.len() as i8 - self.fg_stack_len;
         let new_bg = ctx.stack_cl_bg.len() as i8 - self.bg_stack_len;
-        let new_at = ctx.stack_cl_bg.len() as i8 - self.at_stack_len;
+        let new_at = ctx.stack_attr.len()  as i8 - self.at_stack_len;
         ctx.pop_cl_fg_n(new_fg);
         ctx.pop_cl_bg_n(new_bg);
         ctx.pop_attr_n(new_at);
