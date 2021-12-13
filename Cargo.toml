@@ -16,4 +16,12 @@ unicode-width = "0.1"
 opt-level = 'z'  # Optimize for size.
 lto = true
 codegen-units = 1
-# panic = 'abort'
+#panic = 'abort'
+
+[profile.dev]
+debug = true
+lto = false
+codegen-units = 2
+
+[features]
+fast_line = []

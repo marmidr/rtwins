@@ -71,6 +71,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 ```bash
 cargo r
+# with fast_fill enabled:
+cargo r --features=fast_fill
 ```
 
 ## How to build and run unit tests

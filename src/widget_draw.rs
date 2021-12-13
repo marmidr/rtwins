@@ -61,7 +61,7 @@ struct DrawCtx<'a>
     wnd_widgets: &'a [Widget]
 }
 
-/// Draw `wids` widgets offor given window.
+/// Draw `wids` widgets of the given window.
 /// If `wids` contains only `WIDGET_ID_ALL`, draw entire window
 pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
 {
@@ -73,7 +73,6 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
     fm.store(ctx);
 
 /*
-    CallEnv env(pWindowWidgets);
     g_ws.pFocusedWgt = getWidgetByWID(env, ctx.stat.getFocusedID());
 */
     ctx.cursor_hide();
@@ -170,7 +169,7 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
     }
 
     if !wnd_title.is_empty() {
-        let title_width = wnd_title.chars().count() as u16 + 4;
+        let title_width = UnicodeWidthStr::width(wnd_title.as_str()) as u16 + 4;
         let mut ctx = dctx.ctx.borrow_mut();
         ctx.move_to(wnd_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width) / 2, wnd_coord.row as u16);
         ctx.push_attr(FontAttrib::Bold);
@@ -929,18 +928,7 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
 
     // top line
     strbuff.push(frame[0]);
-
-    #[cfg(feature = "fast_fill")]
-    {
-        strbuff.push(frame[1]);
-        strbuff.push_esc_fmt(esc::CHAR_REPEAT_LAST_FMT, size.width as i16 - 3);
-    }
-
-    #[cfg(not(feature = "fast_fill"))]
-    {
-        strbuff.push_n(frame[1], size.width as i16 - 2);
-    }
-
+    draw_line(&mut strbuff, frame[1], size.width);
     strbuff.push(frame[2]);
 
     ctx.write_str(strbuff.as_str());
@@ -952,16 +940,7 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
     strbuff.push(frame[3]);
 
     if filled {
-        #[cfg(feature = "fast_fill")]
-        {
-            strbuff.push(frame[4]);
-            strbuff.push_esc_fmt(esc::CHAR_REPEAT_LAST_FMT, size.width as i16 - 3);
-        }
-
-        #[cfg(not(feature = "fast_fill"))]
-        {
-            strbuff.push_n(frame[4], size.width as i16 - 2);
-        }
+        draw_line(&mut strbuff, frame[4], size.width);
     }
     else {
         strbuff.push_esc_fmt(esc::CURSOR_FORWARD_FMT, size.width as i16 - 2);
@@ -984,18 +963,7 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
     // bottom line
     strbuff.clear();
     strbuff.push(frame[6]);
-
-    #[cfg(feature = "fast_fill")]
-    {
-        strbuff.push(frame[7]);
-        strbuff.push_esc_fmt(esc::CHAR_REPEAT_LAST_FMT, size.width as i16 - 3);
-    }
-
-    #[cfg(not(feature = "fast_fill"))]
-    {
-        strbuff.push_n(frame[7], size.width as i16 - 2);
-    }
-
+    draw_line(&mut strbuff, frame[7], size.width);
     strbuff.push(frame[8]);
 
     if shadow {
@@ -1011,24 +979,24 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
         ctx.move_by(-(size.width as i16), 1);
         strbuff.clear();
         // trailing shadow
-
-        #[cfg(feature = "fast_fill")]
-        {
-            strbuff.push('█');
-            strbuff.push_esc_fmt(esc::CHAR_REPEAT_LAST_FMT, size.width as i16 - 1);
-        }
-
-        #[cfg(not(feature = "fast_fill"))]
-        {
-            strbuff.push_n('█', size.width as i16);
-        }
-
+        draw_line(&mut strbuff, '█', size.width + 2);
         ctx.write_str(strbuff.as_str());
         ctx.write_str(colors::encode_cl_fg(cl_fg));
         ctx.flush_buff();
     }
 
     // here the Fg and Bg colors are not restored
+}
+
+fn draw_line(strbuff: &mut String, c: char, len: u8) {
+    if cfg!(fast_line) {
+        strbuff.push(c);
+        strbuff.push_esc_fmt(esc::CHAR_REPEAT_LAST_FMT, len as i16 - 3);
+    }
+    else {
+        // in case the 'g' code is not supported
+        strbuff.push_n(c, len as i16 - 2);
+    }
 }
 
 fn draw_list_scroll_bar_v(ctx: &mut Ctx, coord: Coord, height: i8, max: i32, pos: i32) {
@@ -1046,10 +1014,8 @@ fn draw_list_scroll_bar_v(ctx: &mut Ctx, coord: Coord, height: i8, max: i32, pos
     }
 }
 
-fn get_widget_bg_color(wgt: &Widget) -> ColorBG
-{
-    let cl = match wgt.typ
-    {
+fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
+    let cl = match wgt.typ {
         Type::Window(ref p) => p.bg_color,
         Type::Panel(ref p) => p.bg_color,
         Type::Label(ref p) => p.bg_color,
@@ -1067,10 +1033,8 @@ fn get_widget_bg_color(wgt: &Widget) -> ColorBG
     return cl;
 }
 
-fn get_widget_fg_color(wgt: &Widget) -> ColorFG
-{
-    let cl = match wgt.typ
-    {
+fn get_widget_fg_color(wgt: &Widget) -> ColorFG {
+    let cl = match wgt.typ {
         Type::Window(ref p) => p.fg_color,
         Type::Panel(ref p) => p.fg_color,
         Type::Label(ref p) => p.fg_color,
