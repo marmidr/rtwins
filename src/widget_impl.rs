@@ -149,3 +149,39 @@ pub fn wgt_get_parent<'a>(wgt: &'a Widget) -> &'a Widget {
         &*pwgt.offset(parent_idx_offset)
     }
 }
+
+/// Iterator over parent-type Widget childs
+pub struct WidgetIter <'a> {
+    childs: &'a Widget,
+    child_idx: u16,
+    child_cnt: u16
+}
+
+impl <'a> WidgetIter <'a> {
+    pub fn new(parent_wgt: &'a Widget) -> Self {
+        unsafe {
+            let p_parent = parent_wgt as *const Widget;
+            let childs_offs = parent_wgt.link.childs_idx as isize - parent_wgt.link.own_idx as isize;
+            let p_childs = p_parent.offset(childs_offs);
+
+            WidgetIter { childs: &*p_childs, child_idx: 0, child_cnt: parent_wgt.link.childs_cnt }
+        }
+    }
+}
+
+impl <'a> Iterator for WidgetIter<'a> {
+    type Item = &'a Widget;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.child_idx < self.child_cnt {
+            unsafe {
+                let p_child = (self.childs as *const Widget).offset(self.child_idx as isize);
+                self.child_idx += 1;
+                Some(&*p_child)
+            }
+        }
+        else {
+            None
+        }
+    }
+}

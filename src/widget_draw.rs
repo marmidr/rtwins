@@ -8,7 +8,7 @@ use std::fmt::Write;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{FontMementoManual, FontMemento, FontAttrib, colors};
-use crate::widget_impl::{WidgetSearchStruct, wgt_get_parent};
+use crate::widget_impl::{WidgetSearchStruct, wgt_get_parent, WidgetIter};
 use crate::widget::*;
 use crate::colors::*;
 use crate::Ctx;
@@ -182,14 +182,14 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
     dctx.parent_coord = wnd_coord;
 
     {
-        let wgt_backup = dctx.wgt;
-        let link = &dctx.wgt.link;
-        for i in link.childs_idx..link.childs_idx + link.childs_cnt {
-            dctx.wgt = &dctx.wnd_widgets[i as usize];
+        let wnd = dctx.wgt;
+
+        for wgt in WidgetIter::new(wnd) {
+            dctx.wgt = wgt;
             draw_widget_internal(dctx);
         }
 
-        dctx.wgt = wgt_backup;
+        dctx.wgt = wnd;
     }
 
     // reset colors set by frame drawer
@@ -234,10 +234,8 @@ fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
         dctx.parent_coord = my_coord;
         let pnl = dctx.wgt;
 
-        // TODO: create iterator over childs
-        for i in 0..pnl.link.childs_cnt {
-            let wgt_to_draw = &dctx.wnd_widgets[pnl.link.childs_idx as usize + i as usize];
-            dctx.wgt = wgt_to_draw;
+        for wgt in WidgetIter::new(pnl) {
+            dctx.wgt = wgt;
             draw_widget_internal(dctx);
         }
 
@@ -605,13 +603,12 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
         let focused = dctx.wnd_state.is_focused(pgctrl);
         dctx.parent_coord.col += prp.tab_width;
 
-        for i in 0..pgctrl.link.childs_cnt {
+        for (idx, page) in WidgetIter::new(pgctrl).enumerate() {
             // check if page is below lower border
-            if i == pgctrl.size.height as u16 - 1 - prp.vert_offs as u16 {
+            if idx as u16 == pgctrl.size.height as u16 - 1 - prp.vert_offs as u16 {
                 break;
             }
 
-            let page = &dctx.wnd_widgets[pgctrl.link.childs_idx as usize + i as usize];
             let page_prp = match page.typ {
                 Type::Page(ref p) => p,
                 _ => panic!()
@@ -620,7 +617,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
             // draw tab title
             let mut strbuff = String::with_capacity(100);
 
-            if i as i8 == pg_idx {
+            if idx as i8 == pg_idx {
                 strbuff.push_str("►");
             }
             else {
@@ -635,11 +632,11 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
                 let mut clfg = page_prp.fg_color;
                 if clfg == ColorFG::Inherit { clfg = get_widget_fg_color(page); }
                 let mut ctx = dctx.ctx.borrow_mut();
-                ctx.move_to(my_coord.col as u16, my_coord.row as u16 + prp.vert_offs as u16 + i + 1);
+                ctx.move_to(my_coord.col as u16, my_coord.row as u16 + prp.vert_offs as u16 + idx as u16 + 1);
                 ctx.push_cl_fg(clfg);
-                if i as i8 == pg_idx { ctx.push_attr(FontAttrib::Inverse); }
+                if idx as i8 == pg_idx { ctx.push_attr(FontAttrib::Inverse); }
                 ctx.write_str(strbuff.as_str());
-                if i as i8 == pg_idx { ctx.pop_attr(); }
+                if idx as i8 == pg_idx { ctx.pop_attr(); }
                 ctx.pop_cl_fg();
             }
 
@@ -672,8 +669,8 @@ fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/)
     {
         let page = dctx.wgt;
 
-        for i in 0..page.link.childs_cnt {
-            dctx.wgt = &dctx.wnd_widgets[page.link.childs_idx as usize + i as usize];
+        for wgt in WidgetIter::new(page) {
+            dctx.wgt = wgt;
             draw_widget_internal(dctx);
         }
     }
