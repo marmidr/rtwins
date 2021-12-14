@@ -58,7 +58,9 @@ struct DrawCtx<'a>
     /// Current widget's parent left-top position
     parent_coord: Coord,
     ///
-    wnd_widgets: &'a [Widget]
+    wnd_widgets: &'a [Widget],
+    ///
+    strbuff: String
 }
 
 /// Draw `wids` widgets of the given window.
@@ -81,7 +83,9 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
     if wids.len() == 1 && wids[0] == WIDGET_ID_ALL {
         let wgts = ws.get_widgets();
         let wgt = wgts.get(0).unwrap(); // window is at index 0
-        let mut dctx = DrawCtx{ ctx: RefCell::new(ctx), wgt, wnd_state: ws, parent_coord: Coord::cdeflt(), wnd_widgets: wgts };
+        let mut dctx = DrawCtx{ ctx: RefCell::new(ctx),
+            wgt, wnd_state: ws, parent_coord: Coord::cdeflt(), wnd_widgets: wgts,
+            strbuff: String::with_capacity(200) };
         draw_widget_internal(&mut dctx);
     }
     else {
@@ -124,6 +128,7 @@ fn draw_widget_internal(dctx: &mut DrawCtx)
 
     // dctx.ctx.borrow_mut().log_d(format!("drawing {}", dctx.wgt.typ).as_str());
     // println!("drawing {}", dctx.wgt.typ);
+    dctx.strbuff.clear();
 
     match dctx.wgt.typ {
         Type::Window(ref p) => draw_window(dctx, p),
@@ -172,7 +177,9 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
     if !wnd_title.is_empty() {
         let title_width = UnicodeWidthStr::width(wnd_title.as_str()) as u16 + 4;
         let mut ctx = dctx.ctx.borrow_mut();
-        ctx.move_to(wnd_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width) / 2, wnd_coord.row as u16);
+        ctx.move_to(
+            wnd_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width) / 2,
+            wnd_coord.row as u16);
         ctx.push_attr(FontAttrib::Bold);
         ctx.write_str(format!("╡ {} ╞", wnd_title.as_str()).as_str());
         ctx.pop_attr();
@@ -219,7 +226,8 @@ fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
     if !prp.title.is_empty() {
         let title_width = UnicodeWidthStr::width(prp.title) as u16;
         let mut ctx = dctx.ctx.borrow_mut();
-        ctx.move_to(my_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width - 2)/2,
+        ctx.move_to(
+            my_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width - 2)/2,
             my_coord.row as u16);
         ctx.push_attr(FontAttrib::Bold);
         ctx.write_char(' ').write_str(prp.title).write_char(' ');
@@ -360,13 +368,12 @@ fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit)
 fn draw_led(dctx: &mut DrawCtx, prp: &prop::Led)
 {
     let clbg = if dctx.wnd_state.get_led_lit(dctx.wgt) { prp.bg_color_on } else { prp.bg_color_off };
-    let mut strbuff = String::with_capacity(100);
 
     if !prp.text.is_empty() {
-        strbuff.push_str(prp.text);
+        dctx.strbuff.push_str(prp.text);
     }
     else {
-        dctx.wnd_state.get_led_text(dctx.wgt, &mut strbuff);
+        dctx.wnd_state.get_led_text(dctx.wgt, &mut dctx.strbuff);
     }
 
     // led text
@@ -377,7 +384,7 @@ fn draw_led(dctx: &mut DrawCtx, prp: &prop::Led)
         dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
     ctx.push_cl_bg(clbg);
     ctx.push_cl_fg(get_widget_fg_color(dctx.wgt));
-    ctx.write_str(strbuff.as_str());
+    ctx.write_str(dctx.strbuff.as_str());
 }
 
 fn draw_checkbox(dctx: &mut DrawCtx, prp: &prop::CheckBox)
@@ -581,15 +588,14 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
 
     // tabs title
     {
-        let mut strbuff = String::with_capacity(100);
-        strbuff.push_n(' ', (prp.tab_width as i16 -8) / 2);
-        strbuff.push_str("≡ MENU ≡");
-        strbuff.set_width(prp.tab_width as i16);
+        dctx.strbuff.push_n(' ', (prp.tab_width as i16 -8) / 2);
+        dctx.strbuff.push_str("≡ MENU ≡");
+        dctx.strbuff.set_width(prp.tab_width as i16);
 
         let mut ctx = dctx.ctx.borrow_mut();
         ctx.move_to(my_coord.col as u16, my_coord.row as u16 + prp.vert_offs as u16);
         ctx.push_attr(FontAttrib::Inverse);
-        ctx.write_str(strbuff.as_str());
+        ctx.write_str(dctx.strbuff.as_str());
         ctx.pop_attr();
     }
 
@@ -605,7 +611,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
 
         for (idx, page) in WidgetIter::new(pgctrl).enumerate() {
             // check if page is below lower border
-            if idx as u16 == pgctrl.size.height as u16 - 1 - prp.vert_offs as u16 {
+            if idx as i16 == pgctrl.size.height as i16 - 1 - prp.vert_offs as i16 {
                 break;
             }
 
@@ -615,27 +621,29 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
             };
 
             // draw tab title
-            let mut strbuff = String::with_capacity(100);
+            dctx.strbuff.clear();
 
             if idx as i8 == pg_idx {
-                strbuff.push_str("►");
+                dctx.strbuff.push_str("►");
             }
             else {
-                strbuff.push_str(" ");
+                dctx.strbuff.push_str(" ");
             }
 
-            strbuff.push_str(page_prp.title);
-            strbuff.set_width(prp.tab_width as i16);
+            dctx.strbuff.push_str(page_prp.title);
+            dctx.strbuff.set_width(prp.tab_width as i16);
 
             // for Page we do not want inherit after it's title color
             {
                 let mut clfg = page_prp.fg_color;
                 if clfg == ColorFG::Inherit { clfg = get_widget_fg_color(page); }
                 let mut ctx = dctx.ctx.borrow_mut();
-                ctx.move_to(my_coord.col as u16, my_coord.row as u16 + prp.vert_offs as u16 + idx as u16 + 1);
+                ctx.move_to(
+                    my_coord.col as u16,
+                    my_coord.row as u16 + prp.vert_offs as u16 + idx as u16 + 1);
                 ctx.push_cl_fg(clfg);
                 if idx as i8 == pg_idx { ctx.push_attr(FontAttrib::Inverse); }
-                ctx.write_str(strbuff.as_str());
+                ctx.write_str(dctx.strbuff.as_str());
                 if idx as i8 == pg_idx { ctx.pop_attr(); }
                 ctx.pop_cl_fg();
             }
@@ -674,6 +682,8 @@ fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/)
             draw_widget_internal(dctx);
         }
     }
+
+    dctx.strbuff.clear();
 }
 
 fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar)
@@ -693,16 +703,16 @@ fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar)
     if pos > max { pos = max; }
 
     let mut ctx = dctx.ctx.borrow_mut();
-    ctx.move_to(dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
+    ctx.move_to(
+        dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
         dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
-    let mut strbuff = String::with_capacity(100);
 
     let fill_len = (pos * dctx.wgt.size.width as i32 / max) as i16;
-    strbuff.push_n(STYLE_DATA[style][0], fill_len);
-    strbuff.push_n(STYLE_DATA[style][1], dctx.wgt.size.width as i16 - fill_len);
+    dctx.strbuff.push_n(STYLE_DATA[style][0], fill_len);
+    dctx.strbuff.push_n(STYLE_DATA[style][1], dctx.wgt.size.width as i16 - fill_len);
 
     ctx.push_cl_fg(get_widget_fg_color(dctx.wgt));
-    ctx.write_str(strbuff.as_str());
+    ctx.write_str(dctx.strbuff.as_str());
     ctx.pop_cl_fg();
 
     // ████░░░░░░░░░░░
