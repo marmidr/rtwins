@@ -141,7 +141,11 @@ pub fn wgt_get_wss(/* CallCtx &ctx,*/ wss: &mut WidgetSearchStruct) -> bool
     false
 }
 
-/// Get `wgt` parent in `wnd` array; for Window, return window itself
-pub fn wgt_get_parent<'a>(wnd: &'a [Widget], wgt: &Widget) -> &'a Widget {
-    &wnd[wgt.link.parent_idx as usize]
+/// Get `wgt` parent, using flat widgets layout
+pub fn wgt_get_parent<'a>(wgt: &'a Widget) -> &'a Widget {
+    unsafe {
+        let parent_idx_offset = wgt.link.parent_idx as isize - wgt.link.own_idx as isize;
+        let pwgt = wgt as *const Widget;
+        &*pwgt.offset(parent_idx_offset)
+    }
 }

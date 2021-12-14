@@ -217,7 +217,7 @@ pub const PAGE_VER_CHILDS: &[Widget] = &[
         coord: Coord { col: 30, row: 5 },
         typ: prop::CheckBox {
             text: "Enable",
-            fg_color: ColorFG::Green,
+            fg_color: ColorFG::White,
         }.into(),
         ..Widget::cdeflt()
     },
@@ -298,7 +298,7 @@ pub const PAGE_VER_CHILDS: &[Widget] = &[
 // ---------------------------------------------------------------------------------------------- //
 
 #[rustfmt::skip]
-pub const WINDOW_MAIN: Widget = Widget {
+const WINDOW_MAIN: Widget = Widget {
     id: Id::WndMain.into(),
     link: Link::cdeflt(),
     coord: Coord { col: 15, row: 2 },

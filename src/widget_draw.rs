@@ -8,7 +8,7 @@ use std::fmt::Write;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{FontMementoManual, FontMemento, FontAttrib, colors};
-use crate::widget_impl::{WidgetSearchStruct};
+use crate::widget_impl::{WidgetSearchStruct, wgt_get_parent};
 use crate::widget::*;
 use crate::colors::*;
 use crate::Ctx;
@@ -123,6 +123,7 @@ fn draw_widget_internal(dctx: &mut DrawCtx)
     if !en { dctx.ctx.borrow_mut().push_attr(FontAttrib::Faint); }
 
     // dctx.ctx.borrow_mut().log_d(format!("drawing {}", dctx.wgt.typ).as_str());
+    // println!("drawing {}", dctx.wgt.typ);
 
     match dctx.wgt.typ {
         Type::Window(ref p) => draw_window(dctx, p),
@@ -244,8 +245,8 @@ fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
         dctx.parent_coord = coord_bkp;
     }
 
-    // fm.restore(&mut dctx.ctx.borrow_mut());
-    dctx.ctx.borrow_mut().pop_cl_bg();
+    // dctx.ctx.borrow_mut().pop_cl_bg();
+    fm.restore(&mut dctx.ctx.borrow_mut());
 }
 
 fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label)
@@ -965,11 +966,11 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
     ctx.move_to(coord.col.into(), coord.row.into());
 
     let frame = match style {
-        FrameStyle::Single => FRAME_SINGLE,
-        FrameStyle::Double => FRAME_DOUBLE,
-        FrameStyle::PgControl => FRAME_PGCONTROL,
-        FrameStyle::ListBox => FRAME_LISTBOX,
-        _ => FRAME_NONE
+        FrameStyle::Single => &FRAME_SINGLE,
+        FrameStyle::Double => &FRAME_DOUBLE,
+        FrameStyle::PgControl => &FRAME_PGCONTROL,
+        FrameStyle::ListBox => &FRAME_LISTBOX,
+        _ => &FRAME_NONE
     };
 
     // background and frame color
@@ -1067,7 +1068,7 @@ fn draw_list_scroll_bar_v(ctx: &mut Ctx, coord: Coord, height: i8, max: i32, pos
 }
 
 fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
-    let cl = match wgt.typ {
+    let mut cl = match wgt.typ {
         Type::Window(ref p) => p.bg_color,
         Type::Panel(ref p) => p.bg_color,
         Type::Label(ref p) => p.bg_color,
@@ -1080,14 +1081,14 @@ fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
     };
 
     if cl == ColorBG::Inherit {
-        // let parent = wgt_get_parent(wgt);
-        // cl = get_widget_bg_color(parent);
+        let parent = wgt_get_parent(wgt);
+        cl = get_widget_bg_color(parent);
     }
     return cl;
 }
 
 fn get_widget_fg_color(wgt: &Widget) -> ColorFG {
-    let cl = match wgt.typ {
+    let mut cl = match wgt.typ {
         Type::Window(ref p) => p.fg_color,
         Type::Panel(ref p) => p.fg_color,
         Type::Label(ref p) => p.fg_color,
@@ -1105,8 +1106,8 @@ fn get_widget_fg_color(wgt: &Widget) -> ColorFG {
     };
 
     if cl == ColorFG::Inherit {
-        // let parent = wgt_get_parent(wgt);
-        // cl = get_widget_fg_color(parent);
+        let parent = wgt_get_parent(wgt);
+        cl = get_widget_fg_color(parent);
     }
 
     return cl;
