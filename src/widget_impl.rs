@@ -18,11 +18,10 @@ impl WidgetSearchStruct {
     }
 }
 
-/** Widget drawing state object */
+/// Widget drawing state object
 #[allow(dead_code)]
 struct WidgetState
 {
-    buff: String,                        // common string buff for widget drawers
     // p_focused_wgt: Option<&Widget>,
     // p_mouse_down_wgt: Option<&Widget>,
     // p_drop_down_combo: Option<&Widget>,
@@ -141,14 +140,31 @@ pub fn wgt_get_wss(/* CallCtx &ctx,*/ wss: &mut WidgetSearchStruct) -> bool
     false
 }
 
-/// Get `wgt` parent, using flat widgets layout
+/// Get `wgt`'s parent, using flat widgets layout produced by `wgt_transform_array()`
 pub fn wgt_get_parent<'a>(wgt: &'a Widget) -> &'a Widget {
     unsafe {
+        // SAFETY:
+        // it is guaranted thanks to how the `wgt_transform_array()` places widgets
+        // in the contiguous array, thus, having self/parent/children indexes in that array
+        // we can safely find any of them having only particular widget handle, without entire array
         let parent_idx_offset = wgt.link.parent_idx as isize - wgt.link.own_idx as isize;
-        let pwgt = wgt as *const Widget;
-        &*pwgt.offset(parent_idx_offset)
+        let p_wgt = wgt as *const Widget;
+        &*p_wgt.offset(parent_idx_offset)
     }
 }
+
+/// Search for Widget with given `id` in window array
+pub fn wgt_find_by_id<'a>(id: WId, wndarray: &'a [Widget]) -> Option<&'a Widget> {
+    for wgt in wndarray {
+        if wgt.id == id {
+            return Some(wgt);
+        }
+    }
+
+    None
+}
+
+// -----------------------------------------------------------------------------------------------
 
 /// Iterator over parent-type Widget childs
 pub struct WidgetIter <'a> {
@@ -158,8 +174,13 @@ pub struct WidgetIter <'a> {
 }
 
 impl <'a> WidgetIter <'a> {
+    /// Creates a new iterator.
+    ///
+    /// If the given widget happen to be not a parent-type widget,
+    /// first iteration will fail anyway as the child counter is 0
     pub fn new(parent_wgt: &'a Widget) -> Self {
         unsafe {
+            // SAFETY: see `wgt_get_parent`
             let p_parent = parent_wgt as *const Widget;
             let childs_offs = parent_wgt.link.childs_idx as isize - parent_wgt.link.own_idx as isize;
             let p_childs = p_parent.offset(childs_offs);
@@ -175,6 +196,7 @@ impl <'a> Iterator for WidgetIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         if self.child_idx < self.child_cnt {
             unsafe {
+                // SAFETY: see `wgt_get_parent`
                 let p_child = (self.childs as *const Widget).offset(self.child_idx as isize);
                 self.child_idx += 1;
                 Some(&*p_child)
@@ -185,3 +207,4 @@ impl <'a> Iterator for WidgetIter<'a> {
         }
     }
 }
+

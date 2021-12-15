@@ -79,7 +79,7 @@ impl Id {
 // ---------------------------------------------------------------------------------------------- //
 
 #[rustfmt::skip]
-pub const PNL_STATE_CHILDS: &[Widget] = &[
+const PNL_STATE_CHILDS: &[Widget] = &[
     Widget {
         id: Id::LedBattery.into(),
         coord: Coord { col: 2, row: 1 },
@@ -116,7 +116,7 @@ pub const PNL_STATE_CHILDS: &[Widget] = &[
 ];
 
 #[rustfmt::skip]
-pub const PAGE_VER_CHILDS: &[Widget] = &[
+const PAGE_VER_CHILDS: &[Widget] = &[
     Widget {
         id: Id::PanelVersions.into(),
         link: Link::cdeflt(),
@@ -409,5 +409,5 @@ const WINDOW_MAIN: Widget = Widget {
 };
 
 /// Example of const-evaluated and translated Widgets tree into Widgets array
-pub const WND_MAIN: [Widget; rtwins::widget_impl::wgt_count(&WINDOW_MAIN)] =
+pub const WND_MAIN_ARRAY: [Widget; rtwins::widget_impl::wgt_count(&WINDOW_MAIN)] =
     rtwins::widget_impl::wgt_transform_array(&WINDOW_MAIN);

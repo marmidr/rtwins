@@ -81,7 +81,7 @@ fn main() {
     test_esc_codes();
     // test_property_access();
 
-    let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN[..]);
+    let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN_ARRAY[..]);
     let mut tw = TWins::new(Box::new(DemoPal::new()));
 
     {
@@ -138,7 +138,7 @@ fn test_property_access() {
         _ => "<?>",
     };
 
-    for (idx, w) in tui_def::WND_MAIN.iter().enumerate() {
+    for (idx, w) in tui_def::WND_MAIN_ARRAY.iter().enumerate() {
         let w_par = rtwins::widget_impl::wgt_get_parent(w);
         println!("  {:2}. {:2}:{:10}, idx:{}, chidx:{}, parid {}:{}",
             idx, w.id, w.typ, w.link.own_idx, w.link.childs_idx, w_par.id, w_par.typ);
