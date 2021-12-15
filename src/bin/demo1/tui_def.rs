@@ -142,11 +142,11 @@ const PAGE_VER_CHILDS: &[Widget] = &[
             Widget {
                 id: Id::LabelDate.into(),
                 coord: Coord { col: 2, row: 2 },
-                size: Size { width: 15, height: 1 },
+                size: Size { width: 18, height: 1 },
                 typ: prop::Label {
-                    title: "Date•",
+                    title: "",
                     fg_color: ColorFG::Black,
-                    bg_color: ColorBG::Inherit,
+                    bg_color: ColorBG::White,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -156,7 +156,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
                 size: Size { width: 0, height: 1 },
                 typ: prop::Label {
                     title: "",
-                    fg_color: ColorFG::Blue,
+                    fg_color: ColorFG::White,
                     bg_color: ColorBG::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
@@ -393,11 +393,15 @@ const WINDOW_MAIN: Widget = Widget {
             coord: Coord { col: 1, row: 13 },
             typ: prop::Label {
                 title:  concat!(
-                    "F2 Wnd En  ",
-                    "F4 Mouse On  ",
-                    "F5 Refresh  ",
-                    "F6 Clr Logs  ",
-                    "F9/F10 Page  ",
+                    " ",
+                    rtwins::csi!("7m"),
+                    "F2",
+                    rtwins::csi!("27m"),
+                    " Wnd En • ",
+                    "F4 Mouse On • ",
+                    "F5 Refresh • ",
+                    "F6 Clr Logs • ",
+                    "F9/F10 Page • ",
                     "\u{2581}\u{2582}\u{2583}\u{2584}\u{2585}\u{2586}\u{2587}\u{2588}\u{1F569}"
                 ),
                 fg_color: ColorFG::White,

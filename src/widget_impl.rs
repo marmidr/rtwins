@@ -1,6 +1,6 @@
 //! # RTWins Widget
 
-use crate::input;
+use crate::{input, widget};
 use crate::widget::{Coord, WId, Widget, Type, WIDGET_ID_NONE};
 
 #[allow(dead_code)]
@@ -162,6 +162,39 @@ pub fn wgt_find_by_id<'a>(id: WId, wndarray: &'a [Widget]) -> Option<&'a Widget>
     }
 
     None
+}
+
+pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
+    let mut coord = wgt.coord;
+
+    if wgt.link.own_idx > 0 {
+        // go up the widgets hierarchy
+        let mut parent = wgt_get_parent(wgt);
+
+        loop
+        {
+            if let widget::Type::Window(_) = wgt.typ {
+                // TODO: for popups must be centered on parent window
+                coord = coord + parent.coord;
+            }
+            else {
+                coord = coord + parent.coord;
+            }
+
+            if let widget::Type::PageCtrl(ref p) = parent.typ {
+                coord.col += p.tab_width;
+            }
+
+            // top-level parent reached
+            if parent.link.own_idx == 0 {
+                break;
+            }
+
+            parent = wgt_get_parent(parent);
+        }
+    }
+
+    coord
 }
 
 // -----------------------------------------------------------------------------------------------

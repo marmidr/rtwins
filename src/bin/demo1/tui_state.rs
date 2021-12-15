@@ -191,8 +191,15 @@ impl WindowState for DemoWndState {
     }
 
     fn get_label_text(&mut self, wgt: &Widget, txt: &mut String) {
-        if let widget::Type::Label(ref p) = wgt.typ {
-            *txt = p.title.to_string();
+        if wgt.id == tui_def::Id::LabelDate.into() {
+            txt.push_str(format!("Date•{}",
+                "<datetime>").as_str()
+            );
+        }
+
+        if wgt.id == tui_def::Id::LabelAbout.into() {
+            use rtwins::link;
+            txt.push_str(link!("https://bitbucket.org/marmidr/twins", "About..."));
         }
     }
 

@@ -8,7 +8,7 @@ use std::fmt::Write;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{FontMementoManual, FontMemento, FontAttrib, colors};
-use crate::widget_impl::{WidgetSearchStruct, wgt_get_parent, WidgetIter};
+use crate::widget_impl::*;
 use crate::widget::*;
 use crate::colors::*;
 use crate::Ctx;
@@ -257,55 +257,45 @@ fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
 
 fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label)
 {
-    /* g_ws.str.clear();
-
     // label text
-    if (pWgt->label.text)
-        g_ws.str = pWgt->label.text;
-    else
-        env.pState->getLabelText(pWgt, g_ws.str);
+    let mut title = String::new();
+    if !prp.title.is_empty() {
+        title = prp.title.into();
+    }
+    else {
+        dctx.wnd_state.get_label_text(dctx.wgt, &mut title);
+    }
 
-    FontMemento _m;
+    let _fm = FontMemento::new(&dctx.ctx);
+    let mut ctx = dctx.ctx.borrow_mut();
 
     // setup colors
-    pushClFg(getWidgetFgColor(pWgt));
-    pushClBg(getWidgetBgColor(pWgt));
+    ctx.push_cl_fg(get_widget_fg_color(dctx.wgt));
+    ctx.push_cl_bg(get_widget_bg_color(dctx.wgt));
 
     // print all lines
-    const char *p_line = g_ws.str.cstr();
-    String s_line;
-    moveTo(env.parentCoord.col + pWgt->coord.col, env.parentCoord.row + pWgt->coord.row);
-    const uint8_t max_lines = pWgt->size.height ? pWgt->size.height : 50;
-    const uint8_t line_width = pWgt->size.width;
+    ctx.move_to(
+        dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
+        dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
 
-    for (uint16_t line = 0; line < max_lines; line++)
-    {
-        s_line.clear();
-        const char *p_eol = strchr(p_line, '\n');
+    let max_lines = if dctx.wgt.size.height > 0 { dctx.wgt.size.height } else { 50 };
+    let line_width = dctx.wgt.size.width;
 
-        if (p_eol)
-        {
-            // one or 2+ lines
-            s_line.appendLen(p_line, p_eol - p_line);
-            p_line = p_eol + 1;
-        }
-        else
-        {
-            // only or last line of text
-            s_line.append(p_line);
-            p_line = " ";
+    for (line, s) in title.lines().enumerate() {
+        dctx.strbuff.push_str(s);
+
+        if line_width > 0 {
+            dctx.strbuff.set_width(line_width as i16);
         }
 
-        if (line_width)
-            s_line.setWidth(line_width, true);
-
-        writeStrLen(s_line.cstr(), s_line.size());
-        moveBy(-(int16_t)s_line.width(), 1);
-        flushBuffer();
-
-        if (!p_eol && !pWgt->size.height)
+        ctx.write_str(dctx.strbuff.as_str());
+        let w = UnicodeWidthStr::width(dctx.strbuff.as_str()) as i16;
+        ctx.move_by(-w, 1);
+        ctx.flush_buff();
+        if line as u8 == max_lines {
             break;
-    } */
+        }
+    }
 }
 
 fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit)
@@ -648,7 +638,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
                 ctx.pop_cl_fg();
             }
 
-            if dctx.wnd_state.is_visible(page) {
+            if idx as i8 == pg_idx && dctx.wnd_state.is_visible(page) {
                 dctx.ctx.borrow_mut().flush_buff();
                 dctx.wgt = page;
                 draw_page(dctx, page_prp, false);
@@ -665,12 +655,20 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
 fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/)
 {
     if erase_bg {
-        // TODO:
-        // const Widget *p_pgctrl = getParent(pWgt);
-        // auto page_coord = getScreenCoord(p_pgctrl);
-        // page_coord.col += p_pgctrl->pagectrl.tabWidth;
-        // drawArea(page_coord, p_pgctrl->size - Size{p_pgctrl->pagectrl.tabWidth, 0},
-        //     ColorBG::Inherit, ColorFG::Inherit, FrameStyle::PgControl);
+        let pgctrl = wgt_get_parent(dctx.wgt);
+
+        if let Type::PageCtrl(ref pgctrl_prp) = pgctrl.typ {
+            let page_coord = wgt_get_screen_coord(dctx.wgt);
+            let page_size = pgctrl.size - Size::new(pgctrl_prp.tab_width, 0);
+
+            draw_area(&mut dctx.ctx.borrow_mut(),
+                page_coord,
+                page_size,
+                ColorBG::Inherit,
+                ColorFG::Inherit,
+                FrameStyle::PgControl,
+                true, false);
+        }
     }
 
     // draw childrens
@@ -922,9 +920,8 @@ fn draw_layer(dctx: &mut DrawCtx, _: &prop::Layer)
     // draw only childrens; to erase, redraw layer's parent
     let layer = dctx.wgt;
 
-    for i in 0..layer.link.childs_cnt {
-        let wgt_to_draw = &dctx.wnd_widgets[layer.link.childs_idx as usize + i as usize];
-        dctx.wgt = wgt_to_draw;
+    for wgt in WidgetIter::new(layer) {
+        dctx.wgt = wgt;
         draw_widget_internal(dctx);
     }
 
@@ -1091,6 +1088,7 @@ fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
         let parent = wgt_get_parent(wgt);
         cl = get_widget_bg_color(parent);
     }
+
     return cl;
 }
 
