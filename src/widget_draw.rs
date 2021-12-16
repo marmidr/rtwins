@@ -75,7 +75,7 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
     fm.store(ctx);
 
 /*
-    g_ws.pFocusedWgt = getWidgetByWID(env, ctx.stat.getFocusedID());
+    g_ws.pFocusedWgt = getWidgetByWID(dctx, ctx.stat.getFocusedID());
 */
     ctx.cursor_hide();
     ctx.flush_buff();
@@ -92,12 +92,12 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
         for i in 0..wids.len() {
             let _wss = WidgetSearchStruct::new(wids[i]);
  /*
-            if (getWidgetWSS(env, wss) && wss.isVisible)
+            if (getWidgetWSS(dctx, wss) && wss.isVisible)
             {
-                env.parentCoord = wss.parentCoord;
+                dctx.parentCoord = wss.parentCoord;
                 // set parent's background color
                 pushClBg(getWidgetBgColor(wss.pWidget));
-                drawWidgetInternal(env, wss.pWidget);
+                drawWidgetInternal(dctx, wss.pWidget);
                 popClBg();
             }
   */
@@ -108,7 +108,7 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
     ctx.reset_cl_bg();
     ctx.reset_cl_fg();
 /*
-    setCursorAt(env, g_ws.pFocusedWgt);
+    setCursorAt(dctx, g_ws.pFocusedWgt);
 */
     ctx.cursor_show();
     fm.restore(ctx);
@@ -303,9 +303,9 @@ fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit)
     /*
     g_w s.str.clear();
     int16_t display_pos = 0;
-    const int16_t max_w = pWgt->size.width-3;
+    const int16_t max_w = dctx.wgt->size.width-3;
 
-    if (pWgt == g_ws.textEditState.pWgt)
+    if (dctx.wgt == g_ws.textEditState.dctx.wgt)
     {
         // in edit mode; similar calculation in setCursorAt()
         g_ws.str = g_ws.textEditState.str;
@@ -320,7 +320,7 @@ fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit)
     }
     else
     {
-        env.pState->getTextEditText(pWgt, g_ws.str);
+        dctx.pState->getTextEditText(dctx.wgt, g_ws.str);
     }
 
     const int txt_width = g_ws.str.width();
@@ -335,24 +335,24 @@ fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit)
 
     if (display_pos + max_w <= txt_width)
     {
-        g_ws.str.setWidth(pWgt->size.width-3-1);
+        g_ws.str.setWidth(dctx.wgt->size.width-3-1);
         g_ws.str.append("▷");
     }
     else
     {
-        g_ws.str.setWidth(pWgt->size.width-3);
+        g_ws.str.setWidth(dctx.wgt->size.width-3);
     }
     g_ws.str.append("[^]");
 
-    bool focused = env.pState->isFocused(pWgt);
-    auto clbg = getWidgetBgColor(pWgt);
+    bool focused = dctx.pState->isFocused(dctx.wgt);
+    auto clbg = getWidgetBgColor(dctx.wgt);
     intensifyClIf(focused, clbg);
 
-    FontMemento _m;
-    moveTo(env.parentCoord.col + pWgt->coord.col, env.parentCoord.row + pWgt->coord.row);
+    let _fm = FontMemento::new(&dctx.ctx);
+    moveTo(dctx.parentCoord.col + dctx.wgt->coord.col, dctx.parentCoord.row + dctx.wgt->coord.row);
     pushClBg(clbg);
-    pushClFg(getWidgetFgColor(pWgt));
-    writeStrLen(g_ws.str.cstr(), g_ws.str.size()); */
+    pushClFg(getWidgetFgColor(dctx.wgt));
+    ctx.write_str(dctx.strbuff.as_str()); */
 }
 
 fn draw_led(dctx: &mut DrawCtx, prp: &prop::Led)
@@ -427,131 +427,171 @@ fn draw_radio(dctx: &mut DrawCtx, prp: &prop::Radio)
 
 fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
 {
- /*    const bool focused = env.pState->isFocused(pWgt);
-    const bool pressed = pWgt == g_ws.pMouseDownWgt;
-    auto clfg = getWidgetFgColor(pWgt);
-    intensifyClIf(focused, clfg);
+    let focused = dctx.wnd_state.is_focused(dctx.wgt);
+    let pressed = false; // TODO:dctx.wgt == g_ws.pMouseDownWgt;
+    let clfg = {
+        let cl = get_widget_fg_color(dctx.wgt);
+        if focused { intensify_cl_fg(cl) } else { cl }
+    };
 
-    String txt;
-    if (pWgt->button.text)
-        txt = pWgt->button.text;
-    else
-        env.pState->getButtonText(pWgt, txt);
-
-    if (pWgt->button.style == ButtonStyle::Simple)
-    {
-        FontMemento _m;
-        g_ws.str.clear()
-                .append("[ ")
-                .append(txt)
-                .append(" ]");
-
-        moveTo(env.parentCoord.col + pWgt->coord.col, env.parentCoord.row + pWgt->coord.row);
-        if (focused) pushAttr(FontAttrib::Bold);
-        if (pressed) pushAttr(FontAttrib::Inverse);
-        auto clbg = pressed ? getWidgetBgColor(pWgt) : getWidgetBgColor(getParent(pWgt));
-        pushClBg(clbg);
-        pushClFg(clfg);
-        writeStrLen(g_ws.str.cstr(), g_ws.str.size());
+    let mut txt= String::new();
+    if !prp.text.is_empty() {
+        txt.push_str(prp.text);
     }
-    else if (pWgt->button.style == ButtonStyle::Solid)
-    {
-        {
-            FontMemento _m;
-            g_ws.str.clear();
-            g_ws.str << " " << txt << " ";
+    else {
+        dctx.wnd_state.get_button_text(dctx.wgt, &mut txt);
+    }
 
-            auto clbg = getWidgetBgColor(pWgt);
-            moveTo(env.parentCoord.col + pWgt->coord.col, env.parentCoord.row + pWgt->coord.row);
-            if (focused) pushAttr(FontAttrib::Bold);
-            if (pressed) pushAttr(FontAttrib::Inverse);
-            pushClBg(clbg);
-            pushClFg(clfg);
-            writeStrLen(g_ws.str.cstr(), g_ws.str.size());
+    if prp.style == ButtonStyle::Simple {
+        let _fm = FontMemento::new(&dctx.ctx);
+
+        {
+            let mut ctx = dctx.ctx.borrow_mut();
+
+            dctx.strbuff.push_str("[ ");
+            dctx.strbuff.push_str(txt.as_str());
+            dctx.strbuff.push_str(" ]");
+
+            ctx.move_to(
+                dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
+                dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
+
+            if focused { ctx.push_attr(FontAttrib::Bold); }
+            if pressed { ctx.push_attr(FontAttrib::Inverse); }
+            let clbg = if pressed { get_widget_bg_color(dctx.wgt) } else { get_widget_bg_color(wgt_get_parent(dctx.wgt)) };
+            ctx.push_cl_bg(clbg);
+            ctx.push_cl_fg(clfg);
+            ctx.write_str(dctx.strbuff.as_str());
+        }
+    }
+    else if prp.style == ButtonStyle::Solid {
+        {
+            let _fm = FontMemento::new(&dctx.ctx);
+
+            {
+                let mut ctx = dctx.ctx.borrow_mut();
+                dctx.strbuff.push_str(" ");
+                dctx.strbuff.push_str(txt.as_str());
+                dctx.strbuff.push_str(" ");
+
+                ctx.move_to(
+                    dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
+                    dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
+
+                if focused { ctx.push_attr(FontAttrib::Bold); }
+                if pressed { ctx.push_attr(FontAttrib::Inverse); }
+                let clbg = get_widget_bg_color(dctx.wgt);
+                ctx.push_cl_bg(clbg);
+                ctx.push_cl_fg(clfg);
+                ctx.write_str(dctx.strbuff.as_str());
+            }
         }
 
-        auto shadow_len = 2 + txt.width();
+        let shadow_len = 2 + txt.width() as i16;
 
-        if (pressed)
-        {
+        if pressed {
             // erase trailing shadow
-            pushClBg(getWidgetBgColor(getParent(pWgt)));
-            writeChar(' ');
+            let mut ctx = dctx.ctx.borrow_mut();
+
+            ctx.push_cl_bg(get_widget_bg_color(wgt_get_parent(dctx.wgt)));
+            ctx.write_char(' ');
+
             // erase shadow below
-            moveTo(env.parentCoord.col + pWgt->coord.col + 1, env.parentCoord.row + pWgt->coord.row + 1);
-            writeStr(" ", shadow_len);
-            popClBg();
+            ctx.move_to(
+                dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16 + 1,
+                dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16 + 1);
+
+            ctx.write_char_n(' ', shadow_len);
+            ctx.pop_cl_bg();
         }
-        else
-        {
-            FontMemento _m;
+        else {
+            let _fm = FontMemento::new(&dctx.ctx);
             // trailing shadow
-            pushClBg(getWidgetBgColor(getParent(pWgt)));
-            writeStr(ESC_FG_COLOR(233));
-            writeStr("▄");
-            // shadow below
-            moveTo(env.parentCoord.col + pWgt->coord.col + 1, env.parentCoord.row + pWgt->coord.row + 1);
-            writeStr("▀", shadow_len);
+            {
+                let mut ctx = dctx.ctx.borrow_mut();
+
+                ctx.push_cl_bg(get_widget_bg_color(wgt_get_parent(dctx.wgt)));
+                ctx.write_str(crate::fg_color!(233));
+                ctx.write_char('▄');
+                // shadow below
+                ctx.move_to(
+                    dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16 + 1,
+                    dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16 + 1);
+                ctx.write_char_n('▀', shadow_len);
+            }
         }
     }
-    else if (pWgt->button.style == ButtonStyle::Solid1p5)
-    {
-        g_ws.str.clear();
-        g_ws.str << " " << txt << " ";
-        auto clbg = getWidgetBgColor(pWgt);
-        auto clparbg = getWidgetBgColor(getParent(pWgt));
-        const int16_t bnt_len = 2 + txt.width();
-        const char* scl_shadow = ESC_BG_COLOR(233);
-        const char* scl_bg2fg = transcodeClBg2Fg(encodeCl(clbg));
-        FontMemento _m;
+    else if prp.style == ButtonStyle::Solid1p5 {
+        // dctx.strbuff.clear();
+        let _fm = FontMemento::new(&dctx.ctx);
+        dctx.strbuff.push_str(" ");
+        dctx.strbuff.push_str(txt.as_str());
+        dctx.strbuff.push_str(" ");
 
-        // upper half line
-        moveTo(env.parentCoord.col + pWgt->coord.col, env.parentCoord.row + pWgt->coord.row);
-        pushClBg(clparbg);
-        if (pressed)
-            pushClFg(clfg);
-        else
-            writeStr(scl_bg2fg);
-        writeStr("▄", bnt_len);
+        let clbg = get_widget_bg_color(dctx.wgt);
+        let clparbg = get_widget_bg_color(wgt_get_parent(dctx.wgt));
+        let bnt_len = 2 + txt.width() as i16;
+        let scl_shadow = crate::bg_color!(233);
+        let scl_bg2fg = transcode_cl_bg_2_fg(encode_cl_bg(clbg));
 
-        // middle line - text
-        moveBy(-bnt_len, 1);
-        pushClBg(clbg);
-        pushClFg(clfg);
-        if (pressed) pushAttr(FontAttrib::Inverse);
-        if (focused) pushAttr(FontAttrib::Bold);
-        writeStrLen(g_ws.str.cstr(), g_ws.str.size());
-        if (focused) popAttr();
-        if (pressed) popAttr();
-
-        // middle-shadow
-        if (pressed)
-            pushClBg(clparbg);
-        else
-            writeStr(scl_shadow);
-        writeChar(' ');
-
-        // lower half-line
-        moveBy(-bnt_len-1, 1);
-        if (pressed)
         {
-            pushClFg(clfg);
-            pushClBg(clparbg);
-            writeStr("▀");
-            pushClBg(clparbg);
-        }
-        else
-        {
-            writeStr(scl_bg2fg);
-            pushClBg(clparbg);
-            writeStr("▀");
-            writeStr(scl_shadow);
-        }
-        writeStr("▀", bnt_len-1);
+            let mut ctx = dctx.ctx.borrow_mut();
 
-        // trailing shadow
-        writeChar(' ');
-    } */
+            // upper half line
+            ctx.move_to(
+                dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
+                dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
+
+            ctx.push_cl_bg(clparbg);
+            if pressed {
+                ctx.push_cl_fg(clfg);
+            }
+            else {
+                ctx.write_str(scl_bg2fg.as_str());
+            }
+
+            ctx.write_char_n('▄', bnt_len);
+
+            // middle line - text
+            ctx.move_by(-bnt_len, 1);
+            ctx.push_cl_bg(clbg);
+            ctx.push_cl_fg(clfg);
+            if pressed { ctx.push_attr(FontAttrib::Inverse); }
+            if focused { ctx.push_attr(FontAttrib::Bold); }
+            ctx.write_str(dctx.strbuff.as_str());
+            if focused { ctx.pop_attr(); }
+            if pressed { ctx.pop_attr(); }
+
+            // middle-shadow
+            if pressed {
+                ctx.push_cl_bg(clparbg);
+            }
+            else {
+                ctx.write_str(scl_shadow);
+            }
+            ctx.write_char(' ');
+
+            // lower half-line
+            ctx.move_by(-bnt_len-1, 1);
+
+            if pressed {
+                ctx.push_cl_fg(clfg);
+                ctx.push_cl_bg(clparbg);
+                ctx.write_char('▀');
+                ctx.push_cl_bg(clparbg);
+            }
+            else {
+                ctx.write_str(scl_bg2fg.as_str());
+                ctx.push_cl_bg(clparbg);
+                ctx.write_char('▀');
+                ctx.write_str(scl_shadow);
+            }
+            ctx.write_char_n('▀', bnt_len-1);
+
+            // trailing shadow
+            ctx.write_char(' ');
+        }
+    }
 }
 
 fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
@@ -589,7 +629,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
         ctx.pop_attr();
     }
 
-    // moveTo(env.parentCoord.col + pWgt->coord.col, env.parentCoord.row + pWgt->coord.row);
+    // moveTo(dctx.parentCoord.col + dctx.wgt->coord.col, dctx.parentCoord.row + dctx.wgt->coord.row);
     dctx.ctx.borrow_mut().flush_buff();
 
     // draw tabs and pages
@@ -765,7 +805,7 @@ fn draw_list(p: &DrawListParams)
 
         if (p.focused && is_sel_item) pushAttr(FontAttrib::Inverse);
         if (is_current_item) pushAttr(FontAttrib::Underline);
-        writeStrLen(g_ws.str.cstr(), g_ws.str.size());
+        ctx.write_str(dctx.strbuff.as_str());
         if (is_current_item) popAttr();
         if (p.focused && is_sel_item) popAttr();
     } */
@@ -773,50 +813,50 @@ fn draw_list(p: &DrawListParams)
 
 fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox)
 {
-  /*   FontMemento _m;
-    const auto my_coord = env.parentCoord + pWgt->coord;
-    drawArea(my_coord, pWgt->size,
-        pWgt->listbox.bgColor, pWgt->listbox.fgColor,
-        pWgt->listbox.noFrame ? FrameStyle::None : FrameStyle::ListBox, false);
+  /*   let _fm = FontMemento::new(&dctx.ctx);
+    const auto my_coord = dctx.parentCoord + dctx.wgt->coord;
+    drawArea(my_coord, dctx.wgt->size,
+        dctx.wgt->listbox.bgColor, dctx.wgt->listbox.fgColor,
+        dctx.wgt->listbox.noFrame ? FrameStyle::None : FrameStyle::ListBox, false);
 
-    if (pWgt->size.height < 3)
+    if (dctx.wgt->size.height < 3)
         return;
 
     DrawListParams dlp = {};
     dlp.coord = my_coord;
-    env.pState->getListBoxState(pWgt, dlp.item_idx, dlp.sel_idx, dlp.items_cnt);
-    dlp.frame_size = !pWgt->listbox.noFrame;
-    dlp.items_visible = pWgt->size.height - (dlp.frame_size * 2);
+    dctx.pState->getListBoxState(dctx.wgt, dlp.item_idx, dlp.sel_idx, dlp.items_cnt);
+    dlp.frame_size = !dctx.wgt->listbox.noFrame;
+    dlp.items_visible = dctx.wgt->size.height - (dlp.frame_size * 2);
     dlp.top_item = (dlp.sel_idx / dlp.items_visible) * dlp.items_visible;
-    dlp.focused = env.pState->isFocused(pWgt);
-    dlp.wgt_width = pWgt->size.width;
-    dlp.getItem = [pWgt, &env](int16_t idx, String &out) { env.pState->getListBoxItem(pWgt, idx, out); };
+    dlp.focused = dctx.pState->isFocused(dctx.wgt);
+    dlp.wgt_width = dctx.wgt->size.width;
+    dlp.getItem = [dctx.wgt, &dctx](int16_t idx, String &out) { dctx.pState->getListBoxItem(dctx.wgt, idx, out); };
     drawList(dlp); */
 }
 
 fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox)
 {
-/*     FontMemento _m;
-    const auto my_coord = env.parentCoord + pWgt->coord;
-    const bool focused = env.pState->isFocused(pWgt);
+/*     let _fm = FontMemento::new(&dctx.ctx);
+    const auto my_coord = dctx.parentCoord + dctx.wgt->coord;
+    const bool focused = dctx.pState->isFocused(dctx.wgt);
 
     int16_t item_idx = 0; int16_t sel_idx = 0; int16_t items_count; bool drop_down = false;
-    env.pState->getComboBoxState(pWgt, item_idx, sel_idx, items_count, drop_down);
+    dctx.pState->getComboBoxState(dctx.wgt, item_idx, sel_idx, items_count, drop_down);
 
     {
         g_ws.str.clear();
-        env.pState->getComboBoxItem(pWgt, item_idx, g_ws.str);
+        dctx.pState->getComboBoxItem(dctx.wgt, item_idx, g_ws.str);
         g_ws.str.insert(0, " ");
-        g_ws.str.setWidth(pWgt->size.width - 4, true);
+        g_ws.str.setWidth(dctx.wgt->size.width - 4, true);
         g_ws.str << " [▼]";
 
         moveTo(my_coord.col, my_coord.row);
-        pushClFg(getWidgetFgColor(pWgt));
-        pushClBg(getWidgetBgColor(pWgt));
+        pushClFg(getWidgetFgColor(dctx.wgt));
+        pushClBg(getWidgetBgColor(dctx.wgt));
         if (focused && !drop_down) pushAttr(FontAttrib::Inverse);
         if (drop_down) pushAttr(FontAttrib::Underline);
         if (focused) pushAttr(FontAttrib::Bold);
-        writeStrLen(g_ws.str.cstr(), g_ws.str.size());
+        ctx.write_str(dctx.strbuff.as_str());
         if (focused) popAttr();
         if (drop_down) popAttr();
     }
@@ -830,11 +870,11 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox)
         dlp.sel_idx = sel_idx;
         dlp.items_cnt = items_count;
         dlp.frame_size = 0;
-        dlp.items_visible = pWgt->combobox.dropDownSize;
+        dlp.items_visible = dctx.wgt->combobox.dropDownSize;
         dlp.top_item = (dlp.sel_idx / dlp.items_visible) * dlp.items_visible;
         dlp.focused = focused;
-        dlp.wgt_width = pWgt->size.width;
-        dlp.getItem = [pWgt, &env](int16_t idx, String &out) { env.pState->getComboBoxItem(pWgt, idx, out); };
+        dlp.wgt_width = dctx.wgt->size.width;
+        dlp.getItem = [dctx.wgt, &dctx](int16_t idx, String &out) { dctx.pState->getComboBoxItem(dctx.wgt, idx, out); };
         drawList(dlp);
     } */
 }
@@ -846,21 +886,23 @@ fn draw_custom_wgt(dctx: &mut DrawCtx, _: &prop::CustomWgt)
 
 fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
 {
-/*     FontMemento _m;
-    const auto my_coord = env.parentCoord + pWgt->coord;
+    let _fm = FontMemento::new(&dctx.ctx);
+    let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
-    drawArea(my_coord, pWgt->size,
-        pWgt->textbox.bgColor, pWgt->textbox.fgColor,
+    draw_area(&mut dctx.ctx.borrow_mut(), my_coord, dctx.wgt.size,
+        prp.bg_color, prp.fg_color,
         FrameStyle::ListBox, false, false);
 
-    if (pWgt->size.height < 3)
+    if dctx.wgt.size.height < 3 {
         return;
+    }
 
-    const uint8_t lines_visible = pWgt->size.height - 2;
+/*
+    const uint8_t lines_visible = dctx.wgt->size.height - 2;
     const twins::Vector<twins::CStrView> *p_lines = nullptr;
     int16_t top_line = 0;
 
-    env.pState->getTextBoxState(pWgt, &p_lines, top_line);
+    dctx.pState->getTextBoxState(dctx.wgt, &p_lines, top_line);
 
     if (!p_lines || !p_lines->size())
         return;
@@ -868,16 +910,16 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
     if (top_line > (int)p_lines->size())
     {
         top_line = p_lines->size() - lines_visible;
-        env.pState->onTextBoxScroll(pWgt, top_line);
+        dctx.pState->onTextBoxScroll(dctx.wgt, top_line);
     }
 
     if (top_line < 0)
     {
-        env.pState->onTextBoxScroll(pWgt, top_line);
+        dctx.pState->onTextBoxScroll(dctx.wgt, top_line);
         top_line = 0;
     }
 
-    drawListScrollBarV(my_coord + Coord{uint8_t(pWgt->size.width-1), 1},
+    drawListScrollBarV(my_coord + Coord{uint8_t(dctx.wgt->size.width-1), 1},
         lines_visible, p_lines->size() - lines_visible, top_line);
 
     flushBuffer();
@@ -896,7 +938,7 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
             sr.data = esc + 1;
         }
     }
-    writeStrLen(g_ws.str.cstr(), g_ws.str.size());
+    ctx.write_str(dctx.strbuff.as_str());
 
     // draw lines
     for (int i = 0; i < lines_visible; i++)
@@ -907,12 +949,13 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
             const auto &sr = (*p_lines)[top_line + i];
             g_ws.str.appendLen(sr.data, sr.size);
         }
-        g_ws.str.setWidth(pWgt->size.width - 2, true);
+        g_ws.str.setWidth(dctx.wgt->size.width - 2, true);
         moveTo(my_coord.col + 1, my_coord.row + i + 1);
-        writeStrLen(g_ws.str.cstr(), g_ws.str.size());
+        ctx.write_str(dctx.strbuff.as_str());
     }
 
-    flushBuffer(); */
+    // flushBuffer();
+    */
 }
 
 fn draw_layer(dctx: &mut DrawCtx, _: &prop::Layer)

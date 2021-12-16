@@ -89,7 +89,7 @@ impl Rect {
 }
 
 /// Visual style of button
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
 pub enum ButtonStyle {
     Simple,
     Solid,
@@ -97,7 +97,7 @@ pub enum ButtonStyle {
 }
 
 /// Visual style of Progress Bar
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
 pub enum PgBarStyle {
     /// #
     Hash,
@@ -108,6 +108,7 @@ pub enum PgBarStyle {
 }
 
 /// Window, panel and page control frame styles
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
 pub enum FrameStyle {
     None,
     Single,
