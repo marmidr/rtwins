@@ -2,6 +2,7 @@
 
 use rtwins::colors::{ColorBG, ColorFG};
 use rtwins::widget::{prop, Coord, Size, Widget, Link, ButtonStyle, WId, WIDGET_ID_NONE, PgBarStyle};
+// use rtwins::{bold, normal};
 
 #[allow(dead_code)]
 #[rustfmt::skip]
@@ -448,7 +449,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
                 coord: Coord { col: 2, row: 2 },
                 size: Size { width: 14, height: 1 },
                 typ: prop::Label {
-                    title: "Check list:", // ESC_BOLD "Check list:" ESC_NORMAL
+                    title: "Check list:", // concat!(bold!(), "Check list:", normal!()),
                     fg_color: ColorFG::WhiteIntense,
                     bg_color: ColorBG::Inherit,
                 }.into(),

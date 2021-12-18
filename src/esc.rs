@@ -96,35 +96,80 @@ macro_rules! bg_color {
 // -----------------------------------------------------------------------------------------------
 /// # Text Display Modifier Escape Sequences
 
-pub const BOLD                : &str = csi!("1m");
-pub const FAINT               : &str = csi!("2m");
-pub const NORMAL              : &str = csi!("22m");
+#[macro_export]
+macro_rules! bold { () =>               { $crate::csi!("1m") }; }
+
+#[macro_export]
+macro_rules! faint { () =>              { $crate::csi!("2m") }; }
+
+#[macro_export]
+macro_rules! normal { () =>             { $crate::csi!("22m") }; }
 
 /// # Text attributes
 // if not italics, may be same as inverse
-pub const ITALICS_ON          : &str = csi!("3m");
-pub const ITALICS_OFF         : &str = csi!("23m");
+#[macro_export]
+macro_rules! italics_on                 { () => { $crate::csi!("3m") }; }
+#[macro_export]
+macro_rules! italics_off                { () => { $crate::csi!("23m") }; }
 
-pub const UNDERLINE_ON        : &str = csi!("4m");
-pub const UNDERLINE_OFF       : &str = csi!("24m");
+#[macro_export]
+macro_rules! underline_on               { () => { $crate::csi!("4m") }; }
+#[macro_export]
+macro_rules! underline_off              { () => { $crate::csi!("24m") }; }
 
-pub const OVERLINE_ON         : &str = csi!("53m");
-pub const OVERLINE_OFF        : &str = csi!("55m");
+#[macro_export]
+macro_rules! overline_on                { () => { $crate::csi!("53m") }; }
+#[macro_export]
+macro_rules! overline_off               { () => { $crate::csi!("55m") }; }
+
+#[macro_export]
+macro_rules! blink                      { () => { $crate::csi!("5m") }; }
+#[macro_export]
+macro_rules! blink_off                  { () => { $crate::csi!("25m") }; }
+
+#[macro_export]
+macro_rules! inverse_on                 { () => { $crate::csi!("7m") }; }
+#[macro_export]
+macro_rules! inverse_off                { () => { $crate::csi!("27m") }; }
+
+#[macro_export]
+macro_rules! invisible_on               { () => { $crate::csi!("8m") }; }
+#[macro_export]
+macro_rules! invisible_off              { () => { $crate::csi!("28m") }; }
+
+#[macro_export]
+macro_rules! strikethrough_on           { () => { $crate::csi!("9m") }; }
+#[macro_export]
+macro_rules! strikethrough_off          { () => { $crate::csi!("29m") }; }
+
+#[macro_export]
+macro_rules! attributes_default         { () => { $crate::csi!("10;22;23;24;25;27;28;29m") }; }
+
+
+pub const BOLD                : &str = bold!();
+pub const FAINT               : &str = faint!();
+pub const NORMAL              : &str = normal!();
+
+pub const ITALICS_ON          : &str = italics_on!();
+pub const ITALICS_OFF         : &str = italics_off!();
+
+pub const UNDERLINE_ON        : &str = underline_on!();
+pub const UNDERLINE_OFF       : &str = underline_off!();
 
 // if not blinks, the bg color may be lighter
-pub const BLINK               : &str = csi!("5m");
-pub const BLINK_OFF           : &str = csi!("25m");
+pub const BLINK               : &str = blink!();
+pub const BLINK_OFF           : &str = blink_off!();
 
-pub const INVERSE_ON          : &str = csi!("7m");
-pub const INVERSE_OFF         : &str = csi!("27m");
+pub const INVERSE_ON          : &str = inverse_on!();
+pub const INVERSE_OFF         : &str = inverse_off!();
 
-pub const INVISIBLE_ON        : &str = csi!("8m");
-pub const INVISIBLE_OFF       : &str = csi!("28m");
+pub const INVISIBLE_ON        : &str = invisible_on!();
+pub const INVISIBLE_OFF       : &str = invisible_off!();
 
-pub const STRIKETHROUGH_ON    : &str = csi!("9m");
-pub const STRIKETHROUGH_OFF   : &str = csi!("29m");
+pub const STRIKETHROUGH_ON    : &str = strikethrough_on!();
+pub const STRIKETHROUGH_OFF   : &str = strikethrough_off!();
 
-pub const ATTRIBUTES_DEFAULT  : &str = csi!("10;22;23;24;25;27;28;29m");
+pub const ATTRIBUTES_DEFAULT  : &str = attributes_default!();
 
 /// # Font selection
 pub const FONT_DEFAULT    : &str = csi!("10m");
