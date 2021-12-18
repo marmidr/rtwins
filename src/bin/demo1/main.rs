@@ -133,15 +133,15 @@ fn test_esc_codes() {
 
 #[allow(dead_code)]
 fn test_property_access() {
-    let title = |wgt: &rtwins::widget::Widget| match wgt.typ {
-        rtwins::widget::Type::Window(ref wp) => wp.title,
+    let title = |wgt: &rtwins::widget::Widget| match wgt.prop {
+        rtwins::widget::Property::Window(ref wp) => wp.title,
         _ => "<?>",
     };
 
     for (idx, w) in tui_def::WND_MAIN_ARRAY.iter().enumerate() {
         let w_par = rtwins::widget_impl::wgt_get_parent(w);
         println!("  {:2}. {:2}:{:10}, idx:{}, chidx:{}, parid {}:{}",
-            idx, w.id, w.typ, w.link.own_idx, w.link.childs_idx, w_par.id, w_par.typ);
+            idx, w.id, w.prop, w.link.own_idx, w.link.childs_idx, w_par.id, w_par.prop);
     }
 
     println!(
@@ -150,7 +150,7 @@ fn test_property_access() {
     );
     println!(
         "sizeof Type: {}",
-        std::mem::size_of::<rtwins::widget::Type>()
+        std::mem::size_of::<rtwins::widget::Property>()
     );
     println!("sizeof Id: {}", std::mem::size_of::<tui_def::Id>());
 }

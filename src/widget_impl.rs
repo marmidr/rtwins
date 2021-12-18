@@ -1,7 +1,7 @@
 //! # RTWins Widget
 
 use crate::{input, widget};
-use crate::widget::{Coord, WId, Widget, Type, WIDGET_ID_NONE};
+use crate::widget::{Coord, WId, Widget, Property, WIDGET_ID_NONE};
 
 #[allow(dead_code)]
 pub struct WidgetSearchStruct
@@ -49,11 +49,11 @@ pub const fn wgt_count(wgt: &Widget) -> usize {
 
 /// Checks if given widget is parent-type
 pub const fn wgt_is_parent(wgt: &Widget) -> bool {
-    match wgt.typ {
-        Type::Window(_) |
-        Type::Panel(_)  |
-        Type::Page(_)   => true,
-        _               => false
+    match wgt.prop {
+        Property::Window(_) |
+        Property::Panel(_)  |
+        Property::Page(_)   => true,
+        _                   => false
     }
 }
 
@@ -173,7 +173,7 @@ pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
 
         loop
         {
-            if let widget::Type::Window(_) = wgt.typ {
+            if let widget::Property::Window(_) = wgt.prop {
                 // TODO: for popups must be centered on parent window
                 coord = coord + parent.coord;
             }
@@ -181,7 +181,7 @@ pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
                 coord = coord + parent.coord;
             }
 
-            if let widget::Type::PageCtrl(ref p) = parent.typ {
+            if let widget::Property::PageCtrl(ref p) = parent.prop {
                 coord.col += p.tab_width;
             }
 

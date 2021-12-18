@@ -84,7 +84,7 @@ const PNL_STATE_CHILDS: &[Widget] = &[
     Widget {
         id: Id::LedBattery.into(),
         coord: Coord { col: 2, row: 1 },
-        typ: prop::Led {
+        prop: prop::Led {
             text: "(BATT)",
             fg_color: ColorFG::Black,
             bg_color_off: ColorBG::White,
@@ -95,7 +95,7 @@ const PNL_STATE_CHILDS: &[Widget] = &[
     Widget {
         id: Id::LedLock.into(),
         coord: Coord { col: 9, row: 1 },
-        typ: prop::Led {
+        prop: prop::Led {
             text: "(LOCK)",
             fg_color: ColorFG::Black,
             bg_color_off: ColorBG::White,
@@ -106,7 +106,7 @@ const PNL_STATE_CHILDS: &[Widget] = &[
     Widget {
         id: Id::LedPump.into(),
         coord: Coord { col: 16, row: 1 },
-        typ: prop::Led {
+        prop: prop::Led {
             text: "(PUMP)",
             fg_color: ColorFG::Red,
             bg_color_off: ColorBG::White,
@@ -123,7 +123,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
         link: Link::cdeflt(),
         coord: Coord { col: 1, row: 1 },
         size: Size { width: 21, height: 5 },
-        typ: prop::Panel {
+        prop: prop::Panel {
             title: "VER 🍁",
             fg_color: ColorFG::White,
             bg_color: ColorBG::Green,
@@ -133,7 +133,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
             Widget {
                 id: Id::LabelFwVersion.into(),
                 coord: Coord { col: 2, row: 1 },
-                typ: prop::Label {
+                prop: prop::Label {
                     title: "FwVer: 1.1",
                     fg_color: ColorFG::YellowIntense,
                     bg_color: ColorBG::Inherit,
@@ -144,7 +144,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
                 id: Id::LabelDate.into(),
                 coord: Coord { col: 2, row: 2 },
                 size: Size { width: 18, height: 1 },
-                typ: prop::Label {
+                prop: prop::Label {
                     title: "",
                     fg_color: ColorFG::Black,
                     bg_color: ColorBG::White,
@@ -155,7 +155,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
                 id: Id::LabelAbout.into(),
                 coord: Coord { col: 2, row: 3 },
                 size: Size { width: 0, height: 1 },
-                typ: prop::Label {
+                prop: prop::Label {
                     title: "",
                     fg_color: ColorFG::White,
                     bg_color: ColorBG::Inherit,
@@ -169,7 +169,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
         link: Link::cdeflt(),
         coord: Coord { col: 30, row: 1 },
         size: Size { width: 25, height: 3 },
-        typ: prop::Panel {
+        prop: prop::Panel {
             title: "STATE: Leds",
             fg_color: ColorFG::Blue,
             bg_color: ColorBG::White,
@@ -182,7 +182,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
         link: Link::cdeflt(),
         coord: Coord { col: 1, row: 7 },
         size: Size { width: 26, height: 4 },
-        typ: prop::Panel {
+        prop: prop::Panel {
             title: "KEY-CODES",
             fg_color: ColorFG::White,
             bg_color: ColorBG::Magenta,
@@ -193,7 +193,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
                 id: Id::LabelKeyseq.into(),
                 coord: Coord { col: 2, row: 1 },
                 size: Size { width: 22, height: 1 },
-                typ: prop::Label {
+                prop: prop::Label {
                     title: "",
                     fg_color: ColorFG::White,
                     bg_color: ColorBG::Inherit,
@@ -204,7 +204,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
                 id: Id::LabelKeyname.into(),
                 coord: Coord { col: 2, row: 2 },
                 size: Size { width: 17, height: 1 },
-                typ: prop::Label {
+                prop: prop::Label {
                     title: "",
                     fg_color: ColorFG::White,
                     bg_color: ColorBG::Inherit,
@@ -216,7 +216,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
     Widget {
         id: Id::ChbxEnbl.into(),
         coord: Coord { col: 30, row: 5 },
-        typ: prop::CheckBox {
+        prop: prop::CheckBox {
             text: "Enable",
             fg_color: ColorFG::White,
         }.into(),
@@ -225,7 +225,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
     Widget {
         id: Id::ChbxLock.into(),
         coord: Coord { col: 45, row: 5 },
-        typ: prop::CheckBox {
+        prop: prop::CheckBox {
             text: "Lock",
             fg_color: ColorFG::Inherit,
         }.into(),
@@ -234,7 +234,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
     Widget {
         id: Id::BtnYes.into(),
         coord: Coord { col: 30, row: 7 },
-        typ: prop::Button {
+        prop: prop::Button {
             text: "YES",
             fg_color: ColorFG::White,
             bg_color: ColorBG::Green,
@@ -245,7 +245,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
     Widget {
         id: Id::BtnNo.into(),
         coord: Coord { col: 38, row: 7 },
-        typ: prop::Button {
+        prop: prop::Button {
             text: "NO",
             fg_color: ColorFG::White,
             bg_color: ColorBG::Red,
@@ -256,7 +256,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
     Widget {
         id: Id::BtnPopup.into(),
         coord: Coord { col: 45, row: 7 },
-        typ: prop::Button {
+        prop: prop::Button {
             text: "POPUP",
             fg_color: ColorFG::White,
             bg_color: ColorBG::Inherit,
@@ -268,7 +268,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
         id: Id::Prgbar1.into(),
         coord: Coord { col: 30, row: 9 },
         size: Size { width: 25, height: 1 },
-        typ: prop::ProgressBar {
+        prop: prop::ProgressBar {
             fg_color: ColorFG::Yellow,
             style: PgBarStyle::Hash
         }.into(),
@@ -278,7 +278,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
         id: Id::Prgbar2.into(),
         coord: Coord { col: 30, row: 10 },
         size: Size { width: 12, height: 1 },
-        typ: prop::ProgressBar {
+        prop: prop::ProgressBar {
             fg_color: ColorFG::White,
             style: PgBarStyle::Shade
         }.into(),
@@ -288,7 +288,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
         id: Id::Prgbar3.into(),
         coord: Coord { col: 43, row: 10 },
         size: Size { width: 12, height: 1 },
-        typ: prop::ProgressBar {
+        prop: prop::ProgressBar {
             fg_color: ColorFG::Black,
             style: PgBarStyle::Rectangle
         }.into(),
@@ -300,14 +300,14 @@ const PAGE_VER_CHILDS: &[Widget] = &[
 const PAGE_SERV_CHILDS: &[Widget] = &[
     Widget {
         id: Id::Layer1.into(),
-        typ: prop::Layer {
+        prop: prop::Layer {
         }.into(),
         childs: &[
             Widget {
                 id: Id::LabelMultiFmt.into(),
                 coord: Coord { col: 24, row: 2 },
                 size: Size { width: 35, height: 4 },
-                typ: prop::Label {
+                prop: prop::Label {
                     title: "",
                     fg_color: ColorFG::YellowIntense,
                     bg_color: ColorBG::BlueIntense,
@@ -318,7 +318,7 @@ const PAGE_SERV_CHILDS: &[Widget] = &[
                 id: Id::ListBox.into(),
                 coord: Coord { col: 2, row: 2 },
                 size: Size { width: 20, height: 8 },
-                typ: prop::ListBox {
+                prop: prop::ListBox {
                     fg_color: ColorFG::Green,
                     bg_color: ColorBG::White,
                     no_frame: false
@@ -330,13 +330,13 @@ const PAGE_SERV_CHILDS: &[Widget] = &[
     },
     Widget {
         id: Id::Layer2.into(),
-        typ: prop::Layer {
+        prop: prop::Layer {
         }.into(),
         childs: &[
             Widget {
                 id: Id::Radio1.into(),
                 coord: Coord { col: 25, row: 7 },
-                typ: prop::Radio {
+                prop: prop::Radio {
                     text : "YES",
                     fg_color : ColorFG::GreenIntense,
                     group_id : 1,
@@ -347,7 +347,7 @@ const PAGE_SERV_CHILDS: &[Widget] = &[
             Widget {
                 id: Id::Radio2.into(),
                 coord: Coord { col: 35, row: 7 },
-                typ: prop::Radio {
+                prop: prop::Radio {
                     text : "NO",
                     fg_color : ColorFG::Yellow,
                     group_id : 1,
@@ -358,7 +358,7 @@ const PAGE_SERV_CHILDS: &[Widget] = &[
             Widget {
                 id: Id::Radio3.into(),
                 coord: Coord { col: 44, row: 7 },
-                typ: prop::Radio {
+                prop: prop::Radio {
                     text : "Don't know",
                     fg_color : ColorFG::Inherit,
                     group_id : 1,
@@ -372,7 +372,7 @@ const PAGE_SERV_CHILDS: &[Widget] = &[
     Widget {
         id: Id::ChbxL1.into(),
         coord: Coord { col: 25, row: 9 },
-        typ: prop::CheckBox {
+        prop: prop::CheckBox {
             text : "Layer 1",
             fg_color : ColorFG::Inherit,
         }.into(),
@@ -381,7 +381,7 @@ const PAGE_SERV_CHILDS: &[Widget] = &[
     Widget {
         id: Id::ChbxL2.into(),
         coord: Coord { col: 40, row: 9 },
-        typ: prop::CheckBox {
+        prop: prop::CheckBox {
             text : "Layer 2",
             fg_color : ColorFG::Inherit,
         }.into(),
@@ -395,7 +395,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
         id: Id::PanelEdt.into(),
         coord: Coord { col: 2, row: 1 },
         size: Size { width: 32, height: 5 },
-        typ: prop::Panel {
+        prop: prop::Panel {
             title : "",
             fg_color : ColorFG::White,
             bg_color : ColorBG::White,
@@ -406,7 +406,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
                 id: Id::Edt1.into(),
                 coord: Coord { col: 1, row: 1 },
                 size: Size { width: 30, height: 1 },
-                typ: prop::TextEdit {
+                prop: prop::TextEdit {
                     fg_color: ColorFG::Black,
                     bg_color: ColorBG::White,
                 }.into(),
@@ -416,7 +416,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
                 id: Id::Edt2.into(),
                 coord: Coord { col: 1, row: 3 },
                 size: Size { width: 30, height: 1 },
-                typ: prop::TextEdit {
+                prop: prop::TextEdit {
                     fg_color: ColorFG::Black,
                     bg_color: ColorBG::Yellow,
                 }.into(),
@@ -429,7 +429,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
         id: Id::CustomWgt1.into(),
         coord: Coord { col: 2, row: 6 },
         size: Size { width: 32, height: 4 },
-        typ: prop::CustomWgt {
+        prop: prop::CustomWgt {
         }.into(),
         ..Widget::cdeflt()
     },
@@ -437,7 +437,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
         id: Id::PanelChbx.into(),
         coord: Coord { col: 36, row: 1 },
         size: Size { width: 22, height: 10 },
-        typ: prop::Panel {
+        prop: prop::Panel {
             title : "",
             fg_color : ColorFG::White,
             bg_color : ColorBG::BlueIntense,
@@ -448,7 +448,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
                 id: Id::LblChbxTitle.into(),
                 coord: Coord { col: 2, row: 2 },
                 size: Size { width: 14, height: 1 },
-                typ: prop::Label {
+                prop: prop::Label {
                     title: "Check list:", // concat!(bold!(), "Check list:", normal!()),
                     fg_color: ColorFG::WhiteIntense,
                     bg_color: ColorBG::Inherit,
@@ -458,7 +458,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
             Widget {
                 id: Id::ChbxA.into(),
                 coord: Coord { col: 2, row: 4 },
-                typ: prop::CheckBox {
+                prop: prop::CheckBox {
                     text : "Check A ",
                     fg_color : ColorFG::YellowIntense,
                 }.into(),
@@ -467,7 +467,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
             Widget {
                 id: Id::ChbxB.into(),
                 coord: Coord { col: 2, row: 5 },
-                typ: prop::CheckBox {
+                prop: prop::CheckBox {
                     text : "Check B ",
                     fg_color : ColorFG::Inherit,
                 }.into(),
@@ -476,7 +476,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
             Widget {
                 id: Id::ChbxC.into(),
                 coord: Coord { col: 2, row: 6 },
-                typ: prop::CheckBox {
+                prop: prop::CheckBox {
                     text : "Check C ",
                     fg_color : ColorFG::Inherit,
                 }.into(),
@@ -485,7 +485,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
             Widget {
                 id: Id::ChbxD.into(),
                 coord: Coord { col: 2, row: 7 },
-                typ: prop::CheckBox {
+                prop: prop::CheckBox {
                     text : "Check D ",
                     fg_color : ColorFG::Inherit,
                 }.into(),
@@ -502,7 +502,7 @@ const PAGE_INACT_CHILDS: &[Widget] = &[
         id: Id::PanelEmpty1.into(),
         coord: Coord { col: 5, row: 1 },
         size: Size { width: 20, height: 10 },
-        typ: prop::Panel {
+        prop: prop::Panel {
             title : "Word-wrap",
             fg_color : ColorFG::Inherit,
             bg_color : ColorBG::Inherit,
@@ -513,7 +513,7 @@ const PAGE_INACT_CHILDS: &[Widget] = &[
                 id: Id::LblWordwrap.into(),
                 coord: Coord { col: 2, row: 1 },
                 size: Size { width: 16, height: 6 },
-                typ: prop::Label {
+                prop: prop::Label {
                     title: "",
                     fg_color: ColorFG::White,
                     bg_color: ColorBG::Blue,
@@ -523,7 +523,7 @@ const PAGE_INACT_CHILDS: &[Widget] = &[
             Widget {
                 id: Id::BtnNoaction.into(),
                 coord: Coord { col: 5, row: 8 },
-                typ: prop::Button {
+                prop: prop::Button {
                     text: "...",
                     fg_color: ColorFG::White,
                     bg_color: ColorBG::Inherit,
@@ -538,7 +538,7 @@ const PAGE_INACT_CHILDS: &[Widget] = &[
         id: Id::PanelEmpty2.into(),
         coord: Coord { col: 40, row: 1 },
         size: Size { width: 12, height: 10 },
-        typ: prop::Panel {
+        prop: prop::Panel {
             title : "...",
             fg_color : ColorFG::Inherit,
             bg_color : ColorBG::Inherit,
@@ -549,7 +549,7 @@ const PAGE_INACT_CHILDS: &[Widget] = &[
                 id: Id::LblEmpty2.into(),
                 coord: Coord { col: 2, row: 2 },
                 size: Size { width: 1, height: 1 },
-                typ: prop::Label {
+                prop: prop::Label {
                     title: "---",
                     fg_color: ColorFG::Inherit,
                     bg_color: ColorBG::Inherit,
@@ -567,7 +567,7 @@ const PAGE_TXTBOX_CHILDS: &[Widget] = &[
         id: Id::TbxLoremipsum.into(),
         coord: Coord { col: 3, row: 1 },
         size: Size { width: 40, height: 10 },
-        typ: prop::TextBox {
+        prop: prop::TextBox {
             fg_color: ColorFG::White,
             bg_color: ColorBG::Inherit,
         }.into(),
@@ -577,7 +577,7 @@ const PAGE_TXTBOX_CHILDS: &[Widget] = &[
         id: Id::Tbx1line.into(),
         coord: Coord { col: 46, row: 1 },
         size: Size { width: 12, height: 10 },
-        typ: prop::TextBox {
+        prop: prop::TextBox {
             fg_color: ColorFG::White,
             bg_color: ColorBG::BlueIntense,
         }.into(),
@@ -591,7 +591,7 @@ const PAGE_CMBBOX_CHILDS: &[Widget] = &[
         id: Id::CbxOptions.into(),
         coord: Coord { col: 10, row: 2 },
         size: Size { width: 20, height: 1 },
-        typ: prop::ComboBox {
+        prop: prop::ComboBox {
             fg_color: ColorFG::White,
             bg_color: ColorBG::BlueIntense,
             drop_down_size: 4
@@ -602,7 +602,7 @@ const PAGE_CMBBOX_CHILDS: &[Widget] = &[
         id: Id::LbxUnderoptions.into(),
         coord: Coord { col: 5, row: 4 },
         size: Size { width: 30, height: 7 },
-        typ: prop::ListBox {
+        prop: prop::ListBox {
             fg_color: ColorFG::Inherit,
             bg_color: ColorBG::Inherit,
             no_frame: false
@@ -612,7 +612,7 @@ const PAGE_CMBBOX_CHILDS: &[Widget] = &[
     Widget {
         id: Id::BtnSayYes.into(),
         coord: Coord { col: 38, row: 2 },
-        typ: prop::Button {
+        prop: prop::Button {
             text: "Say YES",
             fg_color: ColorFG::White,
             bg_color: ColorBG::Green,
@@ -623,7 +623,7 @@ const PAGE_CMBBOX_CHILDS: &[Widget] = &[
     Widget {
         id: Id::BtnSayNo.into(),
         coord: Coord { col: 38, row: 4 },
-        typ: prop::Button {
+        prop: prop::Button {
             text: "Say NO",
             fg_color: ColorFG::White,
             bg_color: ColorBG::Red,
@@ -634,7 +634,7 @@ const PAGE_CMBBOX_CHILDS: &[Widget] = &[
     Widget {
         id: Id::Btn1p5.into(),
         coord: Coord { col: 38, row: 7 },
-        typ: prop::Button {
+        prop: prop::Button {
             text: "   ????   ",
             fg_color: ColorFG::White,
             bg_color: ColorBG::GreenIntense,
@@ -652,7 +652,7 @@ const WINDOW_MAIN: Widget = Widget {
     link: Link::cdeflt(),
     coord: Coord { col: 15, row: 2 },
     size: Size { width: 80, height: 15 },
-    typ: prop::Window {
+    prop: prop::Window {
         title: "",
         fg_color: ColorFG::White,
         bg_color: ColorBG::Blue,
@@ -663,7 +663,7 @@ const WINDOW_MAIN: Widget = Widget {
             id: Id::BtnToaster.into(),
             coord: Coord { col: 1, row: 1 },
             size: Size { width: 14, height: 1 },
-            typ: prop::Button {
+            prop: prop::Button {
                 text: "",
                 fg_color: ColorFG::Yellow,
                 bg_color: ColorBG::Inherit,
@@ -675,14 +675,14 @@ const WINDOW_MAIN: Widget = Widget {
             id: Id::PgControl.into(),
             coord: Coord { col: 1, row: 1 },
             size: Size { width: 75, height: 12 },
-            typ: prop::PageCtrl {
+            prop: prop::PageCtrl {
                 tab_width: 14,
                 vert_offs: 2
             }.into(),
             childs: &[
                 Widget {
                     id: Id::PageVer.into(),
-                    typ: prop::Page {
+                    prop: prop::Page {
                         title: "Version",
                         fg_color: ColorFG::Yellow,
                     }.into(),
@@ -691,7 +691,7 @@ const WINDOW_MAIN: Widget = Widget {
                 },
                 Widget {
                     id: Id::PageServ.into(),
-                    typ: prop::Page {
+                    prop: prop::Page {
                         title: "Service ∑",
                         fg_color: ColorFG::White,
                     }.into(),
@@ -700,7 +700,7 @@ const WINDOW_MAIN: Widget = Widget {
                 },
                 Widget {
                     id: Id::PageDiag.into(),
-                    typ: prop::Page {
+                    prop: prop::Page {
                         title: "Diagnostics",
                         fg_color: ColorFG::Yellow,
                     }.into(),
@@ -709,7 +709,7 @@ const WINDOW_MAIN: Widget = Widget {
                 },
                 Widget {
                     id: Id::PageInactiv.into(),
-                    typ: prop::Page {
+                    prop: prop::Page {
                         title: "Inactiv 🍀",
                         fg_color: ColorFG::White,
                     }.into(),
@@ -718,7 +718,7 @@ const WINDOW_MAIN: Widget = Widget {
                 },
                 Widget {
                     id: Id::PageTextbox.into(),
-                    typ: prop::Page {
+                    prop: prop::Page {
                         title: "Text Box",
                         fg_color: ColorFG::White,
                     }.into(),
@@ -727,7 +727,7 @@ const WINDOW_MAIN: Widget = Widget {
                 },
                 Widget {
                     id: Id::PageCombobox.into(),
-                    typ: prop::Page {
+                    prop: prop::Page {
                         title: "Combo Box",
                         fg_color: ColorFG::White,
                     }.into(),
@@ -740,7 +740,7 @@ const WINDOW_MAIN: Widget = Widget {
         Widget {
             id: Id::LabelFtr.into(),
             coord: Coord { col: 1, row: 13 },
-            typ: prop::Label {
+            prop: prop::Label {
                 title:  concat!(
                     " ",
                     rtwins::csi!("7m"),

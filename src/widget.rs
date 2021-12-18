@@ -145,8 +145,8 @@ pub mod prop {
     }
 
     impl Window {
-        pub const fn into(self) -> super::Type {
-            super::Type::Window(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::Window(self)
         }
     }
 
@@ -159,8 +159,8 @@ pub mod prop {
     }
 
     impl Panel {
-        pub const fn into(self) -> super::Type {
-            super::Type::Panel(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::Panel(self)
         }
     }
 
@@ -172,8 +172,8 @@ pub mod prop {
     }
 
     impl Label {
-        pub const fn into(self) -> super::Type {
-            super::Type::Label(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::Label(self)
         }
     }
 
@@ -184,8 +184,8 @@ pub mod prop {
     }
 
     impl TextEdit {
-        pub const fn into(self) -> super::Type {
-            super::Type::TextEdit(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::TextEdit(self)
         }
     }
 
@@ -196,8 +196,8 @@ pub mod prop {
     }
 
     impl CheckBox {
-        pub const fn into(self) -> super::Type {
-            super::Type::CheckBox(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::CheckBox(self)
         }
     }
 
@@ -210,8 +210,8 @@ pub mod prop {
     }
 
     impl Radio {
-        pub const fn into(self) -> super::Type {
-            super::Type::Radio(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::Radio(self)
         }
     }
 
@@ -224,8 +224,8 @@ pub mod prop {
     }
 
     impl Button {
-        pub const fn into(self) -> super::Type {
-            super::Type::Button(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::Button(self)
         }
     }
 
@@ -238,8 +238,8 @@ pub mod prop {
     }
 
     impl Led {
-        pub const fn into(self) -> super::Type {
-            super::Type::Led(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::Led(self)
         }
     }
 
@@ -250,8 +250,8 @@ pub mod prop {
     }
 
     impl PageCtrl {
-        pub const fn into(self) -> super::Type {
-            super::Type::PageCtrl(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::PageCtrl(self)
         }
     }
 
@@ -262,8 +262,8 @@ pub mod prop {
     }
 
     impl Page {
-        pub const fn into(self) -> super::Type {
-            super::Type::Page(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::Page(self)
         }
     }
 
@@ -274,8 +274,8 @@ pub mod prop {
     }
 
     impl ProgressBar {
-        pub const fn into(self) -> super::Type {
-            super::Type::ProgressBar(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::ProgressBar(self)
         }
     }
 
@@ -287,8 +287,8 @@ pub mod prop {
     }
 
     impl ListBox {
-        pub const fn into(self) -> super::Type {
-            super::Type::ListBox(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::ListBox(self)
         }
     }
 
@@ -300,8 +300,8 @@ pub mod prop {
     }
 
     impl ComboBox {
-        pub const fn into(self) -> super::Type {
-            super::Type::ComboBox(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::ComboBox(self)
         }
     }
 
@@ -309,8 +309,8 @@ pub mod prop {
     pub struct CustomWgt {}
 
     impl CustomWgt {
-        pub const fn into(self) -> super::Type {
-            super::Type::CustomWgt(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::CustomWgt(self)
         }
     }
 
@@ -321,8 +321,8 @@ pub mod prop {
     }
 
     impl TextBox {
-        pub const fn into(self) -> super::Type {
-            super::Type::TextBox(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::TextBox(self)
         }
     }
 
@@ -330,15 +330,15 @@ pub mod prop {
     pub struct Layer {}
 
     impl Layer {
-        pub const fn into(self) -> super::Type {
-            super::Type::Layer(self)
+        pub const fn into(self) -> super::Property {
+            super::Property::Layer(self)
         }
     }
 }
 
 /// Widget type with all specific data
 #[derive(Copy, Clone)]
-pub enum Type {
+pub enum Property {
     NoWgt,
     Window(prop::Window),
     Panel(prop::Panel),
@@ -360,7 +360,7 @@ pub enum Type {
 
 use std::fmt;
 
-impl fmt::Display for Type {
+impl fmt::Display for Property {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let name = match self {
             Self::NoWgt         => "NoWgt",
@@ -385,7 +385,7 @@ impl fmt::Display for Type {
     }
 }
 
-impl Type {
+impl Property {
     /// Returns default object; can be used in `const` initialization
     pub const fn cdeflt() -> Self {
         Self::NoWgt
@@ -416,14 +416,14 @@ impl Type {
 pub struct Widget {
     /// Unique widget ID
     pub id: WId,
-    /// indexes used after flattening widget tree to array
-    pub link: Link,
     /// coordinates
     pub coord: Coord,
     /// widget size
     pub size: Size,
-    /// widget type with properties
-    pub typ: Type,
+    /// indexes used after flattening widget tree to array
+    pub link: Link,
+    /// widget properties defining it's type
+    pub prop: Property,
     /// link to children widgets, 2x8B
     pub childs: &'static [Widget],
 }
@@ -436,7 +436,7 @@ impl Widget {
             link: Link::cdeflt(),
             coord: Coord::cdeflt(),
             size: Size::cdeflt(),
-            typ: Type::cdeflt(),
+            prop: Property::cdeflt(),
             childs: &[],
         }
     }

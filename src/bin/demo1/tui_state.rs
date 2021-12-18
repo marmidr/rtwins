@@ -47,7 +47,7 @@ impl DemoWndState {
 
         ws.wstate.insert(Id::ChbxEnbl.into(), WidgetState{state: RuntimeState::Chbx{ checked: true }, enabled: true});
 
-        ws.wstate.insert(Id::PgControl.into(), WidgetState{state: RuntimeState::Pgctrl{ page: 1 }, enabled: true});
+        ws.wstate.insert(Id::PgControl.into(), WidgetState{state: RuntimeState::Pgctrl{ page: 0 }, enabled: true});
         return ws;
     }
 }

@@ -118,11 +118,6 @@ macro_rules! underline_on               { () => { $crate::csi!("4m") }; }
 macro_rules! underline_off              { () => { $crate::csi!("24m") }; }
 
 #[macro_export]
-macro_rules! overline_on                { () => { $crate::csi!("53m") }; }
-#[macro_export]
-macro_rules! overline_off               { () => { $crate::csi!("55m") }; }
-
-#[macro_export]
 macro_rules! blink                      { () => { $crate::csi!("5m") }; }
 #[macro_export]
 macro_rules! blink_off                  { () => { $crate::csi!("25m") }; }

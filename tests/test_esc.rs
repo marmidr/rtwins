@@ -35,8 +35,6 @@ fn test_colors_attributes() {
         + ITALICS_OFF
         + UNDERLINE_ON
         + UNDERLINE_OFF
-        + OVERLINE_ON
-        + OVERLINE_OFF
         + BLINK
         + BLINK_OFF
         + INVERSE_ON
@@ -47,7 +45,7 @@ fn test_colors_attributes() {
         + STRIKETHROUGH_OFF
         + ATTRIBUTES_DEFAULT;
 
-    assert_eq!(count_esc(&s), 18);
+    assert_eq!(count_esc(&s), 16);
 }
 
 /// Check if all colors are available

@@ -96,23 +96,23 @@ fn draw_widget_internal(dctx: &mut DrawCtx)
     // println!("drawing {}", dctx.wgt.typ);
     dctx.strbuff.clear();
 
-    match dctx.wgt.typ {
-        Type::Window(ref p) => draw_window(dctx, p),
-        Type::Panel(ref p) => draw_panel(dctx, p),
-        Type::Label(ref p) => draw_label(dctx, p),
-        Type::TextEdit(ref p) => draw_text_edit(dctx, p),
-        Type::CheckBox(ref p) => draw_checkbox(dctx, p),
-        Type::Radio(ref p) => draw_radio(dctx, p),
-        Type::Button(ref p) => draw_button(dctx, p),
-        Type::Led(ref p) => draw_led(dctx, p),
-        Type::PageCtrl(ref p) => draw_page_control(dctx, p),
-        Type::Page(ref p) => draw_page(dctx, p, true),
-        Type::ProgressBar(ref p) => draw_progress_bar(dctx, p),
-        Type::ListBox(ref p) => draw_list_box(dctx, p),
-        Type::ComboBox(ref p) => draw_combo_box(dctx, p),
-        Type::CustomWgt(ref p) => draw_custom_wgt(dctx, p),
-        Type::TextBox(ref p) => draw_text_box(dctx, p),
-        Type::Layer(ref p) => draw_layer(dctx, p),
+    match dctx.wgt.prop {
+        Property::Window(ref p) => draw_window(dctx, p),
+        Property::Panel(ref p) => draw_panel(dctx, p),
+        Property::Label(ref p) => draw_label(dctx, p),
+        Property::TextEdit(ref p) => draw_text_edit(dctx, p),
+        Property::CheckBox(ref p) => draw_checkbox(dctx, p),
+        Property::Radio(ref p) => draw_radio(dctx, p),
+        Property::Button(ref p) => draw_button(dctx, p),
+        Property::Led(ref p) => draw_led(dctx, p),
+        Property::PageCtrl(ref p) => draw_page_control(dctx, p),
+        Property::Page(ref p) => draw_page(dctx, p, true),
+        Property::ProgressBar(ref p) => draw_progress_bar(dctx, p),
+        Property::ListBox(ref p) => draw_list_box(dctx, p),
+        Property::ComboBox(ref p) => draw_combo_box(dctx, p),
+        Property::CustomWgt(ref p) => draw_custom_wgt(dctx, p),
+        Property::TextBox(ref p) => draw_text_box(dctx, p),
+        Property::Layer(ref p) => draw_layer(dctx, p),
         _ => {}
     }
 
@@ -611,8 +611,8 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
                 break;
             }
 
-            let page_prp = match page.typ {
-                Type::Page(ref p) => p,
+            let page_prp = match page.prop {
+                Property::Page(ref p) => p,
                 _ => panic!()
             };
 
@@ -663,7 +663,7 @@ fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/)
     if erase_bg {
         let pgctrl = wgt_get_parent(dctx.wgt);
 
-        if let Type::PageCtrl(ref pgctrl_prp) = pgctrl.typ {
+        if let Property::PageCtrl(ref pgctrl_prp) = pgctrl.prop {
             let page_coord = wgt_get_screen_coord(dctx.wgt);
             let page_size = pgctrl.size - Size::new(pgctrl_prp.tab_width, 0);
 
@@ -1081,15 +1081,15 @@ fn draw_list_scroll_bar_v(ctx: &mut Ctx, coord: Coord, height: i8, max: i32, pos
 }
 
 fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
-    let mut cl = match wgt.typ {
-        Type::Window(ref p) => p.bg_color,
-        Type::Panel(ref p) => p.bg_color,
-        Type::Label(ref p) => p.bg_color,
-        Type::TextEdit(ref p) => p.bg_color,
-        Type::Button(ref p) => p.bg_color,
-        Type::ListBox(ref p) => p.bg_color,
-        Type::ComboBox(ref p) => p.bg_color,
-        Type::TextBox(ref p) => p.bg_color,
+    let mut cl = match wgt.prop {
+        Property::Window(ref p) => p.bg_color,
+        Property::Panel(ref p) => p.bg_color,
+        Property::Label(ref p) => p.bg_color,
+        Property::TextEdit(ref p) => p.bg_color,
+        Property::Button(ref p) => p.bg_color,
+        Property::ListBox(ref p) => p.bg_color,
+        Property::ComboBox(ref p) => p.bg_color,
+        Property::TextBox(ref p) => p.bg_color,
         _ => ColorBG::Inherit
     };
 
@@ -1102,20 +1102,20 @@ fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
 }
 
 fn get_widget_fg_color(wgt: &Widget) -> ColorFG {
-    let mut cl = match wgt.typ {
-        Type::Window(ref p) => p.fg_color,
-        Type::Panel(ref p) => p.fg_color,
-        Type::Label(ref p) => p.fg_color,
-        Type::TextEdit(ref p) => p.fg_color,
-        Type::CheckBox(ref p) => p.fg_color,
-        Type::Radio(ref p) => p.fg_color,
-        Type::Button(ref p) => p.fg_color,
-        Type::Led(ref p) => p.fg_color,
-        Type::Page(ref p) => p.fg_color,
-        Type::ProgressBar(ref p) => p.fg_color,
-        Type::ListBox(ref p) => p.fg_color,
-        Type::ComboBox(ref p) => p.fg_color,
-        Type::TextBox(ref p) => p.fg_color,
+    let mut cl = match wgt.prop {
+        Property::Window(ref p) => p.fg_color,
+        Property::Panel(ref p) => p.fg_color,
+        Property::Label(ref p) => p.fg_color,
+        Property::TextEdit(ref p) => p.fg_color,
+        Property::CheckBox(ref p) => p.fg_color,
+        Property::Radio(ref p) => p.fg_color,
+        Property::Button(ref p) => p.fg_color,
+        Property::Led(ref p) => p.fg_color,
+        Property::Page(ref p) => p.fg_color,
+        Property::ProgressBar(ref p) => p.fg_color,
+        Property::ListBox(ref p) => p.fg_color,
+        Property::ComboBox(ref p) => p.fg_color,
+        Property::TextBox(ref p) => p.fg_color,
         _ => ColorFG::Inherit
     };
 
