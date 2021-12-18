@@ -29,8 +29,8 @@ Implementation is based on:
 ## Secondary goals
 
 * widgets (controls) to implement
-  * [ ] window
-  * [ ] panel
+  * [x] window
+  * [x] panel
   * [ ] static label / led
   * [ ] check box
   * [ ] edit field (text/number)
@@ -79,6 +79,8 @@ cargo r --features=fast_fill
 
 ```bash
 cargo t
+# to show println! messages from tests:
+cargo test -- --color always --nocapture
 ```
 
 ## Test coverage

@@ -74,9 +74,8 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
     let mut fm = FontMementoManual::new();
     fm.store(ctx);
 
-/*
-    g_ws.pFocusedWgt = getWidgetByWID(dctx, ctx.stat.getFocusedID());
-*/
+    // TODO: g_ws.pFocusedWgt = getWidgetByWID(dctx, ctx.stat.getFocusedID());
+
     ctx.cursor_hide();
     ctx.flush_buff();
 
@@ -91,7 +90,7 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
     else {
         for i in 0..wids.len() {
             let _wss = WidgetSearchStruct::new(wids[i]);
- /*
+        /*
             if (getWidgetWSS(dctx, wss) && wss.isVisible)
             {
                 dctx.parentCoord = wss.parentCoord;
@@ -100,16 +99,14 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
                 drawWidgetInternal(dctx, wss.pWidget);
                 popClBg();
             }
-  */
+        */
         }
     }
 
     ctx.reset_attr();
     ctx.reset_cl_bg();
     ctx.reset_cl_fg();
-/*
-    setCursorAt(dctx, g_ws.pFocusedWgt);
-*/
+    // TODO: setCursorAt(dctx, g_ws.pFocusedWgt);
     ctx.cursor_show();
     fm.restore(ctx);
     ctx.flush_buff();
@@ -274,14 +271,15 @@ fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label)
     ctx.push_cl_bg(get_widget_bg_color(dctx.wgt));
 
     // print all lines
-    ctx.move_to(
-        dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
-        dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
+    let col = dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16;
+    let row = dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16;
+    ctx.move_to(col, row);
 
     let max_lines = if dctx.wgt.size.height > 0 { dctx.wgt.size.height } else { 50 };
     let line_width = dctx.wgt.size.width;
 
     for (line, s) in title.lines().enumerate() {
+        dctx.strbuff.clear();
         dctx.strbuff.push_str(s);
 
         if line_width > 0 {
@@ -289,8 +287,7 @@ fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label)
         }
 
         ctx.write_str(dctx.strbuff.as_str());
-        let w = UnicodeWidthStr::width(dctx.strbuff.as_str()) as i16;
-        ctx.move_by(-w, 1);
+        ctx.move_to(col, row + 1 + line as u16);
         ctx.flush_buff();
         if line as u8 == max_lines {
             break;
@@ -635,7 +632,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
     // draw tabs and pages
     {
         let pgctrl = dctx.wgt;
-        let pg_idx = dctx.wnd_state.get_page_ctrl_page_index(pgctrl);
+        let cur_pg_idx = dctx.wnd_state.get_page_ctrl_page_index(pgctrl) as usize;
         let focused = dctx.wnd_state.is_focused(pgctrl);
         dctx.parent_coord.col += prp.tab_width;
 
@@ -653,7 +650,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
             // draw tab title
             dctx.strbuff.clear();
 
-            if idx as i8 == pg_idx {
+            if idx == cur_pg_idx {
                 dctx.strbuff.push_str("►");
             }
             else {
@@ -672,13 +669,13 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
                     my_coord.col as u16,
                     my_coord.row as u16 + prp.vert_offs as u16 + idx as u16 + 1);
                 ctx.push_cl_fg(clfg);
-                if idx as i8 == pg_idx { ctx.push_attr(FontAttrib::Inverse); }
+                if idx == cur_pg_idx { ctx.push_attr(FontAttrib::Inverse); }
                 ctx.write_str(dctx.strbuff.as_str());
-                if idx as i8 == pg_idx { ctx.pop_attr(); }
+                if idx == cur_pg_idx { ctx.pop_attr(); }
                 ctx.pop_cl_fg();
             }
 
-            if idx as i8 == pg_idx && dctx.wnd_state.is_visible(page) {
+            if idx == cur_pg_idx && dctx.wnd_state.is_visible(page) {
                 dctx.ctx.borrow_mut().flush_buff();
                 dctx.wgt = page;
                 draw_page(dctx, page_prp, false);

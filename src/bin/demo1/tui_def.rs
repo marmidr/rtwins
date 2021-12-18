@@ -295,6 +295,354 @@ const PAGE_VER_CHILDS: &[Widget] = &[
     },
 ];
 
+#[rustfmt::skip]
+const PAGE_SERV_CHILDS: &[Widget] = &[
+    Widget {
+        id: Id::Layer1.into(),
+        typ: prop::Layer {
+        }.into(),
+        childs: &[
+            Widget {
+                id: Id::LabelMultiFmt.into(),
+                coord: Coord { col: 24, row: 2 },
+                size: Size { width: 35, height: 4 },
+                typ: prop::Label {
+                    title: "",
+                    fg_color: ColorFG::YellowIntense,
+                    bg_color: ColorBG::BlueIntense,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+            Widget {
+                id: Id::ListBox.into(),
+                coord: Coord { col: 2, row: 2 },
+                size: Size { width: 20, height: 8 },
+                typ: prop::ListBox {
+                    fg_color: ColorFG::Green,
+                    bg_color: ColorBG::White,
+                    no_frame: false
+                }.into(),
+                ..Widget::cdeflt()
+            },
+        ],
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: Id::Layer2.into(),
+        typ: prop::Layer {
+        }.into(),
+        childs: &[
+            Widget {
+                id: Id::Radio1.into(),
+                coord: Coord { col: 25, row: 7 },
+                typ: prop::Radio {
+                    text : "YES",
+                    fg_color : ColorFG::GreenIntense,
+                    group_id : 1,
+                    radio_id : 0,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+            Widget {
+                id: Id::Radio2.into(),
+                coord: Coord { col: 35, row: 7 },
+                typ: prop::Radio {
+                    text : "NO",
+                    fg_color : ColorFG::Yellow,
+                    group_id : 1,
+                    radio_id : 1,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+            Widget {
+                id: Id::Radio3.into(),
+                coord: Coord { col: 44, row: 7 },
+                typ: prop::Radio {
+                    text : "Don't know",
+                    fg_color : ColorFG::Inherit,
+                    group_id : 1,
+                    radio_id : 3,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+        ],
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: Id::ChbxL1.into(),
+        coord: Coord { col: 25, row: 9 },
+        typ: prop::CheckBox {
+            text : "Layer 1",
+            fg_color : ColorFG::Inherit,
+        }.into(),
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: Id::ChbxL2.into(),
+        coord: Coord { col: 40, row: 9 },
+        typ: prop::CheckBox {
+            text : "Layer 2",
+            fg_color : ColorFG::Inherit,
+        }.into(),
+        ..Widget::cdeflt()
+    },
+];
+
+#[rustfmt::skip]
+const PAGE_DIAG_CHILDS: &[Widget] = &[
+    Widget {
+        id: Id::PanelEdt.into(),
+        coord: Coord { col: 2, row: 1 },
+        size: Size { width: 32, height: 5 },
+        typ: prop::Panel {
+            title : "",
+            fg_color : ColorFG::White,
+            bg_color : ColorBG::White,
+            no_frame : true,
+        }.into(),
+        childs: &[
+            Widget {
+                id: Id::Edt1.into(),
+                coord: Coord { col: 1, row: 1 },
+                size: Size { width: 30, height: 1 },
+                typ: prop::TextEdit {
+                    fg_color: ColorFG::Black,
+                    bg_color: ColorBG::White,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+            Widget {
+                id: Id::Edt2.into(),
+                coord: Coord { col: 1, row: 3 },
+                size: Size { width: 30, height: 1 },
+                typ: prop::TextEdit {
+                    fg_color: ColorFG::Black,
+                    bg_color: ColorBG::Yellow,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+        ],
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: Id::CustomWgt1.into(),
+        coord: Coord { col: 2, row: 6 },
+        size: Size { width: 32, height: 4 },
+        typ: prop::CustomWgt {
+        }.into(),
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: Id::PanelChbx.into(),
+        coord: Coord { col: 36, row: 1 },
+        size: Size { width: 22, height: 10 },
+        typ: prop::Panel {
+            title : "",
+            fg_color : ColorFG::White,
+            bg_color : ColorBG::BlueIntense,
+            no_frame : false,
+        }.into(),
+        childs: &[
+            Widget {
+                id: Id::LblChbxTitle.into(),
+                coord: Coord { col: 2, row: 2 },
+                size: Size { width: 14, height: 1 },
+                typ: prop::Label {
+                    title: "Check list:", // ESC_BOLD "Check list:" ESC_NORMAL
+                    fg_color: ColorFG::WhiteIntense,
+                    bg_color: ColorBG::Inherit,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+            Widget {
+                id: Id::ChbxA.into(),
+                coord: Coord { col: 2, row: 4 },
+                typ: prop::CheckBox {
+                    text : "Check A ",
+                    fg_color : ColorFG::YellowIntense,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+            Widget {
+                id: Id::ChbxB.into(),
+                coord: Coord { col: 2, row: 5 },
+                typ: prop::CheckBox {
+                    text : "Check B ",
+                    fg_color : ColorFG::Inherit,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+            Widget {
+                id: Id::ChbxC.into(),
+                coord: Coord { col: 2, row: 6 },
+                typ: prop::CheckBox {
+                    text : "Check C ",
+                    fg_color : ColorFG::Inherit,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+            Widget {
+                id: Id::ChbxD.into(),
+                coord: Coord { col: 2, row: 7 },
+                typ: prop::CheckBox {
+                    text : "Check D ",
+                    fg_color : ColorFG::Inherit,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+        ],
+        ..Widget::cdeflt()
+    }
+];
+
+#[rustfmt::skip]
+const PAGE_INACT_CHILDS: &[Widget] = &[
+    Widget {
+        id: Id::PanelEmpty1.into(),
+        coord: Coord { col: 5, row: 1 },
+        size: Size { width: 20, height: 10 },
+        typ: prop::Panel {
+            title : "Word-wrap",
+            fg_color : ColorFG::Inherit,
+            bg_color : ColorBG::Inherit,
+            no_frame : true,
+        }.into(),
+        childs: &[
+            Widget {
+                id: Id::LblWordwrap.into(),
+                coord: Coord { col: 2, row: 1 },
+                size: Size { width: 16, height: 6 },
+                typ: prop::Label {
+                    title: "",
+                    fg_color: ColorFG::White,
+                    bg_color: ColorBG::Blue,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+            Widget {
+                id: Id::BtnNoaction.into(),
+                coord: Coord { col: 5, row: 8 },
+                typ: prop::Button {
+                    text: "...",
+                    fg_color: ColorFG::White,
+                    bg_color: ColorBG::Inherit,
+                    style: ButtonStyle::Simple
+                }.into(),
+                ..Widget::cdeflt()
+            },
+        ],
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: Id::PanelEmpty2.into(),
+        coord: Coord { col: 40, row: 1 },
+        size: Size { width: 12, height: 10 },
+        typ: prop::Panel {
+            title : "...",
+            fg_color : ColorFG::Inherit,
+            bg_color : ColorBG::Inherit,
+            no_frame : false,
+        }.into(),
+        childs: &[
+            Widget {
+                id: Id::LblEmpty2.into(),
+                coord: Coord { col: 2, row: 2 },
+                size: Size { width: 1, height: 1 },
+                typ: prop::Label {
+                    title: "---",
+                    fg_color: ColorFG::Inherit,
+                    bg_color: ColorBG::Inherit,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+        ],
+        ..Widget::cdeflt()
+    },
+];
+
+#[rustfmt::skip]
+const PAGE_TXTBOX_CHILDS: &[Widget] = &[
+    Widget {
+        id: Id::TbxLoremipsum.into(),
+        coord: Coord { col: 3, row: 1 },
+        size: Size { width: 40, height: 10 },
+        typ: prop::TextBox {
+            fg_color: ColorFG::White,
+            bg_color: ColorBG::Inherit,
+        }.into(),
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: Id::Tbx1line.into(),
+        coord: Coord { col: 46, row: 1 },
+        size: Size { width: 12, height: 10 },
+        typ: prop::TextBox {
+            fg_color: ColorFG::White,
+            bg_color: ColorBG::BlueIntense,
+        }.into(),
+        ..Widget::cdeflt()
+    },
+];
+
+#[rustfmt::skip]
+const PAGE_CMBBOX_CHILDS: &[Widget] = &[
+    Widget {
+        id: Id::CbxOptions.into(),
+        coord: Coord { col: 10, row: 2 },
+        size: Size { width: 20, height: 1 },
+        typ: prop::ComboBox {
+            fg_color: ColorFG::White,
+            bg_color: ColorBG::BlueIntense,
+            drop_down_size: 4
+        }.into(),
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: Id::LbxUnderoptions.into(),
+        coord: Coord { col: 5, row: 4 },
+        size: Size { width: 30, height: 7 },
+        typ: prop::ListBox {
+            fg_color: ColorFG::Inherit,
+            bg_color: ColorBG::Inherit,
+            no_frame: false
+        }.into(),
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: Id::BtnSayYes.into(),
+        coord: Coord { col: 38, row: 2 },
+        typ: prop::Button {
+            text: "Say YES",
+            fg_color: ColorFG::White,
+            bg_color: ColorBG::Green,
+            style: ButtonStyle::Simple
+        }.into(),
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: Id::BtnSayNo.into(),
+        coord: Coord { col: 38, row: 4 },
+        typ: prop::Button {
+            text: "Say NO",
+            fg_color: ColorFG::White,
+            bg_color: ColorBG::Red,
+            style: ButtonStyle::Simple
+        }.into(),
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: Id::Btn1p5.into(),
+        coord: Coord { col: 38, row: 7 },
+        typ: prop::Button {
+            text: "   ????   ",
+            fg_color: ColorFG::White,
+            bg_color: ColorBG::GreenIntense,
+            style: ButtonStyle::Solid1p5
+        }.into(),
+        ..Widget::cdeflt()
+    },
+];
+
 // ---------------------------------------------------------------------------------------------- //
 
 #[rustfmt::skip]
@@ -346,7 +694,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Service ∑",
                         fg_color: ColorFG::White,
                     }.into(),
-                    childs: &[],
+                    childs: &PAGE_SERV_CHILDS,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -355,7 +703,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Diagnostics",
                         fg_color: ColorFG::Yellow,
                     }.into(),
-                    childs: &[],
+                    childs: &PAGE_DIAG_CHILDS,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -364,7 +712,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Inactiv 🍀",
                         fg_color: ColorFG::White,
                     }.into(),
-                    childs: &[],
+                    childs: &PAGE_INACT_CHILDS,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -373,7 +721,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Text Box",
                         fg_color: ColorFG::White,
                     }.into(),
-                    childs: &[],
+                    childs: &PAGE_TXTBOX_CHILDS,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -382,7 +730,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Combo Box",
                         fg_color: ColorFG::White,
                     }.into(),
-                    childs: &[],
+                    childs: &PAGE_CMBBOX_CHILDS,
                     ..Widget::cdeflt()
                 },
             ],

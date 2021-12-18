@@ -20,6 +20,8 @@ pub struct DemoWndState {
     text_edit_txt: String,
     /// list of widgets to redraw
     invalidated: Vec<widget::WId>,
+    //
+    radiogrp1_idx: i16
 }
 
 impl DemoWndState {
@@ -29,6 +31,7 @@ impl DemoWndState {
             focused_id: WIDGET_ID_NONE,
             text_edit_txt: String::new(),
             invalidated: vec![],
+            radiogrp1_idx: 1
         };
 
         use tui_def::Id;
@@ -43,6 +46,7 @@ impl DemoWndState {
 
         ws.wstate.insert(Id::ChbxEnbl.into(), WidgetState{state: RuntimeState::Chbx{ checked: true }, enabled: true});
 
+        ws.wstate.insert(Id::PgControl.into(), WidgetState{state: RuntimeState::Pgctrl{ page: 1 }, enabled: true});
         return ws;
     }
 }
@@ -118,7 +122,7 @@ impl WindowState for DemoWndState {
     }
 
     fn on_radio_select(&mut self, wgt: &Widget) {
-
+        // TODO: self.radiogrp1_idx =
     }
 
     fn on_text_box_scroll(&mut self, wgt: &Widget, top_line: i16) {
@@ -201,6 +205,30 @@ impl WindowState for DemoWndState {
             use rtwins::link;
             txt.push_str(link!("https://bitbucket.org/marmidr/twins", "About..."));
         }
+
+        if wgt.id == tui_def::Id::LabelMultiFmt.into() {
+            // TODO: extend String with << operator, extraxt StringExt to separate unit
+            txt.push_str("  ▫▫▫▫▫ ");
+            txt.push_str(esc::INVERSE_ON);
+            txt.push_str("ListBox");
+            txt.push_str(esc::INVERSE_OFF);
+            txt.push_str(" ▫▫▫▫▫\n");
+            txt.push_str("• ");
+            txt.push_str(esc::UNDERLINE_ON);
+            txt.push_str("Up/Down");
+            txt.push_str(esc::UNDERLINE_OFF);
+            txt.push_str(" -> change item\n");
+            txt.push_str("• ");
+            txt.push_str(esc::UNDERLINE_ON);
+            txt.push_str("PgUp/PgDown");
+            txt.push_str(esc::UNDERLINE_OFF);
+            txt.push_str(" -> scroll page\n");
+            txt.push_str("• ");
+            txt.push_str(esc::UNDERLINE_ON);
+            txt.push_str("Enter");
+            txt.push_str(esc::UNDERLINE_OFF);
+            txt.push_str(" -> select the item");
+        }
     }
 
     fn get_text_edit_text(&mut self, wgt: &Widget, txt: &mut String, edit_mode: bool) {
@@ -229,8 +257,13 @@ impl WindowState for DemoWndState {
         }
     }
 
-    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> i8 {
-        return 0;
+    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u8 {
+        if let Some(ws) = self.wstate.get(&wgt.id) {
+            if let widget::RuntimeState::Pgctrl { page } = ws.state {
+                return page;
+            }
+        }
+        0
     }
 
     fn get_list_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16) {
@@ -250,7 +283,7 @@ impl WindowState for DemoWndState {
     }
 
     fn get_radio_index(&mut self, wgt: &Widget) -> i16 {
-        return -1;
+        return self.radiogrp1_idx;
     }
 
     fn get_text_box_state(&mut self, wgt: &Widget, lines: &[&str], top_line: &mut i16) {

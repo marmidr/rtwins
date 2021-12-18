@@ -30,8 +30,8 @@ impl Add for Coord {
     type Output = Self;
     fn add(self, other: Coord) -> Coord {
         Coord {
-            col: self.col + other.col,
-            row: self.row + other.row,
+            col: self.col.saturating_add(other.col),
+            row: self.row.saturating_add(other.row),
         }
     }
 }
@@ -58,8 +58,8 @@ impl Sub for Size {
     type Output = Self;
     fn sub(self, other: Size) -> Size {
         Size {
-            width:  self.width - other.width,
-            height: self.height - other.height,
+            width:  self.width.saturating_sub(other.width),
+            height: self.height.saturating_sub(other.height),
         }
     }
 }
@@ -493,7 +493,7 @@ pub enum RuntimeState {
     },
     Pgctrl {
         page: u8
-    }
+    },
 }
 
 pub struct WidgetState {
@@ -549,7 +549,7 @@ pub trait WindowState {
     fn get_led_lit(&mut self, wgt: &Widget) -> bool { return false; }
     fn get_led_text(&mut self, wgt: &Widget, txt: &mut String) {}
     fn get_progress_bar_state(&mut self, wgt: &Widget, pos: &mut i32, max: &mut i32) {}
-    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> i8 { return 0; }
+    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u8 { return 0; }
     fn get_list_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16) {}
     fn get_list_box_item(&mut self, wgt: &Widget, item_idx: &mut i16, txt: &mut String) {}
     fn get_combo_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16, drop_down: &mut bool) {}
