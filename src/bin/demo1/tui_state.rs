@@ -1,6 +1,7 @@
 //! Demo - window state
 
 use std::collections::HashMap;
+use rtwins::string_ext::*;
 use rtwins::widget;
 use rtwins::esc;
 use rtwins::widget::*;
@@ -177,12 +178,14 @@ impl WindowState for DemoWndState {
     }
 
     fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {
-        txt.push_str(esc::BOLD);
-        txt.push_str("** Service Menu **");
-        txt.push_str(esc::NORMAL);
-        txt.push_str(esc::UNDERLINE_ON);
-        txt.push_str(" (Ctrl+D quit)");
-        txt.push_str(esc::UNDERLINE_OFF);
+        let _ = StrOps::new(txt)
+            << esc::BOLD
+            << "** Service Menu **"
+            << esc::NORMAL
+            << esc::UNDERLINE_ON
+            << " (Ctrl+D quit)"
+            << esc::UNDERLINE_OFF
+            ;
     }
 
     fn get_checkbox_checked(&mut self, wgt: &Widget) -> bool {
@@ -207,27 +210,28 @@ impl WindowState for DemoWndState {
         }
 
         if wgt.id == tui_def::Id::LabelMultiFmt.into() {
-            // TODO: extend String with << operator, extraxt StringExt to separate unit
-            txt.push_str("  ▫▫▫▫▫ ");
-            txt.push_str(esc::INVERSE_ON);
-            txt.push_str("ListBox");
-            txt.push_str(esc::INVERSE_OFF);
-            txt.push_str(" ▫▫▫▫▫\n");
-            txt.push_str("• ");
-            txt.push_str(esc::UNDERLINE_ON);
-            txt.push_str("Up/Down");
-            txt.push_str(esc::UNDERLINE_OFF);
-            txt.push_str(" -> change item\n");
-            txt.push_str("• ");
-            txt.push_str(esc::UNDERLINE_ON);
-            txt.push_str("PgUp/PgDown");
-            txt.push_str(esc::UNDERLINE_OFF);
-            txt.push_str(" -> scroll page\n");
-            txt.push_str("• ");
-            txt.push_str(esc::UNDERLINE_ON);
-            txt.push_str("Enter");
-            txt.push_str(esc::UNDERLINE_OFF);
-            txt.push_str(" -> select the item");
+            let _ = StrOps::new(txt)
+                << "  ▫▫▫▫▫ "
+                << esc::INVERSE_ON
+                << "ListBox"
+                << esc::INVERSE_OFF
+                << " ▫▫▫▫▫\n"
+                << "• "
+                << esc::UNDERLINE_ON
+                << "Up/Down"
+                << esc::UNDERLINE_OFF
+                << " -> change item\n"
+                << "• "
+                << esc::UNDERLINE_ON
+                << "PgUp/PgDown"
+                << esc::UNDERLINE_OFF
+                << " -> scroll page\n"
+                << "• "
+                << esc::UNDERLINE_ON
+                << "Enter"
+                << esc::UNDERLINE_OFF
+                << " -> select the item"
+                ;
         }
     }
 

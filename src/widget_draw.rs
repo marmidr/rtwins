@@ -4,7 +4,6 @@
 #![allow(unused_variables)]
 
 use std::cell::RefCell;
-use std::fmt::Write;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{FontMementoManual, FontMemento, FontAttrib, colors};
@@ -12,38 +11,8 @@ use crate::widget_impl::*;
 use crate::widget::*;
 use crate::colors::*;
 use crate::Ctx;
+use crate::string_ext::*;
 use crate::esc;
-
-// ---------------------------------------------------------------------------------------------- //
-
-/// Trait extending base `String` functionality
-trait StrExt {
-    /// Push ANSI escape sequence, replacing `{0}` with the `val`
-    fn push_esc_fmt(&mut self, escfmt: &str, val: i16);
-    /// Push `repeat` copies of `c`
-    fn push_n(&mut self, c: char, n: i16);
-    /// Set displayed width to `w` according to Unicode Standard
-    fn set_width(&mut self, w: i16);
-}
-
-impl StrExt for String {
-    fn push_esc_fmt(&mut self, escfmt: &str, val: i16) {
-        if let Some((a, b)) = escfmt.split_once("{0}") {
-            self.write_fmt(format_args!("{}{}{}", a, val, b)).unwrap_or_default();
-        }
-    }
-
-    fn push_n(&mut self, c: char, repeat: i16) {
-        for i in 0..repeat {
-            self.push(c);
-        }
-    }
-
-    fn set_width(&mut self, w: i16) {
-        let n = UnicodeWidthStr::width(self.as_str());
-        self.push_n(' ', w - n as i16);
-    }
-}
 
 // ---------------------------------------------------------------------------------------------- //
 
