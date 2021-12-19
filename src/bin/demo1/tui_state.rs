@@ -13,8 +13,8 @@ use super::tui_def;
 pub struct DemoWndState {
     /// all window widgets, starting with the window widget itself
     widgets: &'static [Widget],
-    /// widgets state
-    wstate: HashMap<WId, WidgetState>,
+    /// widgets runtime state
+    wrs: HashMap<WId, RuntimeState>,
     /// currently focused widget
     focused_id: WId,
     /// text of focused text edit widget
@@ -27,8 +27,8 @@ pub struct DemoWndState {
 
 impl DemoWndState {
     pub fn new(widgets: &'static [Widget]) -> Self {
-        let mut ws = DemoWndState{widgets,
-            wstate: HashMap::new(),
+        let mut wnd_state = DemoWndState{widgets,
+            wrs: HashMap::new(),
             focused_id: WIDGET_ID_NONE,
             text_edit_txt: String::new(),
             invalidated: vec![],
@@ -36,19 +36,18 @@ impl DemoWndState {
         };
 
         use tui_def::Id;
-        ws.wstate.insert(Id::LabelFwVersion.into(), WidgetState::new());
-        ws.wstate.get_mut(&Id::LabelFwVersion.into()).unwrap().enabled = false;
+        use prop_rt::*;
 
-        ws.wstate.insert(Id::Prgbar1.into(), WidgetState{state: RuntimeState::Pgbar{ pos:5, max: 10 }, enabled: true});
-        ws.wstate.insert(Id::Prgbar2.into(), WidgetState{state: RuntimeState::Pgbar{ pos:2, max: 10 }, enabled: true});
-        ws.wstate.insert(Id::Prgbar3.into(), WidgetState{state: RuntimeState::Pgbar{ pos:8, max: 10 }, enabled: true});
+        wnd_state.wrs.insert(Id::LabelFwVersion.into(), RuntimeState::new());
+        wnd_state.wrs.get_mut(&Id::LabelFwVersion.into()).unwrap().enabled = false;
 
-        ws.wstate.insert(Id::LedLock.into(), WidgetState{state: RuntimeState::Led{ lit: true }, enabled: true});
-
-        ws.wstate.insert(Id::ChbxEnbl.into(), WidgetState{state: RuntimeState::Chbx{ checked: true }, enabled: true});
-
-        ws.wstate.insert(Id::PgControl.into(), WidgetState{state: RuntimeState::Pgctrl{ page: 0 }, enabled: true});
-        return ws;
+        wnd_state.wrs.insert(Id::Prgbar1.into(),   Pgbar{ pos:5, max: 10 }.into());
+        wnd_state.wrs.insert(Id::Prgbar2.into(),   Pgbar{ pos:2, max: 10 }.into());
+        wnd_state.wrs.insert(Id::Prgbar3.into(),   Pgbar{ pos:8, max: 10 }.into());
+        wnd_state.wrs.insert(Id::LedLock.into(),   Led{ lit: true }.into());
+        wnd_state.wrs.insert(Id::ChbxEnbl.into(),  Chbx{ checked: true }.into());
+        wnd_state.wrs.insert(Id::PgControl.into(), Pgctrl{ page: 0 }.into());
+        return wnd_state;
     }
 }
 
@@ -78,36 +77,27 @@ impl WindowState for DemoWndState {
     }
 
     fn on_checkbox_toggle(&mut self, wgt: &Widget) {
-        let rs = WidgetState{state: RuntimeState::Chbx{ checked: false }, enabled: true };
-        let ws = self.wstate.entry(wgt.id).or_insert(rs);
-
-        if let RuntimeState::Chbx { ref mut checked } = ws.state {
-            *checked = !*checked;
-        }
+        let rs = self.wrs.entry(wgt.id).or_insert(
+            prop_rt::Chbx::default().into());
+        let _ = rs.as_chbx().and_then(|p| Ok(p.checked = !p.checked));
     }
 
     fn on_page_control_page_change(&mut self, wgt: &Widget, new_page_idx: u8) {
-        if let Some(ws) = self.wstate.get_mut(&wgt.id) {
-            if let widget::RuntimeState::Pgctrl { ref mut page } = ws.state {
-                *page = new_page_idx;
-            }
-        }
+        let rs = self.wrs.entry(wgt.id).or_insert(
+            prop_rt::Pgctrl::default().into());
+        let _ = rs.as_pgctrl().and_then(|p| Ok(p.page = new_page_idx));
     }
 
     fn on_list_box_select(&mut self, wgt: &Widget, new_sel_idx: i16) {
-        if let Some(ws) = self.wstate.get_mut(&wgt.id) {
-            if let widget::RuntimeState::Lbx { ref mut sel_idx, .. } = ws.state {
-                *sel_idx = new_sel_idx;
-            }
-        }
+        let rs = self.wrs.entry(wgt.id).or_insert(
+            prop_rt::Lbx::default().into());
+        let _ = rs.as_lbx().and_then(|p| Ok(p.sel_idx = new_sel_idx));
     }
 
     fn on_list_box_change(&mut self, wgt: &Widget, new_idx: i16) {
-        if let Some(ws) = self.wstate.get_mut(&wgt.id) {
-            if let widget::RuntimeState::Lbx { ref mut item_idx, .. } = ws.state {
-                *item_idx = new_idx;
-            }
-        }
+        let rs = self.wrs.entry(wgt.id).or_insert(
+            prop_rt::Lbx::default().into());
+        let _ = rs.as_lbx().and_then(|p| Ok(p.item_idx = new_idx));
     }
 
     fn on_combo_box_select(&mut self, wgt: &Widget, new_sel_idx: i16) {
@@ -145,8 +135,8 @@ impl WindowState for DemoWndState {
     /** common state queries **/
 
     fn is_enabled(&mut self, wgt: &Widget) -> bool {
-        match self.wstate.get(&wgt.id) {
-            Some(p) => p.enabled,
+        match self.wrs.get(&wgt.id) {
+            Some(rs) => rs.enabled,
             None => true
         }
     }
@@ -189,12 +179,10 @@ impl WindowState for DemoWndState {
     }
 
     fn get_checkbox_checked(&mut self, wgt: &Widget) -> bool {
-        if let Some(ws) = self.wstate.get(&wgt.id) {
-            if let widget::RuntimeState::Chbx { checked } = ws.state {
-                return checked;
-            }
-        }
-        return false;
+        return self.wrs.get_mut(&wgt.id).ok_or(())
+            .and_then(|p| p.as_chbx())
+            .and_then(|p| Ok(p.checked))
+            .unwrap_or_default();
     }
 
     fn get_label_text(&mut self, wgt: &Widget, txt: &mut String) {
@@ -240,12 +228,9 @@ impl WindowState for DemoWndState {
     }
 
     fn get_led_lit(&mut self, wgt: &Widget) -> bool {
-        if let Some(ws) = self.wstate.get(&wgt.id) {
-            if let widget::RuntimeState::Led { ref lit } = ws.state {
-                return *lit;
-            }
-        }
-        return false;
+        let rs = self.wrs.entry(wgt.id).or_insert(
+            prop_rt::Led::default().into());
+        rs.as_led().and_then(|p| Ok(p.lit)).unwrap()
     }
 
     fn get_led_text(&mut self, wgt: &Widget, txt: &mut String) {
@@ -253,21 +238,15 @@ impl WindowState for DemoWndState {
     }
 
     fn get_progress_bar_state(&mut self, wgt: &Widget, pos: &mut i32, max: &mut i32) {
-        if let Some(ws) = self.wstate.get(&wgt.id) {
-            if let widget::RuntimeState::Pgbar { max: m, pos: p } = ws.state {
-                *pos = p;
-                *max = m;
-            }
-        }
+        let rs = self.wrs.entry(wgt.id).or_insert(
+            prop_rt::Pgbar::default().into());
+        let _ = rs.as_pgbar().and_then(|p| {*max = p.max; *pos = p.pos; Ok(0)} );
     }
 
     fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u8 {
-        if let Some(ws) = self.wstate.get(&wgt.id) {
-            if let widget::RuntimeState::Pgctrl { page } = ws.state {
-                return page;
-            }
-        }
-        0
+        let rs = self.wrs.entry(wgt.id).or_insert(
+            prop_rt::Pgctrl::default().into());
+        rs.as_pgctrl().and_then(|p| Ok(p.page)).unwrap()
     }
 
     fn get_list_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16) {

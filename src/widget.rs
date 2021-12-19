@@ -129,7 +129,7 @@ pub const WIDGET_ID_ALL: WId = WId::MAX;
 
 // -----------------------------------------------------------------------------------------------
 
-/// Widgets properties
+/// Widget static properties
 pub mod prop {
     use crate::colors::*;
     use super::ButtonStyle;
@@ -466,46 +466,145 @@ impl Link {
 
 // -----------------------------------------------------------------------------------------------
 
-/// Widget runtime state
-pub enum RuntimeState {
-    None,
-    Chbx {
-        checked: bool,
-    },
-    Led {
-        lit: bool,
-    },
-    Lbx {
-        item_idx: i16,
-        sel_idx: i16,
-    },
-    Cbx {
-        item_idx: i16,
-        sel_idx: i16,
-        drop_down: bool,
-    },
-    Pgbar {
-        pos: i32,
-        max: i32,
-    },
-    Txtbx {
-        top_line: i16,
-    },
-    Pgctrl {
-        page: u8
-    },
+/// Widget RunTime properties
+pub mod prop_rt {
+
+#[derive(Default)]
+pub struct Chbx {
+    pub checked: bool,
 }
 
-pub struct WidgetState {
+#[derive(Default)]
+pub struct Led {
+    pub lit: bool,
+}
+
+#[derive(Default)]
+pub struct Lbx {
+    pub item_idx: i16,
+    pub sel_idx: i16,
+}
+
+#[derive(Default)]
+pub struct Cbbx {
+    pub item_idx: i16,
+    pub sel_idx: i16,
+    pub drop_down: bool,
+}
+
+#[derive(Default)]
+pub struct Pgbar {
+    pub pos: i32,
+    pub max: i32,
+}
+
+#[derive(Default)]
+pub struct Txtbx {
+    pub top_line: i16,
+}
+
+#[derive(Default)]
+pub struct Pgctrl {
+    pub page: u8
+}
+
+// Implements into() for all properties
+macro_rules! impl_into {
+    ($($prop: ident)*) => ($(
+        impl $prop {
+            pub fn into(self) -> super::RuntimeState {
+                super::RuntimeState::from(State::$prop(self))
+            }
+        }
+    )*)
+}
+
+impl_into!{Chbx Led Lbx Cbbx Pgbar Txtbx Pgctrl}
+
+pub enum State {
+    None,
+    Chbx(Chbx),
+    Led(Led),
+    Lbx(Lbx),
+    Cbbx(Cbbx),
+    Pgbar(Pgbar),
+    Txtbx(Txtbx),
+    Pgctrl(Pgctrl),
+}
+
+impl Default for State {
+    fn default() -> State {
+        State::None
+    }
+}
+
+} // mod
+
+///
+#[derive(Default)]
+pub struct RuntimeState {
     // particular widget type state
-    pub state: RuntimeState,
+    pub state: prop_rt::State,
     // applies to every widget
     pub enabled: bool,
 }
 
-impl WidgetState {
+impl RuntimeState {
     pub fn new() -> Self {
-        WidgetState{state: RuntimeState::None, enabled: true}
+        RuntimeState{state: prop_rt::State::None, enabled: true}
+    }
+
+    pub fn from(s: prop_rt::State) -> Self {
+        RuntimeState{state: s, enabled: true}
+    }
+
+    pub fn as_chbx(&mut self) -> Result<&mut prop_rt::Chbx, ()> {
+        if let prop_rt::State::Chbx(ref mut prt ) = self.state {
+            return Ok(prt);
+        }
+        Err(())
+    }
+
+    pub fn as_led(&mut self) -> Result<&mut prop_rt::Led, ()> {
+        if let prop_rt::State::Led(ref mut prt ) = self.state {
+            return Ok(prt);
+        }
+        Err(())
+    }
+
+    pub fn as_lbx(&mut self) -> Result<&mut prop_rt::Lbx, ()> {
+        if let prop_rt::State::Lbx(ref mut prt ) = self.state {
+            return Ok(prt);
+        }
+        Err(())
+    }
+
+    pub fn as_cbbx(&mut self) -> Result<&mut prop_rt::Cbbx, ()> {
+        if let prop_rt::State::Cbbx(ref mut prt ) = self.state {
+            return Ok(prt);
+        }
+        Err(())
+    }
+
+    pub fn as_pgbar(&mut self) -> Result<&mut prop_rt::Pgbar, ()> {
+        if let prop_rt::State::Pgbar(ref mut prt ) = self.state {
+            return Ok(prt);
+        }
+        Err(())
+    }
+
+    pub fn as_txtbx(&mut self) -> Result<&mut prop_rt::Txtbx, ()> {
+        if let prop_rt::State::Txtbx(ref mut prt ) = self.state {
+            return Ok(prt);
+        }
+        Err(())
+    }
+
+    pub fn as_pgctrl(&mut self) -> Result<&mut prop_rt::Pgctrl, ()> {
+        if let prop_rt::State::Pgctrl(ref mut prt ) = self.state {
+            return Ok(prt);
+        }
+        Err(())
     }
 }
 
