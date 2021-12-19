@@ -1,0 +1,21 @@
+{
+    "recommendations": [
+        "matklad.rust-analyzer",
+        "alefragnani.bookmarks",
+        "wayou.vscode-todo-highlight",
+        "adamwalzer.string-converter",
+        "gruntfuggly.todo-tree",
+        "shardulm94.trailing-spaces",
+        "swellaby.vscode-rust-test-adapter",
+        "rockingskier.copy-copy-paste",
+        "maptz.camelcasenavigation",
+        "pkief.material-icon-theme",
+        "vadimcn.vscode-lldb",
+        "mhutchie.git-graph",
+        "kevinkassimo.cargo-toml-snippets",
+        "serayuzgur.crates",
+        "tamasfe.even-better-toml",
+        "eamodio.gitlens",
+        "panicbit.cargo"
+    ]
+}

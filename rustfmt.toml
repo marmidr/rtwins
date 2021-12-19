@@ -1,0 +1,8 @@
+#
+# https://rust-lang.github.io/rustfmt/
+#
+
+# do not format esc codes
+ignore = [
+    "src/esc.rs",
+]
