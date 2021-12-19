@@ -4,6 +4,8 @@
 #![allow(unused_variables)]
 
 use std::ops::{Add, Sub};
+use std::collections::HashMap;
+
 use crate::input::KeyCode;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -512,8 +514,8 @@ pub struct Pgctrl {
 macro_rules! impl_into {
     ($($prop: ident)*) => ($(
         impl $prop {
-            pub fn into(self) -> super::RuntimeState {
-                super::RuntimeState::from(State::$prop(self))
+            pub fn into(self) -> State {
+                State::$prop(self)
             }
         }
     )*)
@@ -543,69 +545,53 @@ impl Default for State {
 ///
 #[derive(Default)]
 pub struct RuntimeState {
-    // particular widget type state
-    pub state: prop_rt::State,
+    // widget type state
+    states: HashMap<WId, prop_rt::State>,
     // applies to every widget
-    pub enabled: bool,
+    enabled: HashMap<WId, bool>,
+}
+
+// macro generating similar member functions
+macro_rules! impl_as  {
+    ($name: ident, $prop: ident) => {
+        pub fn $name(&mut self, id: WId) -> &mut prop_rt::$prop {
+            let rs = self.states.entry(id).or_insert(
+                prop_rt::$prop::default().into());
+
+            if let prop_rt::State::$prop(ref mut p ) = rs {
+                return p;
+            }
+
+            panic!("Invalid widget rt state")
+        }
+    };
 }
 
 impl RuntimeState {
     pub fn new() -> Self {
-        RuntimeState{state: prop_rt::State::None, enabled: true}
+        RuntimeState{states: HashMap::new(), enabled: HashMap::new()}
     }
 
-    pub fn from(s: prop_rt::State) -> Self {
-        RuntimeState{state: s, enabled: true}
+    pub fn get_enabled_or_default(&self, id: WId) -> bool {
+        let en = self.enabled.get(&id).or(Some(&true)).unwrap();
+        *en
     }
 
-    pub fn as_chbx(&mut self) -> Result<&mut prop_rt::Chbx, ()> {
-        if let prop_rt::State::Chbx(ref mut prt ) = self.state {
-            return Ok(prt);
-        }
-        Err(())
+    pub fn set_enabled(&mut self, id: WId, en: bool) {
+        *self.enabled.entry(id).or_insert(true) = en;
     }
 
-    pub fn as_led(&mut self) -> Result<&mut prop_rt::Led, ()> {
-        if let prop_rt::State::Led(ref mut prt ) = self.state {
-            return Ok(prt);
-        }
-        Err(())
+    pub fn insert_state(&mut self, id: WId, state: prop_rt::State) {
+        self.states.insert(id, state);
     }
 
-    pub fn as_lbx(&mut self) -> Result<&mut prop_rt::Lbx, ()> {
-        if let prop_rt::State::Lbx(ref mut prt ) = self.state {
-            return Ok(prt);
-        }
-        Err(())
-    }
-
-    pub fn as_cbbx(&mut self) -> Result<&mut prop_rt::Cbbx, ()> {
-        if let prop_rt::State::Cbbx(ref mut prt ) = self.state {
-            return Ok(prt);
-        }
-        Err(())
-    }
-
-    pub fn as_pgbar(&mut self) -> Result<&mut prop_rt::Pgbar, ()> {
-        if let prop_rt::State::Pgbar(ref mut prt ) = self.state {
-            return Ok(prt);
-        }
-        Err(())
-    }
-
-    pub fn as_txtbx(&mut self) -> Result<&mut prop_rt::Txtbx, ()> {
-        if let prop_rt::State::Txtbx(ref mut prt ) = self.state {
-            return Ok(prt);
-        }
-        Err(())
-    }
-
-    pub fn as_pgctrl(&mut self) -> Result<&mut prop_rt::Pgctrl, ()> {
-        if let prop_rt::State::Pgctrl(ref mut prt ) = self.state {
-            return Ok(prt);
-        }
-        Err(())
-    }
+    impl_as!(as_chbx, Chbx);
+    impl_as!(as_led, Led);
+    impl_as!(as_lbx, Lbx);
+    impl_as!(as_cbbx, Cbbx);
+    impl_as!(as_pgbar, Pgbar);
+    impl_as!(as_txtbx, Txtbx);
+    impl_as!(as_pgctrl, Pgctrl);
 }
 
 // -----------------------------------------------------------------------------------------------
