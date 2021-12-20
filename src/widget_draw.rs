@@ -40,9 +40,7 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
         return;
     }
 
-    let mut fm = FontMementoManual::new();
-    fm.store(ctx);
-
+    let mut fm = FontMementoManual::new_from_ctx(ctx);
     // TODO: g_ws.pFocusedWgt = getWidgetByWID(dctx, ctx.stat.getFocusedID());
 
     ctx.cursor_hide();
@@ -176,8 +174,7 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
 
 fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
 {
-    let mut fm = FontMementoManual::new();
-    fm.store(&dctx.ctx.borrow());
+    let mut fm = FontMementoManual::new_from_ctx(&dctx.ctx.borrow());
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
     draw_area(&mut dctx.ctx.borrow_mut(),
@@ -488,7 +485,6 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
         }
     }
     else if prp.style == ButtonStyle::Solid1p5 {
-        // dctx.strbuff.clear();
         let _fm = FontMemento::new(&dctx.ctx);
         dctx.strbuff.push_str(" ");
         dctx.strbuff.push_str(txt.as_str());
@@ -562,8 +558,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
 
 fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
 {
-    let mut fm = FontMementoManual::new();
-    fm.store(&dctx.ctx.borrow());
+    let mut fm = FontMementoManual::new_from_ctx(&dctx.ctx.borrow());
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
     dctx.ctx.borrow_mut().push_cl_bg(get_widget_bg_color(dctx.wgt));
@@ -725,79 +720,91 @@ fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar)
     //  ▁▂▃▄▅▆▇█ - for vertical ▂▄▆█
 }
 
-struct DrawListParams
-{
-    // Coord coord;
-    // int16_t item_idx;
-    // int16_t sel_idx;
-    // int16_t items_cnt;
-    // uint16_t items_visible;
-    // uint16_t top_item;
-    // bool focused;
-    // uint8_t wgt_width;
-    // uint8_t frame_size;
-    // std::function<void(int16_t idx, String &out)> getItem;
+#[derive(Default)]
+struct DrawListParams {
+    coord: Coord,
+    item_idx: i16,
+    sel_idx: i16,
+    items_cnt: i16,
+    items_visible: i16,
+    top_item: i16,
+    focused: bool,
+    wgt_width: u8,
+    frame_size: u8,
 }
 
-fn draw_list(p: &DrawListParams)
+fn draw_list<Cb: FnMut(i16, &mut String)>(ctx: &mut Ctx, p: &DrawListParams, mut get_item: Cb)
 {
-  /*   if (p.items_cnt > p.items_visible)
-    {
-        drawListScrollBarV(p.coord + Coord{uint8_t(p.wgt_width-1), p.frame_size},
-            p.items_visible, p.items_cnt-1, p.sel_idx);
+    if p.items_cnt > p.items_visible {
+        draw_list_scroll_bar_v(ctx,
+            p.coord + Coord::new(p.wgt_width-1, p.frame_size),
+            p.items_visible as i8, p.items_cnt as i32 -1, p.sel_idx as i32);
     }
 
-    flushBuffer();
+    ctx.flush_buff();
+    let mut strbuff = String::with_capacity(50);
 
-    for (int i = 0; i < p.items_visible; i++)
-    {
-        bool is_current_item = p.items_cnt ? (p.top_item + i == p.item_idx) : false;
-        bool is_sel_item = p.top_item + i == p.sel_idx;
-        moveTo(p.coord.col + p.frame_size, p.coord.row + i + p.frame_size);
+    for i in 0..p.items_visible {
+        let is_current_item = if p.items_cnt > 0 { p.top_item + i == p.item_idx } else { false };
+        let is_sel_item = p.top_item + i == p.sel_idx;
+        strbuff.clear();
+        ctx.move_to(
+            p.coord.col as u16 + p.frame_size as u16,
+            p.coord.row as u16 + i as u16 + p.frame_size as u16);
 
-        g_ws.str.clear();
-
-        if (p.top_item + i < p.items_cnt)
-        {
-            p.getItem(p.top_item + i, g_ws.str);
-            g_ws.str.insert(0, is_current_item ? "►" : " ");
-            g_ws.str.setWidth(p.wgt_width - 1 - p.frame_size, true);
+        if p.top_item + i < p.items_cnt {
+            get_item(p.top_item + i, &mut strbuff);
+            strbuff.insert(0, if is_current_item {'►'} else {' '});
+            strbuff.set_width(p.wgt_width as i16 - 1 - p.frame_size as i16);
         }
-        else
-        {
+        else {
             // empty string - to erase old content
-            g_ws.str.setWidth(p.wgt_width - 1 - p.frame_size);
+            strbuff.set_width(p.wgt_width as i16 - 1 - p.frame_size as i16);
         }
 
-        if (p.focused && is_sel_item) pushAttr(FontAttrib::Inverse);
-        if (is_current_item) pushAttr(FontAttrib::Underline);
-        ctx.write_str(dctx.strbuff.as_str());
-        if (is_current_item) popAttr();
-        if (p.focused && is_sel_item) popAttr();
-    } */
+        if p.focused && is_sel_item { ctx.push_attr(FontAttrib::Inverse); }
+        if is_current_item { ctx.push_attr(FontAttrib::Underline); }
+        ctx.write_str(strbuff.as_str());
+        if is_current_item { ctx.pop_attr(); }
+        if p.focused && is_sel_item { ctx.pop_attr(); }
+    }
 }
 
 fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox)
 {
-  /*   let _fm = FontMemento::new(&dctx.ctx);
-    const auto my_coord = dctx.parentCoord + dctx.wgt->coord;
-    drawArea(my_coord, dctx.wgt->size,
-        dctx.wgt->listbox.bgColor, dctx.wgt->listbox.fgColor,
-        dctx.wgt->listbox.noFrame ? FrameStyle::None : FrameStyle::ListBox, false);
+    let mut fm = FontMementoManual::new_from_ctx(&dctx.ctx.borrow());
+    let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
-    if (dctx.wgt->size.height < 3)
+    draw_area(&mut dctx.ctx.borrow_mut(),
+        my_coord,
+        dctx.wgt.size,
+        prp.bg_color, prp.fg_color,
+        if prp.no_frame {FrameStyle::None} else {FrameStyle::ListBox},
+        false, false);
+
+    if dctx.wgt.size.height < 3 {
         return;
+    }
 
-    DrawListParams dlp = {};
+    let mut dlp = DrawListParams::default();
     dlp.coord = my_coord;
-    dctx.pState->getListBoxState(dctx.wgt, dlp.item_idx, dlp.sel_idx, dlp.items_cnt);
-    dlp.frame_size = !dctx.wgt->listbox.noFrame;
-    dlp.items_visible = dctx.wgt->size.height - (dlp.frame_size * 2);
+    dctx.wnd_state.get_list_box_state(dctx.wgt,
+        &mut dlp.item_idx, &mut dlp.sel_idx, &mut dlp.items_cnt);
+    dlp.frame_size = !prp.no_frame as u8;
+    dlp.items_visible = dctx.wgt.size.height as i16 - (dlp.frame_size as i16 * 2);
     dlp.top_item = (dlp.sel_idx / dlp.items_visible) * dlp.items_visible;
-    dlp.focused = dctx.pState->isFocused(dctx.wgt);
-    dlp.wgt_width = dctx.wgt->size.width;
-    dlp.getItem = [dctx.wgt, &dctx](int16_t idx, String &out) { dctx.pState->getListBoxItem(dctx.wgt, idx, out); };
-    drawList(dlp); */
+    dlp.focused = dctx.wnd_state.is_focused(dctx.wgt);
+    dlp.wgt_width = dctx.wgt.size.width;
+
+    let getitem_cb = |idx, out: &mut String| {
+        // TODO:
+        // dctx.wnd_state.get_list_box_item(dctx.wgt, idx, out);
+        out.push_str(format!("{:03}. {}", idx, out).as_str());
+    };
+
+    let mut ctx = dctx.ctx.borrow_mut();
+    draw_list(&mut ctx, &dlp, getitem_cb);
+    fm.restore(&mut ctx);
 }
 
 fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox)
@@ -1095,7 +1102,9 @@ fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
 
     if cl == ColorBG::Inherit {
         let parent = wgt_get_parent(wgt);
-        cl = get_widget_bg_color(parent);
+        if parent.id != wgt.id {
+            cl = get_widget_bg_color(parent);
+        }
     }
 
     return cl;
@@ -1121,7 +1130,9 @@ fn get_widget_fg_color(wgt: &Widget) -> ColorFG {
 
     if cl == ColorFG::Inherit {
         let parent = wgt_get_parent(wgt);
-        cl = get_widget_fg_color(parent);
+        if parent.id != wgt.id {
+            cl = get_widget_fg_color(parent);
+        }
     }
 
     return cl;

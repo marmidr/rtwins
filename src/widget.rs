@@ -11,7 +11,7 @@ use crate::input::KeyCode;
 // ---------------------------------------------------------------------------------------------- //
 
 /// Widget coordinates on screen or on parent widget
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Coord {
     pub col: u8,
     pub row: u8,
@@ -39,7 +39,7 @@ impl Add for Coord {
 }
 
 /// Widget size
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Size {
     pub width: u8,
     pub height: u8,
@@ -542,7 +542,7 @@ impl Default for State {
 
 } // mod
 
-///
+/// Contains runtime states for most types of the widgets
 #[derive(Default)]
 pub struct RuntimeState {
     // widget type state
@@ -558,8 +558,8 @@ macro_rules! impl_as  {
             let rs = self.states.entry(id).or_insert(
                 prop_rt::$prop::default().into());
 
-            if let prop_rt::State::$prop(ref mut p ) = rs {
-                return p;
+            if let prop_rt::State::$prop(ref mut stat) = rs {
+                return stat;
             }
 
             panic!("Invalid widget rt state")
@@ -636,9 +636,9 @@ pub trait WindowState {
     fn get_progress_bar_state(&mut self, wgt: &Widget, pos: &mut i32, max: &mut i32) {}
     fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u8 { return 0; }
     fn get_list_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16) {}
-    fn get_list_box_item(&mut self, wgt: &Widget, item_idx: &mut i16, txt: &mut String) {}
+    fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
     fn get_combo_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16, drop_down: &mut bool) {}
-    fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: &mut i16, txt: &mut String) {}
+    fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
     fn get_radio_index(&mut self, wgt: &Widget) -> i16 { return -1; }
     fn get_text_box_state(&mut self, wgt: &Widget, lines: &[&str], top_line: &mut i16) {}
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {}

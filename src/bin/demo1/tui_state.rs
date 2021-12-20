@@ -21,7 +21,9 @@ pub struct DemoWndState {
     /// list of widgets to redraw
     invalidated: Vec<widget::WId>,
     //
-    radiogrp1_idx: i16
+    radiogrp1_idx: i16,
+    //
+    lbx_items: Vec<&'static str>
 }
 
 impl DemoWndState {
@@ -31,8 +33,28 @@ impl DemoWndState {
             focused_id: WIDGET_ID_NONE,
             text_edit_txt: String::new(),
             invalidated: vec![],
-            radiogrp1_idx: 1
+            radiogrp1_idx: 1,
+            lbx_items: vec![]
         };
+
+        wnd_state.lbx_items.extend_from_slice(&[
+            "Black",
+            "BlackIntense",
+            "Red",
+            "RedIntense",
+            "Green",
+            "GreenIntense",
+            "Yellow",
+            "YellowIntense",
+            "Blue",
+            "BlueIntense",
+            "Magenta",
+            "MagentaIntense",
+            "Cyan",
+            "CyanIntense",
+            "White",
+            "WhiteIntense",
+        ]);
 
         use tui_def::Id;
         use prop_rt::*;
@@ -44,7 +66,7 @@ impl DemoWndState {
         wnd_state.rs.insert_state(Id::Prgbar3.into(),   Pgbar{ pos:8, max: 10 }.into());
         wnd_state.rs.insert_state(Id::LedLock.into(),   Led{ lit: true }.into());
         wnd_state.rs.insert_state(Id::ChbxEnbl.into(),  Chbx{ checked: true }.into());
-        wnd_state.rs.insert_state(Id::PgControl.into(), Pgctrl{ page: 0 }.into());
+        wnd_state.rs.insert_state(Id::PgControl.into(), Pgctrl{ page: 1 }.into());
         return wnd_state;
     }
 }
@@ -240,18 +262,18 @@ impl WindowState for DemoWndState {
         let rs = self.rs.as_lbx(wgt.id);
         *item_idx = rs.item_idx;
         *sel_idx = rs.sel_idx;
-        // TODO *items_count = ???
+        *items_count = self.lbx_items.len() as i16;
     }
 
-    fn get_list_box_item(&mut self, wgt: &Widget, item_idx: &mut i16, txt: &mut String) {
-
+    fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {
+        txt.push_str(self.lbx_items[item_idx as usize]);
     }
 
     fn get_combo_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16, drop_down: &mut bool) {
 
     }
 
-    fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: &mut i16, txt: &mut String) {
+    fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {
 
     }
 
