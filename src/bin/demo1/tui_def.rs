@@ -589,11 +589,11 @@ const PAGE_TXTBOX_CHILDS: &[Widget] = &[
 const PAGE_CMBBOX_CHILDS: &[Widget] = &[
     Widget {
         id: Id::CbxOptions.into(),
-        coord: Coord { col: 10, row: 2 },
+        coord: Coord { col: 10, row: 1 },
         size: Size { width: 20, height: 1 },
         prop: prop::ComboBox {
-            fg_color: ColorFG::White,
-            bg_color: ColorBG::BlueIntense,
+            fg_color: ColorFG::Black,
+            bg_color: ColorBG::GreenIntense,
             drop_down_size: 4
         }.into(),
         ..Widget::cdeflt()

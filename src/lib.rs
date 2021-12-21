@@ -444,8 +444,8 @@ impl FontMementoManual {
         }
     }
 
-    fn new_from_ctx(ctx: &Ctx) -> Self {
-        let  mut fm = FontMementoManual {
+    fn from_ctx(ctx: &Ctx) -> Self {
+        let mut fm = FontMementoManual {
             fg_stack_len: 0, bg_stack_len: 0, at_stack_len: 0
         };
         fm.store(ctx);

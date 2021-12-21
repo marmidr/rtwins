@@ -23,7 +23,9 @@ pub struct DemoWndState {
     //
     radiogrp1_idx: i16,
     //
-    lbx_items: Vec<&'static str>
+    lbx_items: Vec<&'static str>,
+    //
+    tbx_lines: std::rc::Rc<Vec<String>>
 }
 
 impl DemoWndState {
@@ -34,7 +36,8 @@ impl DemoWndState {
             text_edit_txt: String::new(),
             invalidated: vec![],
             radiogrp1_idx: 1,
-            lbx_items: vec![]
+            lbx_items: vec![],
+            tbx_lines: std::rc::Rc::new(vec![]),
         };
 
         wnd_state.lbx_items.extend_from_slice(&[
@@ -66,7 +69,7 @@ impl DemoWndState {
         wnd_state.rs.insert_state(Id::Prgbar3.into(),   Pgbar{ pos:8, max: 10 }.into());
         wnd_state.rs.insert_state(Id::LedLock.into(),   Led{ lit: true }.into());
         wnd_state.rs.insert_state(Id::ChbxEnbl.into(),  Chbx{ checked: true }.into());
-        wnd_state.rs.insert_state(Id::PgControl.into(), Pgctrl{ page: 1 }.into());
+        wnd_state.rs.insert_state(Id::PgControl.into(), Pgctrl{ page: 5 }.into());
         return wnd_state;
     }
 }
@@ -117,15 +120,18 @@ impl WindowState for DemoWndState {
     }
 
     fn on_combo_box_select(&mut self, wgt: &Widget, new_sel_idx: i16) {
-
+        let rs = self.rs.as_cbbx(wgt.id);
+        rs.sel_idx = new_sel_idx;
     }
 
     fn on_combo_box_change(&mut self, wgt: &Widget, new_idx: i16) {
-
+        let rs = self.rs.as_cbbx(wgt.id);
+        rs.item_idx = new_idx;
     }
 
     fn on_combo_box_drop(&mut self, wgt: &Widget, drop_state: bool) {
-
+        let rs = self.rs.as_cbbx(wgt.id);
+        rs.drop_down = drop_state;
     }
 
     fn on_radio_select(&mut self, wgt: &Widget) {
@@ -133,7 +139,8 @@ impl WindowState for DemoWndState {
     }
 
     fn on_text_box_scroll(&mut self, wgt: &Widget, top_line: i16) {
-
+        let rs = self.rs.as_txtbx(wgt.id);
+        rs.top_line = top_line;
     }
 
     fn on_custom_widget_draw(&mut self, wgt: &Widget) {
@@ -159,6 +166,7 @@ impl WindowState for DemoWndState {
     }
 
     fn is_visible(&mut self, wgt: &Widget) -> bool {
+        // if wgt.id == tui_def::Id::LbxUnderoptions.into() { return false; }
         true
     }
 
@@ -270,19 +278,26 @@ impl WindowState for DemoWndState {
     }
 
     fn get_combo_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16, drop_down: &mut bool) {
-
+        let rs = self.rs.as_cbbx(wgt.id);
+        *item_idx = rs.item_idx;
+        *sel_idx = rs.sel_idx;
+        *items_count = self.lbx_items.len() as i16;
+        // *drop_down = rs.drop_down;
+        *drop_down = true;
     }
 
     fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {
-
+        txt.push_str(self.lbx_items[item_idx as usize]);
     }
 
     fn get_radio_index(&mut self, wgt: &Widget) -> i16 {
         return self.radiogrp1_idx;
     }
 
-    fn get_text_box_state(&mut self, wgt: &Widget, lines: &[&str], top_line: &mut i16) {
-
+    fn get_text_box_state(&mut self, wgt: &Widget, lines: &mut Option<std::rc::Rc<Vec<String>>>, top_line: &mut i16) {
+        let rs = self.rs.as_txtbx(wgt.id);
+        *top_line = rs.top_line;
+        *lines = Some(std::rc::Rc::clone(&self.tbx_lines));
     }
 
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {

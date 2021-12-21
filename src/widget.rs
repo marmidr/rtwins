@@ -640,7 +640,7 @@ pub trait WindowState {
     fn get_combo_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16, drop_down: &mut bool) {}
     fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
     fn get_radio_index(&mut self, wgt: &Widget) -> i16 { return -1; }
-    fn get_text_box_state(&mut self, wgt: &Widget, lines: &[&str], top_line: &mut i16) {}
+    fn get_text_box_state(&mut self, wgt: &Widget, lines: &mut Option<std::rc::Rc<Vec<String>>>, top_line: &mut i16) {}
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {}
 
     /// requests
