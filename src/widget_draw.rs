@@ -745,13 +745,15 @@ fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox)
     dlp.focused = dctx.wnd_state.is_focused(dctx.wgt);
     dlp.wgt_width = dctx.wgt.size.width;
 
+    // destructure dctx so the closure will capture local variables, not entire struct
+    let wgt = dctx.wgt;
+    let ws = &mut dctx.wnd_state;
+    let mut ctx = dctx.ctx.borrow_mut();
+
     let getitem_cb = |idx, out: &mut String| {
-        // TODO:
-        // dctx.wnd_state.get_list_box_item(dctx.wgt, idx, out);
-        out.push_str(format!("{:03}. {}", idx, out).as_str());
+        ws.get_list_box_item(wgt, idx, out);
     };
 
-    let mut ctx = dctx.ctx.borrow_mut();
     draw_list(&mut ctx, &dlp, getitem_cb);
     fm.restore(&mut ctx);
 }
@@ -795,18 +797,21 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox)
         dlp.sel_idx = sel_idx;
         dlp.item_idx = items_count;
         dlp.frame_size = 0;
+        dlp.items_cnt = items_count;
         dlp.items_visible = prp.drop_down_size as i16;
         dlp.top_item = (dlp.sel_idx / dlp.items_visible) * dlp.items_visible;
         dlp.focused = focused;
         dlp.wgt_width = dctx.wgt.size.width;
 
+        // destructure dctx so the closure will capture local variables, not entire struct
+        let wgt = dctx.wgt;
+        let ws = &mut dctx.wnd_state;
+        let mut ctx = dctx.ctx.borrow_mut();
+
         let getitem_cb = |idx, out: &mut String| {
-            // TODO:
-            // dctx.wnd_state.get_combo_box_item(dctx.wgt, idx, out);
-            out.push_str(format!("{:03}. {}", idx, out).as_str());
+            ws.get_combo_box_item(wgt, idx, out);
         };
 
-        let mut ctx = dctx.ctx.borrow_mut();
         draw_list(&mut ctx, &dlp, getitem_cb);
     }
 }
@@ -1058,40 +1063,40 @@ struct DrawListParams {
     frame_size: u8,
 }
 
-fn draw_list<Cb: FnMut(i16, &mut String)>(ctx: &mut Ctx, p: &DrawListParams, mut get_item: Cb)
+fn draw_list<Cb: FnMut(i16, &mut String)>(ctx: &mut Ctx, dlp: &DrawListParams, mut get_item: Cb)
 {
-    if p.items_cnt > p.items_visible {
+    if dlp.items_cnt > dlp.items_visible {
         draw_list_scroll_bar_v(ctx,
-            p.coord + Coord::new(p.wgt_width-1, p.frame_size),
-            p.items_visible, p.items_cnt -1, p.sel_idx);
+            dlp.coord + Coord::new(dlp.wgt_width-1, dlp.frame_size),
+            dlp.items_visible, dlp.items_cnt -1, dlp.sel_idx);
     }
 
     ctx.flush_buff();
     let mut strbuff = String::with_capacity(50);
 
-    for i in 0..p.items_visible {
-        let is_current_item = if p.items_cnt > 0 { p.top_item + i == p.item_idx } else { false };
-        let is_sel_item = p.top_item + i == p.sel_idx;
+    for i in 0..dlp.items_visible {
+        let is_current_item = if dlp.items_cnt > 0 { dlp.top_item + i == dlp.item_idx } else { false };
+        let is_sel_item = dlp.top_item + i == dlp.sel_idx;
         ctx.move_to(
-            p.coord.col as u16 + p.frame_size as u16,
-            p.coord.row as u16 + i as u16 + p.frame_size as u16);
+            dlp.coord.col as u16 + dlp.frame_size as u16,
+            dlp.coord.row as u16 + i as u16 + dlp.frame_size as u16);
 
         strbuff.clear();
-        if p.top_item + i < p.items_cnt {
-            get_item(p.top_item + i, &mut strbuff);
+        if dlp.top_item + i < dlp.items_cnt {
+            get_item(dlp.top_item + i, &mut strbuff);
             strbuff.insert(0, if is_current_item {'►'} else {' '});
-            strbuff.set_width(p.wgt_width as i16 - 1 - p.frame_size as i16);
+            strbuff.set_width(dlp.wgt_width as i16 - 1 - dlp.frame_size as i16);
         }
         else {
             // empty string - to erase old content
-            strbuff.set_width(p.wgt_width as i16 - 1 - p.frame_size as i16);
+            strbuff.set_width(dlp.wgt_width as i16 - 1 - dlp.frame_size as i16);
         }
 
-        if p.focused && is_sel_item { ctx.push_attr(FontAttrib::Inverse); }
+        if dlp.focused && is_sel_item { ctx.push_attr(FontAttrib::Inverse); }
         if is_current_item { ctx.push_attr(FontAttrib::Underline); }
         ctx.write_str(strbuff.as_str());
         if is_current_item { ctx.pop_attr(); }
-        if p.focused && is_sel_item { ctx.pop_attr(); }
+        if dlp.focused && is_sel_item { ctx.pop_attr(); }
     }
 }
 
