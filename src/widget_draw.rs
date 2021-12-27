@@ -4,7 +4,6 @@
 #![allow(unused_variables)]
 
 use std::cell::RefCell;
-use unicode_width::UnicodeWidthStr;
 
 use crate::{FontMementoManual, FontMemento, FontAttrib, colors};
 use crate::widget_impl::*;
@@ -139,7 +138,7 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
     }
 
     if !wnd_title.is_empty() {
-        let title_width = UnicodeWidthStr::width(wnd_title.as_str()) as u16 + 4;
+        let title_width = wnd_title.as_str().ansi_displayed_width() as u16 + 4;
         let mut ctx = dctx.ctx.borrow_mut();
         ctx.move_to(
             wnd_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width) / 2,
@@ -187,7 +186,7 @@ fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
 
     // title
     if !prp.title.is_empty() {
-        let title_width = UnicodeWidthStr::width(prp.title) as u16;
+        let title_width = prp.title.ansi_displayed_width() as u16;
         let mut ctx = dctx.ctx.borrow_mut();
         ctx.move_to(
             my_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width - 2)/2,
@@ -249,7 +248,7 @@ fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label)
         dctx.strbuff.push_str(s);
 
         if line_width > 0 {
-            dctx.strbuff.set_width(line_width as i16);
+            dctx.strbuff.set_displayed_width(line_width as i16);
         }
 
         ctx.write_str(dctx.strbuff.as_str());
@@ -450,7 +449,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
             }
         }
 
-        let shadow_len = 2 + txt.width() as i16;
+        let shadow_len = 2 + txt.ansi_displayed_width() as i16;
 
         if pressed {
             // erase trailing shadow
@@ -492,7 +491,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
 
         let clbg = get_widget_bg_color(dctx.wgt);
         let clparbg = get_widget_bg_color(wgt_get_parent(dctx.wgt));
-        let bnt_len = 2 + txt.width() as i16;
+        let bnt_len = 2 + txt.ansi_displayed_width() as i16;
         let scl_shadow = crate::bg_color!(233);
         let scl_bg2fg = transcode_cl_bg_2_fg(encode_cl_bg(clbg));
 
@@ -581,7 +580,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
     {
         dctx.strbuff.push_n(' ', (prp.tab_width as i16 -8) / 2);
         dctx.strbuff.push_str("≡ MENU ≡");
-        dctx.strbuff.set_width(prp.tab_width as i16);
+        dctx.strbuff.set_displayed_width(prp.tab_width as i16);
 
         let mut ctx = dctx.ctx.borrow_mut();
         ctx.move_to(my_coord.col as u16, my_coord.row as u16 + prp.vert_offs as u16);
@@ -621,7 +620,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
             }
 
             dctx.strbuff.push_str(page_prp.title);
-            dctx.strbuff.set_width(prp.tab_width as i16);
+            dctx.strbuff.set_displayed_width(prp.tab_width as i16);
 
             // for Page we do not want inherit after it's title color
             {
@@ -774,7 +773,7 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox)
         dctx.strbuff.clear();
         dctx.wnd_state.get_combo_box_item(dctx.wgt, item_idx, &mut dctx.strbuff);
         dctx.strbuff.insert(0, ' ');
-        dctx.strbuff.set_width(dctx.wgt.size.width as i16 - 4);//, true);
+        dctx.strbuff.set_displayed_width(dctx.wgt.size.width as i16 - 4);//, true);
         dctx.strbuff.push_str(" [▼]");
 
         let mut ctx = dctx.ctx.borrow_mut();
@@ -885,7 +884,7 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
                 // let &sr = (*lines_rc)[top_line + i];
                 // dctx.strbuff.push_str() .appendLen(sr.data, sr.size);
             }
-            dctx.strbuff.set_width(dctx.wgt.size.width as i16 - 2);//, true);
+            dctx.strbuff.set_displayed_width(dctx.wgt.size.width as i16 - 2);//, true);
             ctx.move_to(my_coord.col as u16 + 1, my_coord.row as u16 + i as u16 + 1);
             ctx.write_str(dctx.strbuff.as_str());
         }
@@ -1085,11 +1084,11 @@ fn draw_list<Cb: FnMut(i16, &mut String)>(ctx: &mut Ctx, dlp: &DrawListParams, m
         if dlp.top_item + i < dlp.items_cnt {
             get_item(dlp.top_item + i, &mut strbuff);
             strbuff.insert(0, if is_current_item {'►'} else {' '});
-            strbuff.set_width(dlp.wgt_width as i16 - 1 - dlp.frame_size as i16);
+            strbuff.set_displayed_width(dlp.wgt_width as i16 - 1 - dlp.frame_size as i16);
         }
         else {
             // empty string - to erase old content
-            strbuff.set_width(dlp.wgt_width as i16 - 1 - dlp.frame_size as i16);
+            strbuff.set_displayed_width(dlp.wgt_width as i16 - 1 - dlp.frame_size as i16);
         }
 
         if dlp.focused && is_sel_item { ctx.push_attr(FontAttrib::Inverse); }

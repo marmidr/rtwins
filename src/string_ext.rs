@@ -5,20 +5,20 @@ use std::fmt::Write;
 use std::ops::Shl;
 
 /// Trait extending base `String` functionality
-pub trait StrExt {
+pub trait StringExt {
     /// Push ANSI escape sequence, replacing `{0}` with the `val`
     fn push_esc_fmt(&mut self, escfmt: &str, val: i16);
     /// Push `repeat` copies of `c`
     fn push_n(&mut self, c: char, n: i16);
     /// Set displayed width to `w` according to Unicode Standard
-    fn set_width(&mut self, w: i16);
+    fn set_displayed_width(&mut self, w: i16);
     /// Append and return ownself
     fn app(&mut self, s: &str) -> &mut Self;
     /// Returns stream operator wrapper
     fn stream(&mut self) -> StrStreamOp;
 }
 
-impl StrExt for String {
+impl StringExt for String {
     fn push_esc_fmt(&mut self, escfmt: &str, val: i16) {
         if let Some((a, b)) = escfmt.split_once("{0}") {
             self.write_fmt(format_args!("{}{}{}", a, val, b)).unwrap_or_default();
@@ -34,9 +34,9 @@ impl StrExt for String {
         }
     }
 
-    fn set_width(&mut self, w: i16) {
-        let n = UnicodeWidthStr::width(self.as_str());
-        self.push_n(' ', w - n as i16);
+    fn set_displayed_width(&mut self, w: i16) {
+        let disp_width = self.as_str().ansi_displayed_width();
+        self.push_n(' ', w - disp_width as i16);
     }
 
     fn app(&mut self, s: &str) -> &mut Self {
@@ -50,13 +50,14 @@ impl StrExt for String {
 }
 
 
-/// Returns ANSI escape sequence length, if begins with `\x1B`
-pub trait AnsiEsc {
-    ///
+pub trait StrExt {
+    /// Returns ANSI escape sequence length, if begins with `\x1B`
     fn ansi_esc_len(&self) -> usize;
+    /// Calculate UTF-8 terminal text width, ignoring ESC sequences inside it
+    fn ansi_displayed_width(&self) -> usize;
 }
 
-impl AnsiEsc for str {
+impl StrExt for str {
     fn ansi_esc_len(&self) -> usize {
         // ESC sequence always ends with:
         // - A..Z
@@ -67,18 +68,18 @@ impl AnsiEsc for str {
         const ESC_MAX_SEQ_LEN: usize = 20;
 
         if self.starts_with('\x1B') {
-            let mut sl = 1;
-            let max_sl = if self.len() < ESC_MAX_SEQ_LEN { self.len() } else { ESC_MAX_SEQ_LEN };
+            let seq_len = if self.len() < ESC_MAX_SEQ_LEN { self.len() } else { ESC_MAX_SEQ_LEN };
             let mut it = self.as_bytes().iter().skip(1);
+            let mut seq_idx = 1;
 
-            while sl < max_sl {
+            while seq_idx < seq_len {
                 let c = *it.next().unwrap() as char;
 
                 match c {
                     '@' | '^' | '~' =>
-                        return sl + 1,
+                        return seq_idx + 1,
                     'M' => {
-                        if max_sl >= 6 && self.len() >= 6 {
+                        if seq_len >= 6 && self.len() >= 6 {
                             return 6;
                         }
                         else {
@@ -87,19 +88,44 @@ impl AnsiEsc for str {
                     },
                     _ => {
                         if c >= 'A' && c <= 'Z' && c != 'O' {
-                            return sl + 1;
+                            return seq_idx + 1;
                         }
                         if c >= 'a' && c <= 'z' {
-                            return sl + 1;
+                            return seq_idx + 1;
                         }
                     },
                 }
 
-                sl += 1;
+                seq_idx += 1;
             }
         }
 
         return 0;
+    }
+
+    fn ansi_displayed_width(&self) -> usize {
+        let mut disp_width = UnicodeWidthStr::width(self) as i32;
+        let mut it = self.char_indices();
+
+        loop {
+            if let Some((idx, _)) = it.next() {
+                let esc_len = self[idx..].ansi_esc_len() as i32;
+                // UnicodeWidthStr::width() returns 0 for \e
+                if esc_len > 0 {
+                    disp_width -= esc_len - 1;
+                }
+            }
+            else {
+                break;
+            }
+        }
+
+        if disp_width > 0 {
+            disp_width as usize
+        }
+        else {
+            0
+        }
     }
 }
 

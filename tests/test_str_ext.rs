@@ -30,7 +30,15 @@ fn test_ansi_esc_len() {
 }
 
 #[test]
-fn test_str_ops() {
+fn test_ansi_displayed_width() {
+    assert_eq!(0, "".ansi_displayed_width());
+    assert_eq!(5, "Title".ansi_displayed_width());
+    assert_eq!(5, format!("{}Title{}", esc::BOLD, esc::NORMAL).as_str().ansi_displayed_width());
+    assert_eq!(7, "-😉-🍺-".ansi_displayed_width());
+}
+
+#[test]
+fn test_str_stream() {
     let mut s = String::from("Hello");
 
     let _ = s.stream()
