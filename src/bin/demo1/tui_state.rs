@@ -189,7 +189,7 @@ impl WindowState for DemoWndState {
     }
 
     fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {
-        let _ = StrOps::new(txt)
+        let _ = txt.stream()
             << esc::BOLD
             << "** Service Menu **"
             << esc::NORMAL
@@ -217,7 +217,7 @@ impl WindowState for DemoWndState {
         }
 
         if wgt.id == tui_def::Id::LabelMultiFmt.into() {
-            let _ = StrOps::new(txt)
+            let _ = txt.stream()
                 << "  ▫▫▫▫▫ "
                 << esc::INVERSE_ON
                 << "ListBox"
