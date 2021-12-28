@@ -3,6 +3,8 @@
 `RTWins` is a Rust library designed for easy creation of visual terminal applications on non-os platforms, like bare Cortex-M3.
 It provides basic facilities required by interactive applications such as screen and cursor management, keyboard input, keymaps, color codes.
 
+![example 1](doc/sshot1.png)
+
 ## References
 
 Implementation is based on:
@@ -31,20 +33,20 @@ Implementation is based on:
 * widgets (controls) to implement
   * [x] window
   * [x] panel
-  * [ ] static label / led
-  * [ ] check box
+  * [x] static label / led
+  * [x] check box
   * [ ] edit field (text/number)
-  * [ ] radio button
-  * [ ] page control
-  * [ ] progress bar
-  * [ ] list box
-  * [ ] combo box
+  * [x] radio button
+  * [x] page control
+  * [x] progress bar
+  * [x] list box
+  * [x] combo box
   * [ ] scrollable text box
   * [ ] custom widget base
-  * [ ] scrollbar
+  * [x] scrollbar
   * [ ] horizontal page control
   * [ ] popup windows
-  * [ ] layers - to control visibility of groups of widgets
+  * [x] layers - to control visibility of groups of widgets
   * [ ] password input
 * navigation
   * [ ] widgets navigation by Tab/Esc key
@@ -56,12 +58,12 @@ Implementation is based on:
 * [ ] color theme for window
 * [ ] keyboard handler returns if key was handled by active widget
 * [ ] support for mouse click
-* [ ] double-width character support (emoticons 😁)
-* [ ] multiline solid button
+* [x] double-width character support (emoticons 😁)
+* [x] multiline solid button
 
 ## Prerequisites
 
-[Install Rust 📖](https://www.rust-lang.org/tools/install)
+[Install Rust](https://www.rust-lang.org/tools/install)
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh

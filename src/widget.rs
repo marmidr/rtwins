@@ -7,6 +7,7 @@ use std::ops::{Add, Sub};
 use std::collections::HashMap;
 
 use crate::input::KeyCode;
+use crate::widget_impl::WidgetIter;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -441,6 +442,10 @@ impl Widget {
             prop: Property::cdeflt(),
             childs: &[],
         }
+    }
+
+    pub fn iter(&self) -> WidgetIter {
+        WidgetIter::new(self)
     }
 }
 

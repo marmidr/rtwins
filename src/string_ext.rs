@@ -110,8 +110,8 @@ impl StrExt for str {
         loop {
             if let Some((idx, _)) = it.next() {
                 let esc_len = self[idx..].ansi_esc_len() as i32;
-                // UnicodeWidthStr::width() returns 0 for \e
                 if esc_len > 0 {
+                    // UnicodeWidthStr::width() returns 0 for \e, thus, esc_len decreased by 1
                     disp_width -= esc_len - 1;
                 }
             }
@@ -174,3 +174,22 @@ impl<'a> Shl<&str> for StrStreamOp<'a> {
     }
 }
 
+impl<'a> Shl<char> for StrStreamOp<'a> {
+    type Output = StrStreamOp<'a>;
+
+    #[inline]
+    fn shl(self, rhs: char) -> Self::Output {
+        self.intern.push(rhs);
+        self
+    }
+}
+
+impl<'a> Shl<(char, i16)> for StrStreamOp<'a> {
+    type Output = StrStreamOp<'a>;
+
+    #[inline]
+    fn shl(self, rhs: (char, i16)) -> Self::Output {
+        self.intern.push_n(rhs.0, rhs.1);
+        self
+    }
+}

@@ -43,11 +43,11 @@ fn test_str_stream() {
 
     let _ = s.stream()
         << " darkness"
-        << ", "
-        << "my old friend."
-        ;
+        << ',' << ' '
+        << "my old friend. "
+        << ('*', 3);
 
-    assert_eq!("Hello darkness, my old friend.", s.as_str());
+    assert_eq!("Hello darkness, my old friend. ***", s.as_str());
 }
 
 #[test]
