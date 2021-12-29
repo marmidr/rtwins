@@ -80,7 +80,7 @@ impl Id {
 // ---------------------------------------------------------------------------------------------- //
 
 #[rustfmt::skip]
-const PNL_STATE_CHILDS: &[Widget] = &[
+const PNL_STATE_CHILDREN: &[Widget] = &[
     Widget {
         id: Id::LedBattery.into(),
         coord: Coord { col: 2, row: 1 },
@@ -117,7 +117,7 @@ const PNL_STATE_CHILDS: &[Widget] = &[
 ];
 
 #[rustfmt::skip]
-const PAGE_VER_CHILDS: &[Widget] = &[
+const PAGE_VER_CHILDREN: &[Widget] = &[
     Widget {
         id: Id::PanelVersions.into(),
         link: Link::cdeflt(),
@@ -129,7 +129,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
             bg_color: ColorBG::Green,
             no_frame: false,
         }.into(),
-        childs: &[
+        children: &[
             Widget {
                 id: Id::LabelFwVersion.into(),
                 coord: Coord { col: 2, row: 1 },
@@ -175,7 +175,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
             bg_color: ColorBG::White,
             no_frame: false,
         }.into(),
-        childs: &PNL_STATE_CHILDS
+        children: &PNL_STATE_CHILDREN
     },
     Widget {
         id: Id::PanelKey.into(),
@@ -188,7 +188,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
             bg_color: ColorBG::Magenta,
             no_frame: false,
         }.into(),
-        childs: &[
+        children: &[
             Widget {
                 id: Id::LabelKeyseq.into(),
                 coord: Coord { col: 2, row: 1 },
@@ -297,12 +297,12 @@ const PAGE_VER_CHILDS: &[Widget] = &[
 ];
 
 #[rustfmt::skip]
-const PAGE_SERV_CHILDS: &[Widget] = &[
+const PAGE_SERV_CHILDREN: &[Widget] = &[
     Widget {
         id: Id::Layer1.into(),
         prop: prop::Layer {
         }.into(),
-        childs: &[
+        children: &[
             Widget {
                 id: Id::LabelMultiFmt.into(),
                 coord: Coord { col: 24, row: 2 },
@@ -332,7 +332,7 @@ const PAGE_SERV_CHILDS: &[Widget] = &[
         id: Id::Layer2.into(),
         prop: prop::Layer {
         }.into(),
-        childs: &[
+        children: &[
             Widget {
                 id: Id::Radio1.into(),
                 coord: Coord { col: 25, row: 7 },
@@ -390,7 +390,7 @@ const PAGE_SERV_CHILDS: &[Widget] = &[
 ];
 
 #[rustfmt::skip]
-const PAGE_DIAG_CHILDS: &[Widget] = &[
+const PAGE_DIAG_CHILDREN: &[Widget] = &[
     Widget {
         id: Id::PanelEdt.into(),
         coord: Coord { col: 2, row: 1 },
@@ -401,7 +401,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
             bg_color : ColorBG::White,
             no_frame : true,
         }.into(),
-        childs: &[
+        children: &[
             Widget {
                 id: Id::Edt1.into(),
                 coord: Coord { col: 1, row: 1 },
@@ -443,7 +443,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
             bg_color : ColorBG::BlueIntense,
             no_frame : false,
         }.into(),
-        childs: &[
+        children: &[
             Widget {
                 id: Id::LblChbxTitle.into(),
                 coord: Coord { col: 2, row: 2 },
@@ -497,7 +497,7 @@ const PAGE_DIAG_CHILDS: &[Widget] = &[
 ];
 
 #[rustfmt::skip]
-const PAGE_INACT_CHILDS: &[Widget] = &[
+const PAGE_INACT_CHILDREN: &[Widget] = &[
     Widget {
         id: Id::PanelEmpty1.into(),
         coord: Coord { col: 5, row: 1 },
@@ -508,7 +508,7 @@ const PAGE_INACT_CHILDS: &[Widget] = &[
             bg_color : ColorBG::Inherit,
             no_frame : true,
         }.into(),
-        childs: &[
+        children: &[
             Widget {
                 id: Id::LblWordwrap.into(),
                 coord: Coord { col: 2, row: 1 },
@@ -544,7 +544,7 @@ const PAGE_INACT_CHILDS: &[Widget] = &[
             bg_color : ColorBG::Inherit,
             no_frame : false,
         }.into(),
-        childs: &[
+        children: &[
             Widget {
                 id: Id::LblEmpty2.into(),
                 coord: Coord { col: 2, row: 2 },
@@ -562,7 +562,7 @@ const PAGE_INACT_CHILDS: &[Widget] = &[
 ];
 
 #[rustfmt::skip]
-const PAGE_TXTBOX_CHILDS: &[Widget] = &[
+const PAGE_TXTBOX_CHILDREN: &[Widget] = &[
     Widget {
         id: Id::TbxLoremipsum.into(),
         coord: Coord { col: 3, row: 1 },
@@ -586,7 +586,7 @@ const PAGE_TXTBOX_CHILDS: &[Widget] = &[
 ];
 
 #[rustfmt::skip]
-const PAGE_CMBBOX_CHILDS: &[Widget] = &[
+const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
     Widget {
         id: Id::CbxOptions.into(),
         coord: Coord { col: 10, row: 1 },
@@ -658,7 +658,7 @@ const WINDOW_MAIN: Widget = Widget {
         bg_color: ColorBG::Blue,
         is_popup: false,
     }.into(),
-    childs: &[
+    children: &[
         Widget {
             id: Id::BtnToaster.into(),
             coord: Coord { col: 1, row: 1 },
@@ -679,14 +679,14 @@ const WINDOW_MAIN: Widget = Widget {
                 tab_width: 14,
                 vert_offs: 2
             }.into(),
-            childs: &[
+            children: &[
                 Widget {
                     id: Id::PageVer.into(),
                     prop: prop::Page {
                         title: "Version",
                         fg_color: ColorFG::Yellow,
                     }.into(),
-                    childs: &PAGE_VER_CHILDS,
+                    children: &PAGE_VER_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -695,7 +695,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Service ∑",
                         fg_color: ColorFG::White,
                     }.into(),
-                    childs: &PAGE_SERV_CHILDS,
+                    children: &PAGE_SERV_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -704,7 +704,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Diagnostics",
                         fg_color: ColorFG::Yellow,
                     }.into(),
-                    childs: &PAGE_DIAG_CHILDS,
+                    children: &PAGE_DIAG_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -713,7 +713,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Inactiv 🍀",
                         fg_color: ColorFG::White,
                     }.into(),
-                    childs: &PAGE_INACT_CHILDS,
+                    children: &PAGE_INACT_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -722,7 +722,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Text Box",
                         fg_color: ColorFG::White,
                     }.into(),
-                    childs: &PAGE_TXTBOX_CHILDS,
+                    children: &PAGE_TXTBOX_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -731,7 +731,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Combo Box",
                         fg_color: ColorFG::White,
                     }.into(),
-                    childs: &PAGE_CMBBOX_CHILDS,
+                    children: &PAGE_CMBBOX_CHILDREN,
                     ..Widget::cdeflt()
                 },
             ],

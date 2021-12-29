@@ -141,7 +141,7 @@ fn test_property_access() {
     for (idx, w) in tui_def::WND_MAIN_ARRAY.iter().enumerate() {
         let w_par = rtwins::widget_impl::wgt_get_parent(w);
         println!("  {:2}. {:2}:{:10}, idx:{}, chidx:{}, parid {}:{}",
-            idx, w.id, w.prop, w.link.own_idx, w.link.childs_idx, w_par.id, w_par.prop);
+            idx, w.id, w.prop, w.link.own_idx, w.link.children_idx, w_par.id, w_par.prop);
     }
 
     println!(

@@ -428,7 +428,7 @@ pub struct Widget {
     /// widget properties defining it's type
     pub prop: Property,
     /// link to children widgets, 2x8B
-    pub childs: &'static [Widget],
+    pub children: &'static [Widget],
 }
 
 impl Widget {
@@ -440,7 +440,7 @@ impl Widget {
             coord: Coord::cdeflt(),
             size: Size::cdeflt(),
             prop: Property::cdeflt(),
-            childs: &[],
+            children: &[],
         }
     }
 
@@ -460,14 +460,14 @@ impl Widget {
 pub struct Link {
     pub own_idx:    u16,
     pub parent_idx: u16,
-    pub childs_idx: u16,
-    pub childs_cnt: u16,
+    pub children_idx: u16,
+    pub children_cnt: u16,
 }
 
 impl Link {
     /// Returns default object; can be used in `const` initialization
     pub const fn cdeflt() -> Self {
-        Link{ own_idx: 0, parent_idx: 0, childs_idx: 0, childs_cnt: 0 }
+        Link{ own_idx: 0, parent_idx: 0, children_idx: 0, children_cnt: 0 }
     }
 }
 
