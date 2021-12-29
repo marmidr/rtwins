@@ -835,12 +835,13 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
 
     let lines_visible = dctx.wgt.size.height as i16 - 2;
     let mut top_line = 0i16;
-    let mut lines_opt_rc: Option<std::rc::Rc<Vec<String>>> = None;
-    dctx.wnd_state.get_text_box_state(dctx.wgt, &mut lines_opt_rc, &mut top_line);
+    let mut lines_rc: std::rc::Rc<std::cell::RefCell<Vec<String>>> = Default::default();
+    dctx.wnd_state.get_text_box_state(dctx.wgt, &mut lines_rc, &mut top_line);
 
-    if let Some(ref lines_rc) = lines_opt_rc {
-        if top_line > lines_rc.len() as i16 {
-            top_line = lines_rc.len() as i16 - lines_visible;
+    if std::rc::Rc::strong_count(&lines_rc) > 0 {
+        let lines = lines_rc.borrow();
+        if top_line > lines.len() as i16 {
+            top_line = lines.len() as i16 - lines_visible;
             dctx.wnd_state.on_text_box_scroll(dctx.wgt, top_line);
         }
 
@@ -853,16 +854,16 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
 
         draw_list_scroll_bar_v(&mut ctx,
             my_coord + Coord::new(dctx.wgt.size.width-1, 1),
-            lines_visible, lines_rc.len() as i16 - lines_visible, top_line);
+            lines_visible, lines.len() as i16 - lines_visible, top_line);
 
         ctx.flush_buff();
 
-        // scan invisible lines for ESC sequences: colors, font attributes
+        // scan invisible lines (because scrooled down) for ESC sequences: colors, font attributes
         dctx.strbuff.clear();
 
         for i in 0..top_line {
             // TODO:
-            // let line = lines_rc.get(i as usize).unwrap();
+            // let line = lines.get(i as usize).unwrap();
             // while (const char *esc = twins::util::strnchr(sr.data, sr.size, '\e'))
             // {
             //     auto esclen = String::escLen(esc, sr.data + sr.size);
@@ -879,10 +880,8 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
         for i in 0..lines_visible {
             dctx.strbuff.clear();
 
-            if top_line + i < lines_rc.len() as i16 {
-                // TODO:
-                // let &sr = (*lines_rc)[top_line + i];
-                // dctx.strbuff.push_str() .appendLen(sr.data, sr.size);
+            if top_line + i < lines.len() as i16 {
+                dctx.strbuff.push_str(lines.get(top_line as usize + i as usize).unwrap().as_str());
             }
             dctx.strbuff.set_displayed_width(dctx.wgt.size.width as i16 - 2);//, true);
             ctx.move_to(my_coord.col as u16 + 1, my_coord.row as u16 + i as u16 + 1);

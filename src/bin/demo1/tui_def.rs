@@ -59,8 +59,8 @@ pub enum Id {
                 PanelEmpty2,
                     LblEmpty2,
             PageTextbox,
-                TbxLoremipsum,
-                Tbx1line,
+                TbxWide,
+                TbxNarrow,
             PageCombobox,
                 CbxOptions,
                 LbxUnderoptions,
@@ -564,7 +564,7 @@ const PAGE_INACT_CHILDREN: &[Widget] = &[
 #[rustfmt::skip]
 const PAGE_TXTBOX_CHILDREN: &[Widget] = &[
     Widget {
-        id: Id::TbxLoremipsum.into(),
+        id: Id::TbxWide.into(),
         coord: Coord { col: 3, row: 1 },
         size: Size { width: 40, height: 10 },
         prop: prop::TextBox {
@@ -574,7 +574,7 @@ const PAGE_TXTBOX_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: Id::Tbx1line.into(),
+        id: Id::TbxNarrow.into(),
         coord: Coord { col: 46, row: 1 },
         size: Size { width: 12, height: 10 },
         prop: prop::TextBox {

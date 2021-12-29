@@ -6,6 +6,9 @@ use rtwins::esc;
 use rtwins::widget::*;
 use rtwins::input::*;
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use super::tui_def;
 
 /// State of all the DemoWindow widget dynamic properties
@@ -25,7 +28,9 @@ pub struct DemoWndState {
     //
     lbx_items: Vec<&'static str>,
     //
-    tbx_lines: std::rc::Rc<Vec<String>>
+    tbx_text: String,
+    tbx_wide_lines: Rc<RefCell<Vec<String>>>,
+    tbx_narrow_lines: Rc<RefCell<Vec<String>>>
 }
 
 impl DemoWndState {
@@ -37,7 +42,9 @@ impl DemoWndState {
             invalidated: vec![],
             radiogrp1_idx: 1,
             lbx_items: vec![],
-            tbx_lines: std::rc::Rc::new(vec![]),
+            tbx_text: String::with_capacity(400),
+            tbx_wide_lines: Rc::new(RefCell::new(vec![])),
+            tbx_narrow_lines: Rc::new(RefCell::new(vec![])),
         };
 
         wnd_state.lbx_items.extend_from_slice(&[
@@ -59,6 +66,19 @@ impl DemoWndState {
             "WhiteIntense",
         ]);
 
+        // prepare text box content
+        let _ = wnd_state.tbx_text.stream()
+            << esc::BOLD
+            << "🔶 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam arcu magna, placerat sit amet libero at, aliquam fermentum augue.\n"
+            << esc::NORMAL
+            << esc::FG_GOLD
+            << " Morbi egestas consectetur malesuada. Mauris vehicula, libero eget tempus ullamcorper, nisi lorem efficitur velit, vel bibendum augue eros vel lorem. Duis vestibulum magna a ornare bibendum. Curabitur eleifend dictum odio, eu ultricies nunc eleifend et.\n"
+            << "Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.\n"
+            << esc::FG_GREEN_YELLOW
+            << "🔷 Interdum et malesuada fames ac ante ipsum primis in faucibus. Aenean malesuada lacus leo, a eleifend lorem suscipit sed.\n"
+            << "▄";
+
+        // setup some widgets initial properties
         use tui_def::Id;
         use prop_rt::*;
 
@@ -69,8 +89,36 @@ impl DemoWndState {
         wnd_state.rs.insert_state(Id::Prgbar3.into(),   Pgbar{ pos:8, max: 10 }.into());
         wnd_state.rs.insert_state(Id::LedLock.into(),   Led{ lit: true }.into());
         wnd_state.rs.insert_state(Id::ChbxEnbl.into(),  Chbx{ checked: true }.into());
-        wnd_state.rs.insert_state(Id::PgControl.into(), Pgctrl{ page: 5 }.into());
+        wnd_state.rs.insert_state(Id::PgControl.into(), Pgctrl{ page: 4 }.into());
         return wnd_state;
+    }
+
+    fn prepare_textbox_lines(max_disp_w: usize, src: &String) -> StringListRc {
+        // let it: Vec<_> = src.split(char::is_ascii_whitespace).collect();
+
+        let it = src.split_inclusive(' ')
+            .scan((0usize, String::new()), |state, s| {
+                let dw = s.ansi_displayed_width();
+
+                // TODO: inefficient - based on appending to string; use slice and create string when line ready
+                if state.0 + dw > max_disp_w {
+                    state.0 = dw;
+                    let mut tmp = String::from(s);
+                    std::mem::swap(&mut tmp, &mut state.1);
+                    return Some(tmp);
+                }
+                else {
+                    state.0 += dw;
+                    state.1.push_str(s);
+                }
+
+                Some("".to_string()) // empty -> will be filtered
+            })
+            .filter(|s| !s.is_empty());
+
+        let out = StringListRc::default();
+        out.borrow_mut().extend(it);
+        out
     }
 }
 
@@ -294,10 +342,22 @@ impl WindowState for DemoWndState {
         return self.radiogrp1_idx;
     }
 
-    fn get_text_box_state(&mut self, wgt: &Widget, lines: &mut Option<std::rc::Rc<Vec<String>>>, top_line: &mut i16) {
+    fn get_text_box_state(&mut self, wgt: &Widget, lines: &mut StringListRc, top_line: &mut i16) {
         let rs = self.rs.as_txtbx(wgt.id);
         *top_line = rs.top_line;
-        *lines = Some(std::rc::Rc::clone(&self.tbx_lines));
+
+        if wgt.id == tui_def::Id::TbxWide.into() {
+            if self.tbx_wide_lines.borrow().len() == 0 {
+                self.tbx_wide_lines = DemoWndState::prepare_textbox_lines(wgt.size.width as usize-2, &self.tbx_text);
+            }
+            *lines = Rc::clone(&self.tbx_wide_lines);
+        }
+        else if wgt.id == tui_def::Id::TbxNarrow.into() {
+            if self.tbx_narrow_lines.borrow().len() == 0 {
+                self.tbx_narrow_lines = DemoWndState::prepare_textbox_lines(wgt.size.width as usize-2, &self.tbx_text);
+            }
+            *lines = Rc::clone(&self.tbx_narrow_lines);
+        }
     }
 
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {
