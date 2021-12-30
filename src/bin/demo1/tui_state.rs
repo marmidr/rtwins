@@ -1,8 +1,9 @@
 //! Demo - window state
 
-use rtwins::string_ext::*;
 use rtwins::widget;
+use rtwins::widget_impl;
 use rtwins::esc;
+use rtwins::string_ext::*;
 use rtwins::widget::*;
 use rtwins::input::*;
 
@@ -27,7 +28,7 @@ pub struct DemoWndState {
     radiogrp1_idx: i16,
     //
     lbx_items: Vec<&'static str>,
-    //
+    // text box raw source string and source splitted into rows
     tbx_text: String,
     tbx_wide_lines: Rc<RefCell<Vec<String>>>,
     tbx_narrow_lines: Rc<RefCell<Vec<String>>>
@@ -78,6 +79,11 @@ impl DemoWndState {
             << "🔷 Interdum et malesuada fames ac ante ipsum primis in faucibus. Aenean malesuada lacus leo, a eleifend lorem suscipit sed.\n"
             << "▄";
 
+            // << esc::BOLD
+            // << "🔶 Lorem ipsum \ndolor sit\n amet, consectetur adipiscing elit. Nam arcu magna, placerat sit amet libero at, aliquam fermentum augue. \n"
+            // << esc::NORMAL
+            // << "▄";
+
         // setup some widgets initial properties
         use tui_def::Id;
         use prop_rt::*;
@@ -91,34 +97,6 @@ impl DemoWndState {
         wnd_state.rs.insert_state(Id::ChbxEnbl.into(),  Chbx{ checked: true }.into());
         wnd_state.rs.insert_state(Id::PgControl.into(), Pgctrl{ page: 4 }.into());
         return wnd_state;
-    }
-
-    fn prepare_textbox_lines(max_disp_w: usize, src: &String) -> StringListRc {
-        // let it: Vec<_> = src.split(char::is_ascii_whitespace).collect();
-
-        let it = src.split_inclusive(' ')
-            .scan((0usize, String::new()), |state, s| {
-                let dw = s.ansi_displayed_width();
-
-                // TODO: inefficient - based on appending to string; use slice and create string when line ready
-                if state.0 + dw > max_disp_w {
-                    state.0 = dw;
-                    let mut tmp = String::from(s);
-                    std::mem::swap(&mut tmp, &mut state.1);
-                    return Some(tmp);
-                }
-                else {
-                    state.0 += dw;
-                    state.1.push_str(s);
-                }
-
-                Some("".to_string()) // empty -> will be filtered
-            })
-            .filter(|s| !s.is_empty());
-
-        let out = StringListRc::default();
-        out.borrow_mut().extend(it);
-        out
     }
 }
 
@@ -348,13 +326,13 @@ impl WindowState for DemoWndState {
 
         if wgt.id == tui_def::Id::TbxWide.into() {
             if self.tbx_wide_lines.borrow().len() == 0 {
-                self.tbx_wide_lines = DemoWndState::prepare_textbox_lines(wgt.size.width as usize-2, &self.tbx_text);
+                self.tbx_wide_lines = widget_impl::prepare_textbox_lines(wgt.size.width as usize-2, &self.tbx_text);
             }
             *lines = Rc::clone(&self.tbx_wide_lines);
         }
         else if wgt.id == tui_def::Id::TbxNarrow.into() {
             if self.tbx_narrow_lines.borrow().len() == 0 {
-                self.tbx_narrow_lines = DemoWndState::prepare_textbox_lines(wgt.size.width as usize-2, &self.tbx_text);
+                self.tbx_narrow_lines = widget_impl::prepare_textbox_lines(wgt.size.width as usize-2, &self.tbx_text);
             }
             *lines = Rc::clone(&self.tbx_narrow_lines);
         }

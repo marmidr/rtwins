@@ -1,6 +1,6 @@
 //! # RTWins String extensions
 
-use unicode_width::UnicodeWidthStr;
+use unicode_width::{UnicodeWidthStr, UnicodeWidthChar};
 use std::fmt::Write;
 use std::ops::Shl;
 
@@ -10,8 +10,8 @@ pub trait StringExt {
     fn push_esc_fmt(&mut self, escfmt: &str, val: i16);
     /// Push `repeat` copies of `c`
     fn push_n(&mut self, c: char, n: i16);
-    /// Set displayed width to `w` according to Unicode Standard
-    fn set_displayed_width(&mut self, w: i16);
+    /// Set displayed width to `expected_disp_w` according to Unicode Standard
+    fn set_displayed_width(&mut self, expected_disp_w: i16);
     /// Append and return ownself
     fn app(&mut self, s: &str) -> &mut Self;
     /// Returns stream operator wrapper
@@ -34,9 +34,29 @@ impl StringExt for String {
         }
     }
 
-    fn set_displayed_width(&mut self, w: i16) {
+    fn set_displayed_width(&mut self, expected_disp_w: i16) {
         let disp_width = self.as_str().ansi_displayed_width();
-        self.push_n(' ', w - disp_width as i16);
+        let n = expected_disp_w - disp_width as i16;
+
+        if n > 0 {
+            // too narrow -> append spaces
+            self.push_n(' ', n);
+        }
+        else if n < 0 {
+            // too wide -> truncate + ellipsis
+            let mut sum_w = 0usize;
+            for (i, c) in self.char_indices() {
+                if let Some(cw) = c.width() {
+                    sum_w += cw;
+                }
+
+                if sum_w >= expected_disp_w as usize {
+                    self.truncate(i);
+                    self.push('…');
+                    break;
+                }
+            }
+        }
     }
 
     fn app(&mut self, s: &str) -> &mut Self {
