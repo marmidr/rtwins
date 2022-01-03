@@ -8,6 +8,7 @@ use std::collections::HashMap;
 
 use crate::input::KeyCode;
 use crate::widget_impl::WidgetIter;
+use crate::utils::StringListRc;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -601,7 +602,6 @@ impl RuntimeState {
 
 // -----------------------------------------------------------------------------------------------
 
-pub type StringListRc = std::rc::Rc<std::cell::RefCell<Vec<String>>>;
 /// Window state and event handler
 pub trait WindowState {
     /// events

@@ -13,6 +13,7 @@ pub mod widget;
 pub mod widget_impl;
 pub mod widget_draw;
 pub mod string_ext;
+pub mod utils;
 
 /// Library version
 pub const VER: &str = env!("CARGO_PKG_VERSION");

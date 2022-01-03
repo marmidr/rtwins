@@ -1,8 +1,8 @@
 //! # RTWins Widget
 
 use crate::{input, widget};
-use crate::widget::{Coord, WId, Widget, Property, WIDGET_ID_NONE, StringListRc};
-use crate::string_ext::*;
+use crate::widget::{Coord, WId, Widget, Property, WIDGET_ID_NONE};
+
 
 #[allow(dead_code)]
 pub struct WidgetSearchStruct
@@ -198,61 +198,6 @@ pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
     coord
 }
 
-pub fn prepare_textbox_lines(max_disp_w: usize, src: &String) -> StringListRc {
-    let it = src.split_inclusive(char::is_whitespace)
-        .scan((0usize, 0usize, 0usize), |state, word| {
-            let word_w = word.ansi_displayed_width();
-            let word_suffix_nl = word.ends_with('\n');
-            // println!(" '{}'", word);
-
-            if word_w > max_disp_w {
-                // TODO: handle single word wider than max_disp_w
-            }
-
-            if state.0 + word_w > max_disp_w {
-                // ready to output the line as the current word would made it too wide
-                let outslice = &src[state.1..state.2];
-                // println!(">'{}'", outslice);
-                state.0 = word_w;       // line_w = word_w
-                state.1 = state.2;      // begin = end
-                state.2 += word.len();  // end += word.len
-                return Some(outslice.to_string());
-            }
-            else {
-                if word_suffix_nl {
-                    // shorter than possible, but ends with new line
-                    state.2 += word.len();  // end += word.len
-                    state.2 -= 1;           // do not put '\n' to the output
-                    let outslice = &src[state.1..state.2];
-                    // println!("<'{}'", outslice);
-                    state.0 = 0;
-                    state.2 += 1;           // do not put '\n' to the output
-                    state.1 = state.2;      // begin = end
-                    return Some(outslice.to_string());
-                }
-                else {
-                    // single word not ending with \n
-                    state.0 += word_w;      // line_w += word_w
-                    state.2 += word.len();  // end += word.len
-
-                    if state.2 == src.len() {
-                        // this the last item in a string -> output it
-                        // println!("<'{}'", src[state.1..state.2].to_string());
-                        Some(word.to_string())
-                    }
-                    else {
-                        // keep iterating -> return Some
-                        Some("".to_string())    // empty str -> will be filtered out
-                    }
-                }
-            }
-        })
-        .filter(|line| !line.is_empty());
-
-    let out = StringListRc::default();
-    out.borrow_mut().extend(it);
-    out
-}
 
 // -----------------------------------------------------------------------------------------------
 

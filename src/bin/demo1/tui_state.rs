@@ -1,7 +1,7 @@
 //! Demo - window state
 
 use rtwins::widget;
-use rtwins::widget_impl;
+use rtwins::utils;
 use rtwins::esc;
 use rtwins::string_ext::*;
 use rtwins::widget::*;
@@ -321,19 +321,19 @@ impl WindowState for DemoWndState {
         return self.radiogrp1_idx;
     }
 
-    fn get_text_box_state(&mut self, wgt: &Widget, lines: &mut StringListRc, top_line: &mut i16) {
+    fn get_text_box_state(&mut self, wgt: &Widget, lines: &mut utils::StringListRc, top_line: &mut i16) {
         let rs = self.rs.as_txtbx(wgt.id);
         *top_line = rs.top_line;
 
         if wgt.id == tui_def::Id::TbxWide.into() {
             if self.tbx_wide_lines.borrow().len() == 0 {
-                self.tbx_wide_lines = widget_impl::prepare_textbox_lines(wgt.size.width as usize-2, &self.tbx_text);
+                self.tbx_wide_lines = utils::word_wrap(wgt.size.width as usize-2, &self.tbx_text);
             }
             *lines = Rc::clone(&self.tbx_wide_lines);
         }
         else if wgt.id == tui_def::Id::TbxNarrow.into() {
             if self.tbx_narrow_lines.borrow().len() == 0 {
-                self.tbx_narrow_lines = widget_impl::prepare_textbox_lines(wgt.size.width as usize-2, &self.tbx_text);
+                self.tbx_narrow_lines = utils::word_wrap(wgt.size.width as usize-2, &self.tbx_text);
             }
             *lines = Rc::clone(&self.tbx_narrow_lines);
         }
