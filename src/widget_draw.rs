@@ -857,31 +857,35 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
             lines_visible, lines.len() as i16 - lines_visible, top_line);
 
         ctx.flush_buff();
-
-        // scan invisible lines (because scrooled down) for ESC sequences: colors, font attributes
         dctx.strbuff.clear();
 
-        for i in 0..top_line {
-            // TODO:
-            // let line = lines.get(i as usize).unwrap();
-            // while (const char *esc = twins::util::strnchr(sr.data, sr.size, '\e'))
-            // {
-            //     auto esclen = String::escLen(esc, sr.data + sr.size);
-            //     dctx.strbuff. .appendLen(esc, esclen);
-
-            //     sr.size -= esc - sr.data + 1;
-            //     sr.data = esc + 1;
-            // }
+        // scan invisible lines (because scrooled down) for ESC sequences: colors, font attributes
+        for i in 0..top_line as usize {
+            if let Some(line) = lines.get(i) {
+                // iterate over all ESC sequences in the line
+                for it in line.bytes().enumerate() {
+                    if it.1 == b'\x1B' {
+                        let esc = line.as_str();
+                        // get the sequence and push it to the output stream
+                        let esc = &esc[it.0..esc.len()];
+                        let esclen = esc.ansi_esc_len();
+                        let sequence = &esc[0..esclen];
+                        dctx.strbuff.push_str(sequence);
+                    }
+                }
+            }
         }
 
         ctx.write_str(dctx.strbuff.as_str());
 
         // draw lines
-        for i in 0..lines_visible {
+        for i in 0..lines_visible as usize {
             dctx.strbuff.clear();
 
-            if top_line + i < lines.len() as i16 {
-                dctx.strbuff.push_str(lines.get(top_line as usize + i as usize).unwrap().as_str());
+            if top_line as usize + i < lines.len() {
+                if let Some(line) = lines.get(top_line as usize + i) {
+                    dctx.strbuff.push_str(line);
+                }
             }
             dctx.strbuff.set_displayed_width(dctx.wgt.size.width as i16 - 2);//, true);
             ctx.move_to(my_coord.col as u16 + 1, my_coord.row as u16 + i as u16 + 1);

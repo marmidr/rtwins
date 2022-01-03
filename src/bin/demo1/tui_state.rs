@@ -96,6 +96,7 @@ impl DemoWndState {
         wnd_state.rs.insert_state(Id::LedLock.into(),   Led{ lit: true }.into());
         wnd_state.rs.insert_state(Id::ChbxEnbl.into(),  Chbx{ checked: true }.into());
         wnd_state.rs.insert_state(Id::PgControl.into(), Pgctrl{ page: 4 }.into());
+        wnd_state.rs.insert_state(Id::TbxWide.into(),   Txtbx{ top_line: 9 }.into());
         return wnd_state;
     }
 }
