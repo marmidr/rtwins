@@ -3,7 +3,8 @@
 `RTWins` is a Rust library designed for easy creation of visual terminal applications on non-os platforms, like bare Cortex-M3.
 It provides basic facilities required by interactive applications such as screen and cursor management, keyboard input, keymaps, color codes.
 
-![example 1](doc/sshot1.png)
+![example 1](assets/sshot1.png)
+![example 2](assets/sshot2.png)
 
 ## References
 

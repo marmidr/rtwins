@@ -12,8 +12,8 @@ pub trait StringExt {
     fn push_n(&mut self, c: char, n: i16);
     /// Set displayed width to `expected_disp_w` according to Unicode Standard
     fn set_displayed_width(&mut self, expected_disp_w: i16);
-    /// Append and return ownself
-    fn app(&mut self, s: &str) -> &mut Self;
+    /// Append and return mutable reference to itself
+    fn append(&mut self, s: &str) -> &mut Self;
     /// Returns stream operator wrapper
     fn stream(&mut self) -> StrStreamOp;
 }
@@ -52,14 +52,16 @@ impl StringExt for String {
 
                 if sum_w >= expected_disp_w as usize {
                     self.truncate(i);
-                    self.push('…');
+                    if expected_disp_w > 0 {
+                        self.push('…');
+                    }
                     break;
                 }
             }
         }
     }
 
-    fn app(&mut self, s: &str) -> &mut Self {
+    fn append(&mut self, s: &str) -> &mut Self {
         self.push_str(s);
         self
     }
@@ -175,10 +177,9 @@ impl<'a> StrStreamOp<'a> {
         StrStreamOp { intern: s }
     }
 
-    /// Destroys decorator returning internal string reference
-    #[inline]
-    pub fn take(self) -> &'a mut String {
-        self.intern
+    // return nonmutable internal string
+    pub fn as_string(&'a self) -> &'a String {
+        &self.intern
     }
 }
 

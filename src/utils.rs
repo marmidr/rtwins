@@ -12,14 +12,7 @@ pub fn word_wrap(max_disp_w: usize, src: &String) -> StringListRc {
     let it = src.split_inclusive(char::is_whitespace)
         .scan((0usize, 0usize, 0usize), |state, word| {
             let word_w = word.ansi_displayed_width();
-            // println!(" '{}'", word);
-
-            if word_w > max_disp_w {
-                state.0 = 0;
-                state.2 += word.len();  // end += word.len
-                state.1 = state.2;      // begin = end
-                return Some(word.to_string());
-            }
+            // println!("w:'{}', wl:{}", word, word.len());
 
             if state.0 + word_w > max_disp_w {
                 // ready to output the line as the current word would made it too wide

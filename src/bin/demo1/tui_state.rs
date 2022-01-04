@@ -162,7 +162,9 @@ impl WindowState for DemoWndState {
     }
 
     fn on_radio_select(&mut self, wgt: &Widget) {
-        // TODO: self.radiogrp1_idx =
+        if let Property::Radio(ref p) = wgt.prop {
+            self.radiogrp1_idx = p.radio_id;
+        }
     }
 
     fn on_text_box_scroll(&mut self, wgt: &Widget, top_line: i16) {
