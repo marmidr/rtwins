@@ -802,15 +802,13 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox)
         dlp.focused = focused;
         dlp.wgt_width = dctx.wgt.size.width;
 
-        // destructure dctx so the closure will capture local variables, not entire struct
-        let wgt = dctx.wgt;
-        let ws = &mut dctx.wnd_state;
-        let mut ctx = dctx.ctx.borrow_mut();
-
+        // in 2021 edition, we can use entire struct in the closure
+        // and see no borrowchecker error
         let getitem_cb = |idx, out: &mut String| {
-            ws.get_combo_box_item(wgt, idx, out);
+            dctx.wnd_state.get_combo_box_item(dctx.wgt, idx, out);
         };
 
+        let mut ctx = dctx.ctx.borrow_mut();
         draw_list(&mut ctx, &dlp, getitem_cb);
     }
 }
