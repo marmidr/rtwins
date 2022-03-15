@@ -9,6 +9,7 @@ pub mod colors;
 pub mod esc;
 pub mod pal;
 pub mod input;
+pub mod input_tty;
 pub mod widget;
 pub mod widget_impl;
 pub mod widget_draw;

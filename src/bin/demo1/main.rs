@@ -103,6 +103,18 @@ fn main() {
         c.move_to_col(10).log_w("Column 10");
         c.write_char('\n').flush_buff();
     }
+
+    let mut inp = rtwins::input_tty::InputTty::new(50);
+    loop {
+        let (k, q) = inp.read_input();
+        if q {
+            println!("Quit!");
+            break;
+        }
+        else if k[0] != 0 {
+            println!("  key");
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------------------------
