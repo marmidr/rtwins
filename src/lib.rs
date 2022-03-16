@@ -7,8 +7,10 @@
 
 pub mod colors;
 pub mod esc;
+pub mod esc_decoder;
 pub mod pal;
 pub mod input;
+#[cfg(target_os = "linux")]
 pub mod input_tty;
 pub mod widget;
 pub mod widget_impl;

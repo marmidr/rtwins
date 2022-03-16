@@ -506,7 +506,7 @@ pub const CURSOR_HOME           : &str = csi!("H");
 
 #[macro_export]
 macro_rules! cursor_column {
-    () =>           { $crate::csi!("{0}G") };
+    () =>              { $crate::csi!("{0}G") };
     ($col:literal) =>  { $crate::csi!(concat!(stringify!($col), "G")); };
 }
 
@@ -672,7 +672,7 @@ pub const REPORT_SCREEN_CHARS   : &str = csi!("19t");
 pub const REPORT_CAPABILITIES   : &str = csi!("c");
 
 /// Maximum ESC sequence length (including null)
-pub const SEQ_MAX_LENGTH        : u8 = 8;
+pub const SEQ_MAX_LENGTH        : usize = 8;
 
 // bash: blink screen until key pressed
 // { while true; do printf \\e[?5h; sleep 0.3; printf \\e[?5l; read -s -n1 -t1 && break; done; }

@@ -1,17 +1,17 @@
 //! # RTWins reading terminal keys
 
-use std::{os::unix::io::AsRawFd, io::Read};
+use std::os::unix::io::AsRawFd;
+use std::io::Read;
 use libc;
 
 const TTY_FILE_PATH: &str = "/dev/tty";
-const KEY_BUF_LEN: usize = 8;
 
 pub struct InputTty{
     tty_file:    Option<std::fs::File>,
     c_lflag_bkp: libc::tcflag_t,
     eof_code:    libc::cc_t,
     input_timeout_ms: u16,
-    input_buff:  [u8; KEY_BUF_LEN],
+    input_buff:  [u8; crate::esc::SEQ_MAX_LENGTH],
 }
 
 impl Drop for InputTty {
@@ -42,7 +42,7 @@ impl InputTty {
             tty_file: None,
             c_lflag_bkp: 0, eof_code: 0,
             input_timeout_ms: timeout_ms,
-            input_buff: [0u8; KEY_BUF_LEN]};
+            input_buff: [0u8; crate::esc::SEQ_MAX_LENGTH]};
 
         itty.tty_file = match std::fs::File::open(TTY_FILE_PATH) {
             Ok(f) =>
@@ -101,7 +101,7 @@ impl InputTty {
         if let Some(ref mut f) = self.tty_file {
             if Self::wait_input(f.as_raw_fd(), self.input_timeout_ms) {
                 // read up to 8-1 bytes
-                let res = f.read(&mut self.input_buff[..KEY_BUF_LEN-1]);
+                let res = f.read(&mut self.input_buff[..crate::esc::SEQ_MAX_LENGTH-1]);
                 if let Ok(nb) = res {
                     // print!("nb={} ", nb);
                     self.input_buff[nb] = 0;

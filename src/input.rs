@@ -43,7 +43,7 @@ pub enum AnsiCodes
 
 
 /// Special keyboard keys
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 pub enum Key
 {
     None,
