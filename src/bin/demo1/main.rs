@@ -104,15 +104,28 @@ fn main() {
         c.write_char('\n').flush_buff();
     }
 
-    let mut inp = rtwins::input_tty::InputTty::new(50);
+    println!("Press Ctrl-D to quit");
+    let mut inp = rtwins::input_tty::InputTty::new(2000);
+
     loop {
-        let (k, q) = inp.read_input();
+        let (inp_seq, q) = inp.read_input();
+
         if q {
             println!("Quit!");
             break;
         }
-        else if k[0] != 0 {
-            println!("  key");
+        else if inp_seq[0] != 0 {
+            // let s = String::from_utf8_lossy(inp_seq);
+
+            let mut s = String::new();
+            for b in inp_seq {
+                if *b == 0 { break; }
+                if *b < b' ' { s.push('�')} else { s.push(*b as char) };
+            }
+            println!(" key={}", s);
+        }
+        else {
+            println!(" -");
         }
     }
 }

@@ -10,7 +10,7 @@ edition = "2021"
 num_enum = "0.5.4"
 unicode-width = "0.1"
 # enum-iterator = "0.7.0"
-termios = "0.3"
+# termios = "0.3"
 # nix = "0.23"
 libc = "0.2"
 
