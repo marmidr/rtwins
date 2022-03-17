@@ -3,6 +3,7 @@
 
 #![allow(dead_code)]
 
+use std::cmp::Ordering;
 use crate::input::*;
 
 // -----------------------------------------------------------------------------
@@ -81,6 +82,7 @@ macro_rules! seq_def {
     };
 }
 
+#[rustfmt::skip]
 const ESC_KEYS_MAP_UNSORTED : [SeqMap; 155] = [
     seq_def!("[A",       "Up",           Key::Up,        KEY_MOD_SPECIAL),   // xterm
     seq_def!("[B",       "Down",         Key::Down,      KEY_MOD_SPECIAL),   // xterm
@@ -253,6 +255,7 @@ macro_rules! letter_def {
     };
 }
 
+#[rustfmt::skip]
 const CTRL_KEYS_MAP_SORTED : [LetterMap; 26] = [
     // letter_def!( 0, "C-2", '2', KEY_MOD_CTRL)
     letter_def!(0x01, "C-A", b'A', KEY_MOD_CTRL),
@@ -289,6 +292,7 @@ macro_rules! ctrl_def {
     };
 }
 
+#[rustfmt::skip]
 const SPECIAL_KEYS_MAP_UNSORTED : [CtrlMap; 8] = [
     ctrl_def!(AnsiCodes::DEL,   "Backspace",  Key::Backspace, KEY_MOD_SPECIAL),
     ctrl_def!(AnsiCodes::HT,    "Tab",        Key::Tab,       KEY_MOD_SPECIAL),
@@ -318,15 +322,15 @@ const fn sort_seq<const N: usize>(input: &[SeqMap]) -> [SeqMap; N] {
     out
 }
 
-// b-sort
-// q-sort cannot be used due to the stack limit
+/// bubble-sort
+/// q-sort cannot be used due to the stack limit
 const fn sort<const N: usize>(mut array: [SeqMap; N]) -> [SeqMap; N] {
     if array.len() > 1 {
         let mut l = 0usize;
         while l < array.len() -1 {
             let mut r = l + 1;
             while r < array.len() {
-                if !seq_lte(&array[l], &array[r]) {
+                if seqmap_cmp(&array[l], &array[r]).is_gt() {
                     // swap
                     let tmp = array[l];
                     array[l] = array[r];
@@ -341,61 +345,38 @@ const fn sort<const N: usize>(mut array: [SeqMap; N]) -> [SeqMap; N] {
     array
 }
 
-/// Checks if `left` is less that or equal to `right`
-const fn seq_lte(left: &SeqMap, right: &SeqMap) -> bool {
-    let len_l = left.seq.len();
-    let len_r = right.seq.len();
-    let commn_len = if len_l < len_r { len_l } else { len_r };
-    let bytes_l = left.seq.as_bytes();
-    let bytes_r = right.seq.as_bytes();
+/// Compares two SeqMap using method similar to strcmp
+const fn seqmap_cmp(left: &SeqMap, right: &SeqMap) -> Ordering {
+    seq_cmp(left.seq.as_bytes(), right.seq.as_bytes())
+}
+
+/// Compares two byte slices using method similar to strcmp
+const fn seq_cmp(left: &[u8], right: &[u8]) -> Ordering {
+    let commn_len = if left.len() < right.len() { left.len() } else { right.len() };
     let mut i = 0usize;
 
     while i < commn_len {
-        if bytes_l[i] != bytes_r[i] {
-            return bytes_l[i] < bytes_r[i];
+        if left[i] != right[i] {
+            if left[i] < right[i] {
+                return Ordering::Less
+            }
+            else {
+                return Ordering::Greater
+            }
         }
         i += 1;
     }
 
-    len_l <= len_r
-}
-
-#[cfg(test)]
-mod tests
-{
-#[test]
-fn test_seq_is_lt() {
-    use super::*;
-
-    {
-        let l = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
-        let r = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
-        assert!(seq_lte(&l, &r));
+    if left.len() == right.len() {
+        Ordering::Equal
     }
-
-    {
-        let l = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
-        let r = SeqMap{seq: "AAB", ..SeqMap::cdeflt()};
-        assert!(seq_lte(&l, &r));
-        assert!(!seq_lte(&r, &l));
+    else if left.len() < right.len() {
+        Ordering::Less
     }
-
-    {
-        let l = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
-        let r = SeqMap{seq: "AAAA", ..SeqMap::cdeflt()};
-        assert!(seq_lte(&l, &r));
-        assert!(!seq_lte(&r, &l));
-    }
-
-    {
-        let l = SeqMap{seq: "AAB", ..SeqMap::cdeflt()};
-        let r = SeqMap{seq: "AAAA", ..SeqMap::cdeflt()};
-        assert!(!seq_lte(&l, &r));
-        assert!(seq_lte(&r, &l));
+    else {
+        Ordering::Greater
     }
 }
-
-} // mod
 
 // -----------------------------------------------------------------------------
 
@@ -404,3 +385,118 @@ pub fn print_seq() {
         println!("{:7} -> {}", s.seq, s.name);
     }
 }
+
+/// Fast binary search of key-sequence `sequence` in sorted `map`.
+/// Returns Some(SeqMap) if found, None otherwise.
+fn seq_binary_search(sequence: &[u8], map: &'static [SeqMap]) -> Option<&'static SeqMap> {
+    if sequence.len() < 2 || sequence[0] == 0 {
+        return None;
+    }
+
+    let mut lo = 0usize;
+    let mut hi = map.len() - 1;
+    let mut mid = (hi - lo) / 2;
+
+    loop {
+        // map[mid].seq must not necessary be equal to seq, but be at the beginning of it
+        let cmp = seq_cmp(sequence, map[mid].seq.as_bytes());
+
+        if cmp.is_eq() {
+            return Some(&map[mid]);
+        }
+        else if cmp.is_gt() {
+            lo = mid + 1;
+        }
+        else {
+            hi = mid - 1;
+        }
+
+        if hi < lo { break; }
+        mid = lo + ((hi - lo) / 2);
+    }
+
+    // seq not found
+    None
+}
+
+// -----------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+use super::*;
+
+#[test]
+fn test_seq_cmp() {
+
+    {
+        // same length, equal
+        let l = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
+        let r = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
+        assert_eq!(Ordering::Equal, seqmap_cmp(&l, &r));
+    }
+
+    {
+        // same length, inequal
+        let l = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
+        let r = SeqMap{seq: "AAB", ..SeqMap::cdeflt()};
+        assert_eq!(Ordering::Less, seqmap_cmp(&l, &r));
+        assert_eq!(Ordering::Greater, seqmap_cmp(&r, &l));
+    }
+
+    {
+        // similar, diferent lenght
+        let l = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
+        let r = SeqMap{seq: "AAAA", ..SeqMap::cdeflt()};
+        assert_eq!(Ordering::Less, seqmap_cmp(&l, &r));
+        assert_eq!(Ordering::Greater, seqmap_cmp(&r, &l));
+    }
+
+    {
+        // different content and length
+        let l = SeqMap{seq: "AAB", ..SeqMap::cdeflt()};
+        let r = SeqMap{seq: "AAAA", ..SeqMap::cdeflt()};
+        assert_eq!(Ordering::Greater, seqmap_cmp(&l, &r));
+        assert_eq!(Ordering::Less, seqmap_cmp(&r, &l));
+    }
+}
+
+#[test]
+fn test_seq_binary_search() {
+    {
+        // empy input
+        let opt = seq_binary_search(b"", &ESC_KEYS_MAP_SORTED);
+        assert!(opt.is_none());
+    }
+
+    {
+        // input too short
+        let opt = seq_binary_search(b"[", &ESC_KEYS_MAP_SORTED);
+        assert!(opt.is_none());
+    }
+
+    {
+        // input unknown
+        let opt = seq_binary_search(b"[ABC", &ESC_KEYS_MAP_SORTED);
+        assert!(opt.is_none());
+    }
+
+    {
+        // valid input
+        let opt = seq_binary_search(b"[H", &ESC_KEYS_MAP_SORTED);
+        assert!(opt.is_some());
+        if let Some(km) = opt {
+            assert!(Key::Home == km.key);
+        }
+    }
+
+    {
+        // valid input
+        let opt = seq_binary_search(b"[24;5~", &ESC_KEYS_MAP_SORTED);
+        assert!(opt.is_some());
+        if let Some(km) = opt {
+            assert!(Key::F12 == km.key);
+        }
+    }
+}
+
+} // mod tests
