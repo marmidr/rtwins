@@ -245,13 +245,15 @@ const ESC_KEYS_MAP_UNSORTED : [SeqMap; 155] = [
     // + Shift + Alt
 ];
 
+const ESC_KEYS_MAP_SORTED : [SeqMap; ESC_KEYS_MAP_UNSORTED.len()] = sort_seq(&ESC_KEYS_MAP_UNSORTED);
+
 macro_rules! letter_def {
     ($c:literal, $n:literal, $k:literal, $m:expr) => {
         LetterMap{code: $c, name: $n, key: $k, modif: $m, seqlen: 1}
     };
 }
 
-const CTRL_KEYS_MAP_UNSORTED : [LetterMap; 26] = [
+const CTRL_KEYS_MAP_SORTED : [LetterMap; 26] = [
     // letter_def!( 0, "C-2", '2', KEY_MOD_CTRL)
     letter_def!(0x01, "C-A", b'A', KEY_MOD_CTRL),
     letter_def!(0x02, "C-B", b'B', KEY_MOD_CTRL),
@@ -302,60 +304,9 @@ const SPECIAL_KEYS_MAP_UNSORTED : [CtrlMap; 8] = [
 
 // -----------------------------------------------------------------------------
 
-/*
-/// @brief constexpr comparison operator needed for sort function
-constexpr bool operator <(const SeqMap &left, const SeqMap &right)
-{
-    const char *pl = left.seq;
-    const char *pr = right.seq;
-
-    while (*pl == *pr)
-        pl++, pr++;
-    return *pl < *pr;
-}
-
-/// @brief constexpr swap
-template<class T>
-constexpr void cex_swap(T& lho, T& rho)
-{
-    T tmp = std::move(lho);
-    lho = std::move(rho);
-    rho = std::move(tmp);
-}
-
-/// @brief constexpr sort
-template <typename T, unsigned N>
-constexpr void cex_sort_impl(Array<T, N> &array, unsigned left, unsigned right)
-{
-    if (left < right)
-    {
-        unsigned m = left;
-
-        for (unsigned i = left + 1; i < right; i++)
-            if (array[i] < array[left])
-                cex_swap(array[++m], array[i]);
-
-        cex_swap(array[left], array[m]);
-
-        cex_sort_impl(array, left, m);
-        cex_sort_impl(array, m + 1, right);
-    }
-}
-
-/// @brief returns constexpr sorted array
-template <typename T, unsigned N>
-constexpr Array<T, N> cex_sort_arr(Array<T, N> array)
-{
-    auto sorted_array = array;
-    cex_sort_impl(sorted_array, 0, N);
-    return sorted_array;
-}
-
-*/
-
-
-const fn sort_keys<const N: usize>(input: &[CtrlMap]) -> [CtrlMap; N] {
-    let mut out = [CtrlMap::cdeflt(); N];
+/// Compile time sorting of sequence array that allows fast searching
+const fn sort_seq<const N: usize>(input: &[SeqMap]) -> [SeqMap; N] {
+    let mut out = [SeqMap::cdeflt(); N];
     let mut i = 0usize;
 
     while i < input.len() {
@@ -363,7 +314,93 @@ const fn sort_keys<const N: usize>(input: &[CtrlMap]) -> [CtrlMap; N] {
         i += 1;
     }
 
+    out = sort(out);
     out
 }
 
-const SPECIAL_KEYS_MAP_SORTED : [CtrlMap; SPECIAL_KEYS_MAP_UNSORTED.len()] = sort_keys(&SPECIAL_KEYS_MAP_UNSORTED);
+// b-sort
+// q-sort cannot be used due to the stack limit
+const fn sort<const N: usize>(mut array: [SeqMap; N]) -> [SeqMap; N] {
+    if array.len() > 1 {
+        let mut l = 0usize;
+        while l < array.len() -1 {
+            let mut r = l + 1;
+            while r < array.len() {
+                if !seq_lte(&array[l], &array[r]) {
+                    // swap
+                    let tmp = array[l];
+                    array[l] = array[r];
+                    array[r] = tmp;
+                }
+                r += 1;
+            }
+            l += 1;
+        }
+    }
+
+    array
+}
+
+/// Checks if `left` is less that or equal to `right`
+const fn seq_lte(left: &SeqMap, right: &SeqMap) -> bool {
+    let len_l = left.seq.len();
+    let len_r = right.seq.len();
+    let commn_len = if len_l < len_r { len_l } else { len_r };
+    let bytes_l = left.seq.as_bytes();
+    let bytes_r = right.seq.as_bytes();
+    let mut i = 0usize;
+
+    while i < commn_len {
+        if bytes_l[i] != bytes_r[i] {
+            return bytes_l[i] < bytes_r[i];
+        }
+        i += 1;
+    }
+
+    len_l <= len_r
+}
+
+#[cfg(test)]
+mod tests
+{
+#[test]
+fn test_seq_is_lt() {
+    use super::*;
+
+    {
+        let l = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
+        let r = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
+        assert!(seq_lte(&l, &r));
+    }
+
+    {
+        let l = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
+        let r = SeqMap{seq: "AAB", ..SeqMap::cdeflt()};
+        assert!(seq_lte(&l, &r));
+        assert!(!seq_lte(&r, &l));
+    }
+
+    {
+        let l = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
+        let r = SeqMap{seq: "AAAA", ..SeqMap::cdeflt()};
+        assert!(seq_lte(&l, &r));
+        assert!(!seq_lte(&r, &l));
+    }
+
+    {
+        let l = SeqMap{seq: "AAB", ..SeqMap::cdeflt()};
+        let r = SeqMap{seq: "AAAA", ..SeqMap::cdeflt()};
+        assert!(!seq_lte(&l, &r));
+        assert!(seq_lte(&r, &l));
+    }
+}
+
+} // mod
+
+// -----------------------------------------------------------------------------
+
+pub fn print_seq() {
+    for s in ESC_KEYS_MAP_SORTED.iter() {
+        println!("{:7} -> {}", s.seq, s.name);
+    }
+}

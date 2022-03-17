@@ -80,6 +80,7 @@ impl rtwins::pal::Pal for DemoPal {
 fn main() {
     test_esc_codes();
     // test_property_access();
+    // rtwins::input_decoder::print_seq();
 
     let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN_ARRAY[..]);
     let mut tw = TWins::new(Box::new(DemoPal::new()));
