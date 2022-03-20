@@ -1,11 +1,11 @@
 //! # RTWins decoder of terminal ESC sequences to key/mouse codes
 
-
 #![allow(dead_code)]
 
 use std::cmp::Ordering;
-use std::collections::vec_deque::*;
 use crate::input::*;
+
+pub type InputQue = std::collections::vec_deque::VecDeque<u8>;
 
 // -----------------------------------------------------------------------------
 
@@ -19,14 +19,14 @@ struct SeqMap {
     // keyboard special key code
     key:    Key,
     // key modifiers, like KEY_MOD_CTRL
-    modif:  u8,
+    kmod:   u8,
     // seq.len()
     seqlen: u8
 }
 
 impl SeqMap {
     const fn cdeflt() -> Self {
-        Self{seq: "", name: "", key: Key::None, modif: 0, seqlen: 0}
+        Self{seq: "", name: "", key: Key::None, kmod: 0, seqlen: 0}
     }
 }
 
@@ -35,40 +35,36 @@ impl SeqMap {
 struct LetterMap {
     // letter A..Z
     code:   u8,
-    // key name
-    name:   &'static str,
     // key code
     key:    u8,
     // key modifiers, like KEY_MOD_CTRL
-    modif:  u8,
-    // =1
-    seqlen: u8
+    kmod:   u8,
+    // key name
+    name:   &'static str,
 }
 
 impl LetterMap {
     const fn cdeflt() -> Self {
-        Self{code: 0, name: "", key: 0, modif: 0, seqlen: 0}
+        Self{code: 0, key: 0, kmod: 0, name: ""}
     }
 }
 
 /// CTRL key definition
 #[derive(Copy, Clone)]
-struct CtrlMap {
+struct SpecialMap {
     // 0x01..
     code:   u8,
-    // key name
-    name:   &'static str,
     // key code
     key:    Key,
     // key modifiers, like KEY_MOD_CTRL
-    modif:  u8,
-    // =1
-    seqlen: u8
+    kmod:   u8,
+    // key name
+    name:   &'static str,
 }
 
-impl CtrlMap {
+impl SpecialMap {
     const fn cdeflt() -> Self {
-        Self{code: 0, name: "", key: Key::None, modif: 0, seqlen: 0}
+        Self{code: 0, key: Key::None, kmod: 0, name: ""}
     }
 }
 
@@ -76,7 +72,7 @@ impl CtrlMap {
 
 macro_rules! seq_def {
     ($s:literal, $n:literal, $k:expr, $m:expr) => {
-        SeqMap{seq: $s, name: $n, key: $k, modif: $m, seqlen: $s.len() as u8}
+        SeqMap{seq: $s, name: $n, key: $k, kmod: $m, seqlen: $s.len() as u8}
     };
 }
 
@@ -247,61 +243,61 @@ const ESC_KEYS_MAP_UNSORTED : [SeqMap; 155] = [
 
 const ESC_KEYS_MAP_SORTED : [SeqMap; ESC_KEYS_MAP_UNSORTED.len()] = sort_seq(&ESC_KEYS_MAP_UNSORTED);
 
-macro_rules! letter_def {
+macro_rules! ctrl_def {
     ($c:literal, $n:literal, $k:literal, $m:expr) => {
-        LetterMap{code: $c, name: $n, key: $k, modif: $m, seqlen: 1}
+        LetterMap{code: $c, name: $n, key: $k, kmod: $m}
     };
 }
 
 #[rustfmt::skip]
 const CTRL_KEYS_MAP_SORTED : [LetterMap; 26] = [
     // letter_def!( 0, "C-2", '2', KEY_MOD_CTRL)
-    letter_def!(0x01, "C-A", b'A', KEY_MOD_CTRL),
-    letter_def!(0x02, "C-B", b'B', KEY_MOD_CTRL),
-    letter_def!(0x03, "C-C", b'C', KEY_MOD_CTRL),
-    letter_def!(0x04, "C-D", b'D', KEY_MOD_CTRL),
-    letter_def!(0x05, "C-E", b'E', KEY_MOD_CTRL),
-    letter_def!(0x06, "C-F", b'F', KEY_MOD_CTRL),
-    letter_def!(0x07, "C-G", b'G', KEY_MOD_CTRL),
-    letter_def!(0x08, "C-H", b'H', KEY_MOD_CTRL), // BS
-    letter_def!(0x09, "C-I", b'I', KEY_MOD_CTRL), // HT
-    letter_def!(0x0A, "C-J", b'J', KEY_MOD_CTRL), // LF
-    letter_def!(0x0B, "C-K", b'K', KEY_MOD_CTRL),
-    letter_def!(0x0C, "C-L", b'L', KEY_MOD_CTRL),
-    letter_def!(0x0D, "C-M", b'M', KEY_MOD_CTRL), // CR
-    letter_def!(0x0E, "C-N", b'N', KEY_MOD_CTRL),
-    letter_def!(0x0F, "C-O", b'O', KEY_MOD_CTRL),
-    letter_def!(0x10, "C-P", b'P', KEY_MOD_CTRL),
-    letter_def!(0x11, "C-Q", b'Q', KEY_MOD_CTRL),
-    letter_def!(0x12, "C-R", b'R', KEY_MOD_CTRL),
-    letter_def!(0x13, "C-S", b'S', KEY_MOD_CTRL),
-    letter_def!(0x14, "C-T", b'T', KEY_MOD_CTRL),
-    letter_def!(0x15, "C-U", b'U', KEY_MOD_CTRL),
-    letter_def!(0x16, "C-V", b'V', KEY_MOD_CTRL),
-    letter_def!(0x17, "C-W", b'W', KEY_MOD_CTRL),
-    letter_def!(0x18, "C-X", b'X', KEY_MOD_CTRL),
-    letter_def!(0x19, "C-Y", b'Y', KEY_MOD_CTRL),
-    letter_def!(0x1A, "C-Z", b'Z', KEY_MOD_CTRL),
+    ctrl_def!(0x01, "C-A", b'A', KEY_MOD_CTRL),
+    ctrl_def!(0x02, "C-B", b'B', KEY_MOD_CTRL),
+    ctrl_def!(0x03, "C-C", b'C', KEY_MOD_CTRL),
+    ctrl_def!(0x04, "C-D", b'D', KEY_MOD_CTRL),
+    ctrl_def!(0x05, "C-E", b'E', KEY_MOD_CTRL),
+    ctrl_def!(0x06, "C-F", b'F', KEY_MOD_CTRL),
+    ctrl_def!(0x07, "C-G", b'G', KEY_MOD_CTRL),
+    ctrl_def!(0x08, "C-H", b'H', KEY_MOD_CTRL), // BS
+    ctrl_def!(0x09, "C-I", b'I', KEY_MOD_CTRL), // HT
+    ctrl_def!(0x0A, "C-J", b'J', KEY_MOD_CTRL), // LF
+    ctrl_def!(0x0B, "C-K", b'K', KEY_MOD_CTRL),
+    ctrl_def!(0x0C, "C-L", b'L', KEY_MOD_CTRL),
+    ctrl_def!(0x0D, "C-M", b'M', KEY_MOD_CTRL), // CR
+    ctrl_def!(0x0E, "C-N", b'N', KEY_MOD_CTRL),
+    ctrl_def!(0x0F, "C-O", b'O', KEY_MOD_CTRL),
+    ctrl_def!(0x10, "C-P", b'P', KEY_MOD_CTRL),
+    ctrl_def!(0x11, "C-Q", b'Q', KEY_MOD_CTRL),
+    ctrl_def!(0x12, "C-R", b'R', KEY_MOD_CTRL),
+    ctrl_def!(0x13, "C-S", b'S', KEY_MOD_CTRL),
+    ctrl_def!(0x14, "C-T", b'T', KEY_MOD_CTRL),
+    ctrl_def!(0x15, "C-U", b'U', KEY_MOD_CTRL),
+    ctrl_def!(0x16, "C-V", b'V', KEY_MOD_CTRL),
+    ctrl_def!(0x17, "C-W", b'W', KEY_MOD_CTRL),
+    ctrl_def!(0x18, "C-X", b'X', KEY_MOD_CTRL),
+    ctrl_def!(0x19, "C-Y", b'Y', KEY_MOD_CTRL),
+    ctrl_def!(0x1A, "C-Z", b'Z', KEY_MOD_CTRL),
 ];
 
-macro_rules! ctrl_def {
+macro_rules! special_def {
     ($c:expr, $n:literal, $k:expr, $m:expr) => {
-        CtrlMap{code: $c as u8, name: $n, key: $k, modif: $m, seqlen: 1}
+        SpecialMap{code: $c as u8, key: $k, kmod: $m, name: $n}
     };
 }
 
 #[rustfmt::skip]
-const SPECIAL_KEYS_MAP_UNSORTED : [CtrlMap; 8] = [
-    ctrl_def!(AnsiCodes::DEL,   "Backspace",  Key::Backspace, KEY_MOD_SPECIAL),
-    ctrl_def!(AnsiCodes::HT,    "Tab",        Key::Tab,       KEY_MOD_SPECIAL),
-    ctrl_def!(AnsiCodes::LF,    "Enter",      Key::Enter,     KEY_MOD_SPECIAL),
-    ctrl_def!(AnsiCodes::CR,    "Enter",      Key::Enter,     KEY_MOD_SPECIAL),
-    ctrl_def!(AnsiCodes::ESC,   "Esc",        Key::Esc,       KEY_MOD_SPECIAL),
-    ctrl_def!(AnsiCodes::GS,    "Pause",      Key::Pause,     KEY_MOD_SPECIAL),
-    // ctrl_def!(0x17,             "C-Bspc",     Key::Backspace, KEY_MOD_SPECIAL | KEY_MOD_CTRL), // VSCode
-    // ctrl_def!(0x08,             "S-Bspc",     Key::Backspace, KEY_MOD_SPECIAL | KEY_MOD_SHIFT), // VSCode
-    ctrl_def!(AnsiCodes::RS,    "C-Enter",    Key::Enter,     KEY_MOD_SPECIAL | KEY_MOD_CTRL), // mintty
-    ctrl_def!(AnsiCodes::US,    "C-Bspc",     Key::Backspace, KEY_MOD_SPECIAL | KEY_MOD_CTRL), // mintty
+const SPECIAL_KEYS_MAP_UNSORTED : [SpecialMap; 8] = [
+    special_def!(AnsiCodes::DEL,   "Backspace",  Key::Backspace, KEY_MOD_SPECIAL),
+    special_def!(AnsiCodes::HT,    "Tab",        Key::Tab,       KEY_MOD_SPECIAL),
+    special_def!(AnsiCodes::LF,    "Enter",      Key::Enter,     KEY_MOD_SPECIAL),
+    special_def!(AnsiCodes::CR,    "Enter",      Key::Enter,     KEY_MOD_SPECIAL),
+    special_def!(AnsiCodes::ESC,   "Esc",        Key::Esc,       KEY_MOD_SPECIAL),
+    special_def!(AnsiCodes::GS,    "Pause",      Key::Pause,     KEY_MOD_SPECIAL),
+    // special_def!(0x17,             "C-Bspc",     Key::Backspace, KEY_MOD_SPECIAL | KEY_MOD_CTRL), // VSCode
+    // special_def!(0x08,             "S-Bspc",     Key::Backspace, KEY_MOD_SPECIAL | KEY_MOD_SHIFT), // VSCode
+    special_def!(AnsiCodes::RS,    "C-Enter",    Key::Enter,     KEY_MOD_SPECIAL | KEY_MOD_CTRL), // mintty
+    special_def!(AnsiCodes::US,    "C-Bspc",     Key::Backspace, KEY_MOD_SPECIAL | KEY_MOD_CTRL), // mintty
 ];
 
 // -----------------------------------------------------------------------------
@@ -443,16 +439,14 @@ impl Decoder {
     /// Decodes input ESC sequence fetching bytes from queue;
     /// fills the output with decoded key/mouse event,
     /// Returns number of bytes consumed from the queue; 0 if no valid data found
-    pub fn decode_input_seq(&mut self, input: &mut VecDeque<u8>, output: &mut KeyCode) -> u8 {
-        output.key = Key::None;
-        output.kmod.mask = 0;
-        output.name = "<?>";
+    pub fn decode_input_seq(&mut self, input: &mut InputQue, output: &mut KeyCode) -> u8 {
+        output.reset();
 
         if input.len() == 0 {
             return 0;
         }
 
-        let read_seq_from_queue = |inp: &VecDeque<u8>, out: &mut [u8]| -> usize {
+        let read_seq_from_queue = |inp: &InputQue, out: &mut [u8]| -> usize {
             // out.copy_from_slice() impossible as Deque is noncontiguous
             let count = (out.len()-1).min(inp.len());
             let mut it = inp.iter();
@@ -488,8 +482,6 @@ impl Decoder {
                     && seq[1] == b'['
                     && seq[2] == b'M'
                 {
-                    output.key = Key::MouseEvent;
-
                     let mouse_btn = seq[3] - b' ';
                     match mouse_btn & 0xE3 {
                         0x00 => output.mouse.btn = MouseBtn::ButtonLeft,
@@ -511,7 +503,7 @@ impl Decoder {
 
                     output.mouse.col = seq[4] - b' ';
                     output.mouse.row = seq[5] - b' ';
-                    output.name = "MouseClk";
+                    output.name = "MouseEvent";
 
                     input.drain(..6);
                     return 6;
@@ -520,7 +512,7 @@ impl Decoder {
                 // binary search: find key map in max 7 steps
                 if let Some(km) = seq_binary_search(&seq, &ESC_KEYS_MAP_SORTED) {
                     output.key = km.key;
-                    output.kmod.mask = km.modif;
+                    output.kmod.mask = km.kmod;
                     output.name = km.name;
                     input.drain(..1 + km.seqlen as usize); // +1 for ESC
                     return 1 + km.seqlen;
@@ -586,7 +578,7 @@ impl Decoder {
                         }
 
                         output.key = km.key;
-                        output.kmod.mask = km.modif;
+                        output.kmod.mask = km.kmod;
                         output.name = km.name;
                         input.drain(..1);
                         return 1;
@@ -598,19 +590,16 @@ impl Decoder {
                 }
 
                 // 3. check for one of Ctrl+[A..Z]
-                for km in CTRL_KEYS_MAP_SORTED.iter() {
-                    if seq[0] == km.code {
-                        output.utf8seq[0] = km.key as u8;
-                        output.utf8seq[1] = b'\0';
-                        output.kmod.mask = km.modif;
-                        output.name = km.name;
-                        input.drain(..1);
-                        return 1;
-                    }
+                if let Some(km) = CTRL_KEYS_MAP_SORTED.iter().find(|&&x| x.code == seq[0]) {
+                    output.utf8seq[0] = km.key as u8;
+                    output.kmod.mask = km.kmod;
+                    output.name = km.name;
+                    input.drain(..1);
+                    return 1;
                 }
 
                 // 4. regular ASCII character or UTF-8 sequence
-                let utf8seqlen = utf8_char_width(seq[0]); // 0..4
+                let utf8seqlen = crate::utils::utf8_char_width(seq[0]); // 0..4
                 // dbg!(seq, seq_sz, utf8seqlen);
 
                 if utf8seqlen > 0 && utf8seqlen <= seq_sz {
@@ -620,6 +609,7 @@ impl Decoder {
                     output.utf8seq[2] = seq[2];
                     output.utf8seq[3] = seq[3];
                     output.utf8sl = utf8seqlen as u8;
+
                     output.name = "<.>";
 
                     input.drain(..utf8seqlen);
@@ -641,34 +631,6 @@ impl Decoder {
 
         return 0;
     }
-}
-
-// copied from code::str::validations.rs
-// https://tools.ietf.org/html/rfc3629
-const UTF8_CHAR_WIDTH: &[u8; 256] = &[
-    // 1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 0
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 1
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 2
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 3
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 4
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 5
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 6
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 7
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 8
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 9
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // A
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // B
-    0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, // C
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, // D
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, // E
-    4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // F
-];
-
-/// Given a first byte, determines how many bytes are in this UTF-8 character.
-#[inline]
-pub const fn utf8_char_width(b: u8) -> usize {
-    UTF8_CHAR_WIDTH[b as usize] as usize
 }
 
 // -----------------------------------------------------------------------------

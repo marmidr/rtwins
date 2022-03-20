@@ -76,7 +76,6 @@ pub enum Key {
     F11,
     F12,
     //
-    MouseEvent
 }
 
 /// Mouse button click events
@@ -179,9 +178,10 @@ impl KeyCode {
         self.name = "";
     }
 
-    /// Returns proper UTF-8 slice from self.utf8seq
-    pub fn utf8slice<'a>(&'a self) -> &'a str {
-        let res = std::str::from_utf8(self.utf8seq.split_at(self.utf8sl as usize).0);
+    /// Returns proper UTF-8 slice from self.utf8seq or empty slice in case of invalid sequence
+    pub fn utf8str(& self) -> &str {
+        let leading_seq = self.utf8seq.split_at(self.utf8sl as usize).0;
+        let res = std::str::from_utf8(leading_seq);
         if let Ok(s) = res {
             s
         }
