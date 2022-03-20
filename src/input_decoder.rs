@@ -4,14 +4,14 @@
 #![allow(dead_code)]
 
 use std::cmp::Ordering;
+use std::collections::vec_deque::*;
 use crate::input::*;
 
 // -----------------------------------------------------------------------------
 
 /// ESC sequence definition
 #[derive(Copy, Clone)]
-struct SeqMap
-{
+struct SeqMap {
     // ESC sequence
     seq:    &'static str,
     // keyboard key name mapped to sequence
@@ -32,8 +32,7 @@ impl SeqMap {
 
 /// CTRL key definition
 #[derive(Copy, Clone)]
-struct LetterMap
-{
+struct LetterMap {
     // letter A..Z
     code:   u8,
     // key name
@@ -54,8 +53,7 @@ impl LetterMap {
 
 /// CTRL key definition
 #[derive(Copy, Clone)]
-struct CtrlMap
-{
+struct CtrlMap {
     // 0x01..
     code:   u8,
     // key name
@@ -421,13 +419,267 @@ fn seq_binary_search(sequence: &[u8], map: &'static [SeqMap]) -> Option<&'static
 
 // -----------------------------------------------------------------------------
 
+/// ESC sequence into Key description decoder
+pub struct Decoder {
+    decode_fail_ctr : u8,
+    prev_cr : u8,
+    prev_esc_ignored : bool
+}
+
+impl Decoder {
+    /// Creates a new decoder instance
+    pub fn new() -> Self {
+        Self{decode_fail_ctr: 0, prev_cr: 0, prev_esc_ignored: false}
+    }
+
+    /// Reset the state; for testing purposes
+    #[cfg(test)]
+    pub fn reset_state(&mut self) {
+        self.decode_fail_ctr = 0;
+        self.prev_cr = 0;
+        self.prev_esc_ignored = false;
+    }
+
+    /// Decodes input ESC sequence fetching bytes from queue;
+    /// fills the output with decoded key/mouse event,
+    /// Returns number of bytes consumed from the queue; 0 if no valid data found
+    pub fn decode_input_seq(&mut self, input: &mut VecDeque<u8>, output: &mut KeyCode) -> u8 {
+        output.key = Key::None;
+        output.kmod.mask = 0;
+        output.name = "<?>";
+
+        if input.len() == 0 {
+            return 0;
+        }
+
+        let read_seq_from_queue = |inp: &VecDeque<u8>, out: &mut [u8]| -> usize {
+            // out.copy_from_slice() impossible as Deque is noncontiguous
+            let count = (out.len()-1).min(inp.len());
+            let mut it = inp.iter();
+            for i in 0..count {
+                out[i] = *it.next().unwrap_or(&0);
+            }
+
+            out[count] = 0; // NUL-term
+            count
+        };
+
+        let mut seq : [u8; crate::esc::SEQ_MAX_LENGTH] = [0; crate::esc::SEQ_MAX_LENGTH];
+
+        while !input.is_empty() {
+            let seq_sz = read_seq_from_queue(&input, &mut seq);
+            self.prev_cr >>= 1; // set = 2 and then shift is faster than: if(prevCR) prevCR--;
+
+            // 1. ANSI escape sequence
+            //    check for two following ESC characters to avoid lock
+            if seq_sz > 1
+                && seq[0] == AnsiCodes::ESC as u8
+                && seq[1] != AnsiCodes::ESC as u8
+            {
+                if seq_sz < 3 {
+                    // sequence too short
+                    return 0;
+                }
+
+                self.prev_esc_ignored = false;
+
+                // check mouse code
+                if seq_sz >= 6
+                    && seq[1] == b'['
+                    && seq[2] == b'M'
+                {
+                    output.key = Key::MouseEvent;
+
+                    let mouse_btn = seq[3] - b' ';
+                    match mouse_btn & 0xE3 {
+                        0x00 => output.mouse.btn = MouseBtn::ButtonLeft,
+                        0x01 => output.mouse.btn = MouseBtn::ButtonMid,
+                        0x02 => output.mouse.btn = MouseBtn::ButtonRight,
+                        0x03 => output.mouse.btn = MouseBtn::ButtonReleased,
+                        0x80 => output.mouse.btn = MouseBtn::ButtonGoBack,
+                        0x81 => output.mouse.btn = MouseBtn::ButtonGoForward,
+                        0x40 => output.mouse.btn = MouseBtn::WheelUp,
+                        0x41 => output.mouse.btn = MouseBtn::WheelDown,
+                        _    => output.mouse.btn = MouseBtn::None,
+                    }
+
+                    // TWINS_LOG_D("MouseBtn:0x%x", (unsigned)mouse_btn);
+
+                    if mouse_btn & 0x04 != 0 { output.kmod.set_shift(); }
+                    if mouse_btn & 0x08 != 0 { output.kmod.set_alt(); }
+                    if mouse_btn & 0x10 != 0 { output.kmod.set_ctrl(); }
+
+                    output.mouse.col = seq[4] - b' ';
+                    output.mouse.row = seq[5] - b' ';
+                    output.name = "MouseClk";
+
+                    input.drain(..6);
+                    return 6;
+                }
+
+                // binary search: find key map in max 7 steps
+                if let Some(km) = seq_binary_search(&seq, &ESC_KEYS_MAP_SORTED) {
+                    output.key = km.key;
+                    output.kmod.mask = km.modif;
+                    output.name = km.name;
+                    input.drain(..1 + km.seqlen as usize); // +1 for ESC
+                    return 1 + km.seqlen;
+                }
+
+                // ESC sequence invalid or unknown?
+                if seq_sz > 3 { // 3 is mimimum ESC seq len
+                    let mut esc_found = false;
+                    // data is long enough to store ESC sequence
+                    for i in 1..seq_sz {
+                        if seq[i] == AnsiCodes::ESC as u8 {
+                            esc_found = true;
+                            // found next ESC, current seq is unknown
+                            input.drain(..i);
+                            break;
+                        }
+                    }
+
+                    if esc_found {
+                        continue;
+                    }
+                }
+
+                self.decode_fail_ctr += 1;
+                if self.decode_fail_ctr == 3 {
+                    // invalid sequence; drop entire buffer
+                    self.decode_fail_ctr = 0;
+                    input.clear();
+                }
+
+                return 0;
+            }
+            else {
+                // single character
+                if seq[0] == AnsiCodes::ESC as u8
+                    && seq_sz == 1
+                    && !self.prev_esc_ignored
+                {
+                    // avoid situations where ESC not followed by another code
+                    // is decoded as freestanding Esc key
+                    self.prev_esc_ignored = true;
+                    return 0;
+                }
+
+                self.prev_esc_ignored = false;
+                let mut skip = false;
+
+                // 2. check for special key
+                // note: it conflicts with ctrl_keys_map[] but has higher priority
+                for km in SPECIAL_KEYS_MAP_UNSORTED.iter() {
+                    if seq[0] == km.code {
+                        if seq[0] == AnsiCodes::CR as u8 {
+                            // CR   -> treat as LF
+                            // CRLF -> ignore LF
+                            //   LF -> LF
+                            self.prev_cr = 2;
+                        }
+                        else if seq[0] == AnsiCodes::LF as u8 && self.prev_cr > 0 {
+                            input.drain(..1);
+                            self.prev_cr = 0;
+                            skip = true;
+                            break;
+                        }
+
+                        output.key = km.key;
+                        output.kmod.mask = km.modif;
+                        output.name = km.name;
+                        input.drain(..1);
+                        return 1;
+                    }
+                }
+
+                if skip {
+                    continue;
+                }
+
+                // 3. check for one of Ctrl+[A..Z]
+                for km in CTRL_KEYS_MAP_SORTED.iter() {
+                    if seq[0] == km.code {
+                        output.utf8seq[0] = km.key as u8;
+                        output.utf8seq[1] = b'\0';
+                        output.kmod.mask = km.modif;
+                        output.name = km.name;
+                        input.drain(..1);
+                        return 1;
+                    }
+                }
+
+                // 4. regular ASCII character or UTF-8 sequence
+                let utf8seqlen = utf8_char_width(seq[0]); // 0..4
+                // dbg!(seq, seq_sz, utf8seqlen);
+
+                if utf8seqlen > 0 && utf8seqlen <= seq_sz {
+                    // copy valid UTF-8 seq
+                    output.utf8seq[0] = seq[0];
+                    output.utf8seq[1] = seq[1];
+                    output.utf8seq[2] = seq[2];
+                    output.utf8seq[3] = seq[3];
+                    output.utf8sl = utf8seqlen as u8;
+                    output.name = "<.>";
+
+                    input.drain(..utf8seqlen);
+                    return utf8seqlen as u8;
+                }
+                else {
+                    // invalid/incomplete sequence?
+                    if utf8seqlen > 0 {
+                        // try next time with more data
+                        return 0;
+                    }
+                    else {
+                        // invalid byte
+                        input.drain(..1);
+                    }
+                }
+            }
+        }
+
+        return 0;
+    }
+}
+
+// copied from code::str::validations.rs
+// https://tools.ietf.org/html/rfc3629
+const UTF8_CHAR_WIDTH: &[u8; 256] = &[
+    // 1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 0
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 1
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 2
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 3
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 4
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 5
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 6
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 7
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 8
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 9
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // A
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // B
+    0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, // C
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, // D
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, // E
+    4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // F
+];
+
+/// Given a first byte, determines how many bytes are in this UTF-8 character.
+#[inline]
+pub const fn utf8_char_width(b: u8) -> usize {
+    UTF8_CHAR_WIDTH[b as usize] as usize
+}
+
+// -----------------------------------------------------------------------------
+
 #[cfg(test)]
 mod tests {
+// tests of local stuff only
 use super::*;
 
 #[test]
 fn test_seq_cmp() {
-
     {
         // same length, equal
         let l = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};

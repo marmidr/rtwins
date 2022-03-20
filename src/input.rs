@@ -4,8 +4,7 @@
 
 /// ANSI control codes
 #[derive(PartialEq)]
-pub enum AnsiCodes
-{
+pub enum AnsiCodes {
     NUL = 0x00,  // Null
     SOH = 0x01,  // Start of Header
     STX = 0x02,  // Start of Text
@@ -43,9 +42,8 @@ pub enum AnsiCodes
 
 
 /// Special keyboard keys
-#[derive(PartialEq, Copy, Clone)]
-pub enum Key
-{
+#[derive(PartialEq, Copy, Clone, Debug)]
+pub enum Key {
     None,
     Esc,
     Tab,
@@ -83,8 +81,7 @@ pub enum Key
 
 /// Mouse button click events
 #[derive(PartialEq)]
-pub enum MouseBtn
-{
+pub enum MouseBtn {
     None,
     ButtonLeft,
     ButtonMid,
@@ -97,15 +94,18 @@ pub enum MouseBtn
 }
 
 /// Mouse event representation
-pub struct Mouse
-{
-    // same as key above
-    pub key: Key,
+pub struct Mouse {
     // button or wheel event
     pub btn: MouseBtn,
     // 1:1 based terminal coordinates of the event
     pub col: u8,
     pub row: u8
+}
+
+impl Mouse {
+    fn new() -> Self {
+        Self{btn: MouseBtn::None, col: 0, row: 0}
+    }
 }
 
 /// Key modifiers
@@ -116,23 +116,25 @@ pub const KEY_MOD_SHIFT: u8 = 0b100;
 pub const KEY_MOD_SPECIAL: u8 = 0b1000;
 
 /// Representation of key modifiers coded on bits
-pub struct KeyMod
-{
-    pub modif: u8
+pub struct KeyMod {
+    pub mask: u8
 }
 
-impl KeyMod
-{
-    fn is_none(&self) -> bool { self.modif == 0 }
-    fn is_ctrl(&self) -> bool { self.modif & KEY_MOD_CTRL != 0 }
-    fn is_alt(&self) ->  bool { self.modif & KEY_MOD_ALT != 0 }
-    fn is_shift(&self) -> bool { self.modif & KEY_MOD_SHIFT != 0 }
-    fn is_special(&self) -> bool { self.modif & KEY_MOD_SPECIAL != 0 }
+impl KeyMod {
+    pub fn new() -> Self { Self {mask: 0 } }
+    pub fn is_none(&self) ->    bool { self.mask == 0 }
+    pub fn has_ctrl(&self) ->   bool { self.mask & KEY_MOD_CTRL != 0 }
+    pub fn has_alt(&self) ->    bool { self.mask & KEY_MOD_ALT != 0 }
+    pub fn has_shift(&self) ->  bool { self.mask & KEY_MOD_SHIFT != 0 }
+    pub fn has_special(&self) -> bool { self.mask & KEY_MOD_SPECIAL != 0 }
+
+    pub fn set_ctrl(&mut self)  { self.mask |= KEY_MOD_CTRL; }
+    pub fn set_alt(&mut self)   { self.mask |= KEY_MOD_ALT; }
+    pub fn set_shift(&mut self) { self.mask |= KEY_MOD_SHIFT; }
 }
 
 /// Decoded terminal key representation
-pub struct KeyCode
-{
+pub struct KeyCode {
 /*
     union
     {
@@ -154,9 +156,37 @@ pub struct KeyCode
     };
  */
 
-    pub utf8seq: [u8; 5],   // NUL terminated UTF-8 code: 'a', '4', 'Ł'
-    pub key: Key,           // 'F1', 'Enter'
-    pub kmod: KeyMod,       // Ctrl/Alt/Shift
-    pub mouse: Mouse,
-    pub name: &'static str
+    pub utf8seq: [u8; 4],   // UTF-8 code: 'a', '4', 'Ł'
+    pub utf8sl: u8,         // length of utf8seq seq
+    pub key:    Key,        // 'F1', 'Enter'
+    pub kmod:   KeyMod,     // Ctrl/Alt/Shift
+    pub mouse:  Mouse,
+    pub name:   &'static str
+}
+
+impl KeyCode {
+    pub fn new() -> Self {
+        Self{utf8seq: [0; 4], utf8sl: 0, key: Key::None, kmod: KeyMod::new(), mouse: Mouse::new(), name: ""}
+    }
+
+    /// Reset all fields to initial state
+    pub fn reset(&mut self) {
+        self.utf8seq[0] = b'\0';
+        self.utf8sl = 0;
+        self.key = Key::None;
+        self.kmod.mask = 0;
+        self.mouse.btn = MouseBtn::None;
+        self.name = "";
+    }
+
+    /// Returns proper UTF-8 slice from self.utf8seq
+    pub fn utf8slice<'a>(&'a self) -> &'a str {
+        let res = std::str::from_utf8(self.utf8seq.split_at(self.utf8sl as usize).0);
+        if let Ok(s) = res {
+            s
+        }
+        else {
+            ""
+        }
+    }
 }
