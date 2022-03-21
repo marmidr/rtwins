@@ -1,7 +1,8 @@
 //! # RTWins Widget
 
-use crate::{input, widget};
+use crate::widget;
 use crate::widget::{Coord, WId, Widget, Property, WIDGET_ID_NONE};
+
 
 #[allow(dead_code)]
 pub struct WidgetSearchStruct
@@ -25,7 +26,7 @@ struct WidgetState
     // p_focused_wgt: Option<&Widget>,
     // p_mouse_down_wgt: Option<&Widget>,
     // p_drop_down_combo: Option<&Widget>,
-    mouse_down_key_code: input::KeyCode,
+    // mouse_down_key_code: input::KeyCode,
     // struct                              // state of Edit being modified
     // {
     //     const Widget *pWgt = nullptr;
@@ -40,8 +41,8 @@ struct WidgetState
 pub const fn wgt_count(wgt: &Widget) -> usize {
     let mut n: usize = 1;
     let mut i: usize = 0;
-    while i < wgt.childs.len() {
-        n += wgt_count(&wgt.childs[i]);
+    while i < wgt.children.len() {
+        n += wgt_count(&wgt.children[i]);
         i += 1;
     }
     n
@@ -67,19 +68,19 @@ pub const fn wgt_transform_array<const N: usize>(wgt: &Widget) -> [Widget; N] {
 const fn wgt_transform<const N: usize>(mut out: [Widget; N], wgt: &Widget, out_idx: usize, mut next_free_idx: usize) -> (usize, [Widget; N]) {
     out[out_idx] = *wgt;
     out[out_idx].link.own_idx = out_idx as u16;
-    out[out_idx].childs = &[];
+    out[out_idx].children = &[];
 
     let mut out_child_idx = next_free_idx;
 
-    if wgt.childs.len() > 0 {
-        out[out_idx].link.childs_idx = out_child_idx as u16;
-        out[out_idx].link.childs_cnt = wgt.childs.len() as u16;
-        next_free_idx += wgt.childs.len();
+    if wgt.children.len() > 0 {
+        out[out_idx].link.children_idx = out_child_idx as u16;
+        out[out_idx].link.children_cnt = wgt.children.len() as u16;
+        next_free_idx += wgt.children.len();
     }
 
     let mut ch_idx = 0;
-    while ch_idx < wgt.childs.len() {
-        let (nfidx, o) = wgt_transform(out, &wgt.childs[ch_idx], out_child_idx, next_free_idx);
+    while ch_idx < wgt.children.len() {
+        let (nfidx, o) = wgt_transform(out, &wgt.children[ch_idx], out_child_idx, next_free_idx);
         out = o;
         out[out_child_idx].link.parent_idx = out_idx as u16;
         next_free_idx = nfidx;
@@ -197,13 +198,14 @@ pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
     coord
 }
 
+
 // -----------------------------------------------------------------------------------------------
 
-/// Iterator over parent-type Widget childs
+/// Iterator over parent-type Widget children
 pub struct WidgetIter <'a> {
-    childs: &'a Widget,
-    child_idx: u16,
-    child_cnt: u16
+    children: &'a Widget,
+    children_idx: u16,
+    children_cnt: u16
 }
 
 impl <'a> WidgetIter <'a> {
@@ -215,10 +217,10 @@ impl <'a> WidgetIter <'a> {
         unsafe {
             // SAFETY: see `wgt_get_parent`
             let p_parent = parent_wgt as *const Widget;
-            let childs_offs = parent_wgt.link.childs_idx as isize - parent_wgt.link.own_idx as isize;
-            let p_childs = p_parent.offset(childs_offs);
+            let children_offs = parent_wgt.link.children_idx as isize - parent_wgt.link.own_idx as isize;
+            let p_children = p_parent.offset(children_offs);
 
-            WidgetIter { childs: &*p_childs, child_idx: 0, child_cnt: parent_wgt.link.childs_cnt }
+            WidgetIter { children: &*p_children, children_idx: 0, children_cnt: parent_wgt.link.children_cnt }
         }
     }
 }
@@ -227,11 +229,11 @@ impl <'a> Iterator for WidgetIter<'a> {
     type Item = &'a Widget;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.child_idx < self.child_cnt {
+        if self.children_idx < self.children_cnt {
             unsafe {
                 // SAFETY: see `wgt_get_parent`
-                let p_child = (self.childs as *const Widget).offset(self.child_idx as isize);
-                self.child_idx += 1;
+                let p_child = (self.children as *const Widget).offset(self.children_idx as isize);
+                self.children_idx += 1;
                 Some(&*p_child)
             }
         }

@@ -4,7 +4,6 @@
 #![allow(unused_variables)]
 
 use std::cell::RefCell;
-use unicode_width::UnicodeWidthStr;
 
 use crate::{FontMementoManual, FontMemento, FontAttrib, colors};
 use crate::widget_impl::*;
@@ -26,9 +25,9 @@ struct DrawCtx<'a>
     wnd_state: &'a mut dyn WindowState,
     /// Current widget's parent left-top position
     parent_coord: Coord,
-    ///
+    /// Reference to the widgets array
     wnd_widgets: &'a [Widget],
-    ///
+    /// Common string buffer for entire drawing session
     strbuff: String
 }
 
@@ -40,9 +39,7 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
         return;
     }
 
-    let mut fm = FontMementoManual::new();
-    fm.store(ctx);
-
+    let mut fm = FontMementoManual::from_ctx(ctx);
     // TODO: g_ws.pFocusedWgt = getWidgetByWID(dctx, ctx.stat.getFocusedID());
 
     ctx.cursor_hide();
@@ -141,7 +138,7 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
     }
 
     if !wnd_title.is_empty() {
-        let title_width = UnicodeWidthStr::width(wnd_title.as_str()) as u16 + 4;
+        let title_width = wnd_title.as_str().ansi_displayed_width() as u16 + 4;
         let mut ctx = dctx.ctx.borrow_mut();
         ctx.move_to(
             wnd_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width) / 2,
@@ -157,7 +154,7 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
     {
         let wnd = dctx.wgt;
 
-        for wgt in WidgetIter::new(wnd) {
+        for wgt in wnd.iter() {
             dctx.wgt = wgt;
             draw_widget_internal(dctx);
         }
@@ -176,8 +173,7 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
 
 fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
 {
-    let mut fm = FontMementoManual::new();
-    fm.store(&dctx.ctx.borrow());
+    let mut fm = FontMementoManual::from_ctx(&dctx.ctx.borrow());
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
     draw_area(&mut dctx.ctx.borrow_mut(),
@@ -190,7 +186,7 @@ fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
 
     // title
     if !prp.title.is_empty() {
-        let title_width = UnicodeWidthStr::width(prp.title) as u16;
+        let title_width = prp.title.ansi_displayed_width() as u16;
         let mut ctx = dctx.ctx.borrow_mut();
         ctx.move_to(
             my_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width - 2)/2,
@@ -208,7 +204,7 @@ fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
         dctx.parent_coord = my_coord;
         let pnl = dctx.wgt;
 
-        for wgt in WidgetIter::new(pnl) {
+        for wgt in pnl.iter() {
             dctx.wgt = wgt;
             draw_widget_internal(dctx);
         }
@@ -252,7 +248,7 @@ fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label)
         dctx.strbuff.push_str(s);
 
         if line_width > 0 {
-            dctx.strbuff.set_width(line_width as i16);
+            dctx.strbuff.set_displayed_width(line_width as i16);
         }
 
         ctx.write_str(dctx.strbuff.as_str());
@@ -453,7 +449,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
             }
         }
 
-        let shadow_len = 2 + txt.width() as i16;
+        let shadow_len = 2 + txt.ansi_displayed_width() as i16;
 
         if pressed {
             // erase trailing shadow
@@ -488,7 +484,6 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
         }
     }
     else if prp.style == ButtonStyle::Solid1p5 {
-        // dctx.strbuff.clear();
         let _fm = FontMemento::new(&dctx.ctx);
         dctx.strbuff.push_str(" ");
         dctx.strbuff.push_str(txt.as_str());
@@ -496,7 +491,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
 
         let clbg = get_widget_bg_color(dctx.wgt);
         let clparbg = get_widget_bg_color(wgt_get_parent(dctx.wgt));
-        let bnt_len = 2 + txt.width() as i16;
+        let bnt_len = 2 + txt.ansi_displayed_width() as i16;
         let scl_shadow = crate::bg_color!(233);
         let scl_bg2fg = transcode_cl_bg_2_fg(encode_cl_bg(clbg));
 
@@ -562,8 +557,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
 
 fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
 {
-    let mut fm = FontMementoManual::new();
-    fm.store(&dctx.ctx.borrow());
+    let mut fm = FontMementoManual::from_ctx(&dctx.ctx.borrow());
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
     dctx.ctx.borrow_mut().push_cl_bg(get_widget_bg_color(dctx.wgt));
@@ -586,7 +580,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
     {
         dctx.strbuff.push_n(' ', (prp.tab_width as i16 -8) / 2);
         dctx.strbuff.push_str("≡ MENU ≡");
-        dctx.strbuff.set_width(prp.tab_width as i16);
+        dctx.strbuff.set_displayed_width(prp.tab_width as i16);
 
         let mut ctx = dctx.ctx.borrow_mut();
         ctx.move_to(my_coord.col as u16, my_coord.row as u16 + prp.vert_offs as u16);
@@ -595,7 +589,6 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
         ctx.pop_attr();
     }
 
-    // moveTo(dctx.parentCoord.col + dctx.wgt->coord.col, dctx.parentCoord.row + dctx.wgt->coord.row);
     dctx.ctx.borrow_mut().flush_buff();
 
     // draw tabs and pages
@@ -605,7 +598,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
         let focused = dctx.wnd_state.is_focused(pgctrl);
         dctx.parent_coord.col += prp.tab_width;
 
-        for (idx, page) in WidgetIter::new(pgctrl).enumerate() {
+        for (idx, page) in pgctrl.iter().enumerate() {
             // check if page is below lower border
             if idx as i16 == pgctrl.size.height as i16 - 1 - prp.vert_offs as i16 {
                 break;
@@ -627,7 +620,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
             }
 
             dctx.strbuff.push_str(page_prp.title);
-            dctx.strbuff.set_width(prp.tab_width as i16);
+            dctx.strbuff.set_displayed_width(prp.tab_width as i16);
 
             // for Page we do not want inherit after it's title color
             {
@@ -681,7 +674,7 @@ fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/)
     {
         let page = dctx.wgt;
 
-        for wgt in WidgetIter::new(page) {
+        for wgt in page.iter() {
             dctx.wgt = wgt;
             draw_widget_internal(dctx);
         }
@@ -725,124 +718,99 @@ fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar)
     //  ▁▂▃▄▅▆▇█ - for vertical ▂▄▆█
 }
 
-struct DrawListParams
-{
-    // Coord coord;
-    // int16_t item_idx;
-    // int16_t sel_idx;
-    // int16_t items_cnt;
-    // uint16_t items_visible;
-    // uint16_t top_item;
-    // bool focused;
-    // uint8_t wgt_width;
-    // uint8_t frame_size;
-    // std::function<void(int16_t idx, String &out)> getItem;
-}
-
-fn draw_list(p: &DrawListParams)
-{
-  /*   if (p.items_cnt > p.items_visible)
-    {
-        drawListScrollBarV(p.coord + Coord{uint8_t(p.wgt_width-1), p.frame_size},
-            p.items_visible, p.items_cnt-1, p.sel_idx);
-    }
-
-    flushBuffer();
-
-    for (int i = 0; i < p.items_visible; i++)
-    {
-        bool is_current_item = p.items_cnt ? (p.top_item + i == p.item_idx) : false;
-        bool is_sel_item = p.top_item + i == p.sel_idx;
-        moveTo(p.coord.col + p.frame_size, p.coord.row + i + p.frame_size);
-
-        g_ws.str.clear();
-
-        if (p.top_item + i < p.items_cnt)
-        {
-            p.getItem(p.top_item + i, g_ws.str);
-            g_ws.str.insert(0, is_current_item ? "►" : " ");
-            g_ws.str.setWidth(p.wgt_width - 1 - p.frame_size, true);
-        }
-        else
-        {
-            // empty string - to erase old content
-            g_ws.str.setWidth(p.wgt_width - 1 - p.frame_size);
-        }
-
-        if (p.focused && is_sel_item) pushAttr(FontAttrib::Inverse);
-        if (is_current_item) pushAttr(FontAttrib::Underline);
-        ctx.write_str(dctx.strbuff.as_str());
-        if (is_current_item) popAttr();
-        if (p.focused && is_sel_item) popAttr();
-    } */
-}
-
 fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox)
 {
-  /*   let _fm = FontMemento::new(&dctx.ctx);
-    const auto my_coord = dctx.parentCoord + dctx.wgt->coord;
-    drawArea(my_coord, dctx.wgt->size,
-        dctx.wgt->listbox.bgColor, dctx.wgt->listbox.fgColor,
-        dctx.wgt->listbox.noFrame ? FrameStyle::None : FrameStyle::ListBox, false);
+    let mut fm = FontMementoManual::from_ctx(&dctx.ctx.borrow());
+    let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
-    if (dctx.wgt->size.height < 3)
+    draw_area(&mut dctx.ctx.borrow_mut(),
+        my_coord,
+        dctx.wgt.size,
+        prp.bg_color, prp.fg_color,
+        if prp.no_frame {FrameStyle::None} else {FrameStyle::ListBox},
+        false, false);
+
+    if dctx.wgt.size.height < 3 {
         return;
+    }
 
-    DrawListParams dlp = {};
+    let mut dlp = DrawListParams::default();
     dlp.coord = my_coord;
-    dctx.pState->getListBoxState(dctx.wgt, dlp.item_idx, dlp.sel_idx, dlp.items_cnt);
-    dlp.frame_size = !dctx.wgt->listbox.noFrame;
-    dlp.items_visible = dctx.wgt->size.height - (dlp.frame_size * 2);
+    dctx.wnd_state.get_list_box_state(dctx.wgt,
+        &mut dlp.item_idx, &mut dlp.sel_idx, &mut dlp.items_cnt);
+    dlp.frame_size = !prp.no_frame as u8;
+    dlp.items_visible = dctx.wgt.size.height as i16 - (dlp.frame_size as i16 * 2);
     dlp.top_item = (dlp.sel_idx / dlp.items_visible) * dlp.items_visible;
-    dlp.focused = dctx.pState->isFocused(dctx.wgt);
-    dlp.wgt_width = dctx.wgt->size.width;
-    dlp.getItem = [dctx.wgt, &dctx](int16_t idx, String &out) { dctx.pState->getListBoxItem(dctx.wgt, idx, out); };
-    drawList(dlp); */
+    dlp.focused = dctx.wnd_state.is_focused(dctx.wgt);
+    dlp.wgt_width = dctx.wgt.size.width;
+
+    // destructure dctx so the closure will capture local variables, not entire struct
+    let wgt = dctx.wgt;
+    let ws = &mut dctx.wnd_state;
+    let mut ctx = dctx.ctx.borrow_mut();
+
+    let getitem_cb = |idx, out: &mut String| {
+        ws.get_list_box_item(wgt, idx, out);
+    };
+
+    draw_list(&mut ctx, &dlp, getitem_cb);
+    fm.restore(&mut ctx);
 }
 
 fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox)
 {
-/*     let _fm = FontMemento::new(&dctx.ctx);
-    const auto my_coord = dctx.parentCoord + dctx.wgt->coord;
-    const bool focused = dctx.pState->isFocused(dctx.wgt);
+    let _fm = FontMemento::new(&dctx.ctx);
+    let my_coord = dctx.parent_coord + dctx.wgt.coord;
+    let focused = dctx.wnd_state.is_focused(dctx.wgt);
 
-    int16_t item_idx = 0; int16_t sel_idx = 0; int16_t items_count; bool drop_down = false;
-    dctx.pState->getComboBoxState(dctx.wgt, item_idx, sel_idx, items_count, drop_down);
+    let mut item_idx = 0i16;
+    let mut sel_idx = 0i16;
+    let mut items_count = 0i16;
+    let mut drop_down = false;
+    dctx.wnd_state.get_combo_box_state(dctx.wgt, &mut item_idx, &mut sel_idx, &mut items_count, &mut drop_down);
 
     {
-        g_ws.str.clear();
-        dctx.pState->getComboBoxItem(dctx.wgt, item_idx, g_ws.str);
-        g_ws.str.insert(0, " ");
-        g_ws.str.setWidth(dctx.wgt->size.width - 4, true);
-        g_ws.str << " [▼]";
+        dctx.strbuff.clear();
+        dctx.wnd_state.get_combo_box_item(dctx.wgt, item_idx, &mut dctx.strbuff);
+        dctx.strbuff.insert(0, ' ');
+        dctx.strbuff.set_displayed_width(dctx.wgt.size.width as i16 - 4);//, true);
+        dctx.strbuff.push_str(" [▼]");
 
-        moveTo(my_coord.col, my_coord.row);
-        pushClFg(getWidgetFgColor(dctx.wgt));
-        pushClBg(getWidgetBgColor(dctx.wgt));
-        if (focused && !drop_down) pushAttr(FontAttrib::Inverse);
-        if (drop_down) pushAttr(FontAttrib::Underline);
-        if (focused) pushAttr(FontAttrib::Bold);
+        let mut ctx = dctx.ctx.borrow_mut();
+        ctx.move_to(my_coord.col as u16, my_coord.row as u16);
+        ctx.push_cl_fg(get_widget_fg_color(dctx.wgt));
+        ctx.push_cl_bg(get_widget_bg_color(dctx.wgt));
+        if focused && !drop_down { ctx.push_attr(FontAttrib::Inverse); }
+        if drop_down { ctx.push_attr(FontAttrib::Underline); }
+        if focused { ctx.push_attr(FontAttrib::Bold); }
         ctx.write_str(dctx.strbuff.as_str());
-        if (focused) popAttr();
-        if (drop_down) popAttr();
+        if focused { ctx.pop_attr(); }
+        if drop_down { ctx.pop_attr(); }
     }
 
-    if (drop_down)
-    {
-        DrawListParams dlp = {};
-        dlp.coord.col = my_coord.col;
-        dlp.coord.row = my_coord.row+1;
+    if drop_down {
+        let mut dlp = DrawListParams::default();
+        dlp.coord = my_coord;
+        dlp.coord.row += 1;
         dlp.item_idx = item_idx;
         dlp.sel_idx = sel_idx;
-        dlp.items_cnt = items_count;
+        dlp.item_idx = items_count;
         dlp.frame_size = 0;
-        dlp.items_visible = dctx.wgt->combobox.dropDownSize;
+        dlp.items_cnt = items_count;
+        dlp.items_visible = prp.drop_down_size as i16;
         dlp.top_item = (dlp.sel_idx / dlp.items_visible) * dlp.items_visible;
         dlp.focused = focused;
-        dlp.wgt_width = dctx.wgt->size.width;
-        dlp.getItem = [dctx.wgt, &dctx](int16_t idx, String &out) { dctx.pState->getComboBoxItem(dctx.wgt, idx, out); };
-        drawList(dlp);
-    } */
+        dlp.wgt_width = dctx.wgt.size.width;
+
+        // in 2021 edition, we can use entire struct in the closure
+        // and see no borrowchecker error
+        let getitem_cb = |idx, out: &mut String| {
+            dctx.wnd_state.get_combo_box_item(dctx.wgt, idx, out);
+        };
+
+        let mut ctx = dctx.ctx.borrow_mut();
+        draw_list(&mut ctx, &dlp, getitem_cb);
+    }
 }
 
 fn draw_custom_wgt(dctx: &mut DrawCtx, _: &prop::CustomWgt)
@@ -863,65 +831,67 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
         return;
     }
 
-/*
-    const uint8_t lines_visible = dctx.wgt->size.height - 2;
-    const twins::Vector<twins::CStrView> *p_lines = nullptr;
-    int16_t top_line = 0;
+    let lines_visible = dctx.wgt.size.height as i16 - 2;
+    let mut top_line = 0i16;
+    let mut lines_rc: std::rc::Rc<std::cell::RefCell<Vec<String>>> = Default::default();
+    dctx.wnd_state.get_text_box_state(dctx.wgt, &mut lines_rc, &mut top_line);
 
-    dctx.pState->getTextBoxState(dctx.wgt, &p_lines, top_line);
-
-    if (!p_lines || !p_lines->size())
-        return;
-
-    if (top_line > (int)p_lines->size())
-    {
-        top_line = p_lines->size() - lines_visible;
-        dctx.pState->onTextBoxScroll(dctx.wgt, top_line);
-    }
-
-    if (top_line < 0)
-    {
-        dctx.pState->onTextBoxScroll(dctx.wgt, top_line);
-        top_line = 0;
-    }
-
-    drawListScrollBarV(my_coord + Coord{uint8_t(dctx.wgt->size.width-1), 1},
-        lines_visible, p_lines->size() - lines_visible, top_line);
-
-    flushBuffer();
-
-    // scan invisible lines for ESC sequences: colors, font attributes
-    g_ws.str.clear();
-    for (int i = 0; i < top_line; i++)
-    {
-        auto sr = (*p_lines)[i];
-        while (const char *esc = twins::util::strnchr(sr.data, sr.size, '\e'))
-        {
-            auto esclen = String::escLen(esc, sr.data + sr.size);
-            g_ws.str.appendLen(esc, esclen);
-
-            sr.size -= esc - sr.data + 1;
-            sr.data = esc + 1;
+    if std::rc::Rc::strong_count(&lines_rc) > 0 {
+        let lines = lines_rc.borrow();
+        if top_line > lines.len() as i16 {
+            top_line = lines.len() as i16 - lines_visible;
+            dctx.wnd_state.on_text_box_scroll(dctx.wgt, top_line);
         }
-    }
-    ctx.write_str(dctx.strbuff.as_str());
 
-    // draw lines
-    for (int i = 0; i < lines_visible; i++)
-    {
-        g_ws.str.clear();
-        if (top_line + i < (int)p_lines->size())
-        {
-            const auto &sr = (*p_lines)[top_line + i];
-            g_ws.str.appendLen(sr.data, sr.size);
+        if top_line < 0 {
+            dctx.wnd_state.on_text_box_scroll(dctx.wgt, top_line);
+            top_line = 0;
         }
-        g_ws.str.setWidth(dctx.wgt->size.width - 2, true);
-        moveTo(my_coord.col + 1, my_coord.row + i + 1);
+
+        let mut ctx = dctx.ctx.borrow_mut();
+
+        draw_list_scroll_bar_v(&mut ctx,
+            my_coord + Coord::new(dctx.wgt.size.width-1, 1),
+            lines_visible, lines.len() as i16 - lines_visible, top_line);
+
+        ctx.flush_buff();
+        dctx.strbuff.clear();
+
+        // scan invisible lines (because scrooled down) for ESC sequences: colors, font attributes
+        for i in 0..top_line as usize {
+            if let Some(line) = lines.get(i) {
+                // iterate over all ESC sequences in the line
+                for it in line.bytes().enumerate() {
+                    if it.1 == b'\x1B' {
+                        let esc = line.as_str();
+                        // get the sequence and push it to the output stream
+                        let esc = &esc[it.0..esc.len()];
+                        let esclen = esc.ansi_esc_len();
+                        let sequence = &esc[0..esclen];
+                        dctx.strbuff.push_str(sequence);
+                    }
+                }
+            }
+        }
+
         ctx.write_str(dctx.strbuff.as_str());
-    }
 
-    // flushBuffer();
-    */
+        // draw lines
+        for i in 0..lines_visible as usize {
+            dctx.strbuff.clear();
+
+            if top_line as usize + i < lines.len() {
+                if let Some(line) = lines.get(top_line as usize + i) {
+                    dctx.strbuff.push_str(line);
+                }
+            }
+            dctx.strbuff.set_displayed_width(dctx.wgt.size.width as i16 - 2);//, true);
+            ctx.move_to(my_coord.col as u16 + 1, my_coord.row as u16 + i as u16 + 1);
+            ctx.write_str(dctx.strbuff.as_str());
+        }
+
+        ctx.flush_buff();
+    }
 }
 
 fn draw_layer(dctx: &mut DrawCtx, _: &prop::Layer)
@@ -929,7 +899,7 @@ fn draw_layer(dctx: &mut DrawCtx, _: &prop::Layer)
     // draw only childrens; to erase, redraw layer's parent
     let layer = dctx.wgt;
 
-    for wgt in WidgetIter::new(layer) {
+    for wgt in layer.iter() {
         dctx.wgt = wgt;
         draw_widget_internal(dctx);
     }
@@ -1065,18 +1035,68 @@ fn draw_line(strbuff: &mut String, c: char, len: u8) {
     }
 }
 
-fn draw_list_scroll_bar_v(ctx: &mut Ctx, coord: Coord, height: i8, max: i32, pos: i32) {
-    if pos > max {
-        ctx.log_d(format!("pos ({}) > max ({})", pos, max).as_str());
+fn draw_list_scroll_bar_v(ctx: &mut Ctx, coord: Coord, height: i16, pos_max: i16, pos: i16) {
+    if pos > pos_max {
+        // ctx.log_d(format!("pos ({}) > max ({})", pos, pos_max).as_str());
         return;
     }
 
-    let slider_at = (((height-1) as i32) * pos) / max;
+    let slider_at = ((height-1) * pos) / pos_max;
     // "▲▴ ▼▾ ◄◂ ►▸ ◘ █";
 
     for i in 0..height {
         ctx.move_to(coord.col.into(), (coord.row as u16) + i as u16);
-        ctx.write_str(if i as i32 == slider_at {"◘"} else {"▒"});
+        ctx.write_char(if i == slider_at {'◘'} else {'▒'});
+    }
+}
+
+#[derive(Default)]
+struct DrawListParams {
+    coord: Coord,
+    item_idx: i16,
+    sel_idx: i16,
+    items_cnt: i16,
+    items_visible: i16,
+    top_item: i16,
+    focused: bool,
+    wgt_width: u8,
+    frame_size: u8,
+}
+
+fn draw_list<Cb: FnMut(i16, &mut String)>(ctx: &mut Ctx, dlp: &DrawListParams, mut get_item: Cb)
+{
+    if dlp.items_cnt > dlp.items_visible {
+        draw_list_scroll_bar_v(ctx,
+            dlp.coord + Coord::new(dlp.wgt_width-1, dlp.frame_size),
+            dlp.items_visible, dlp.items_cnt -1, dlp.sel_idx);
+    }
+
+    ctx.flush_buff();
+    let mut strbuff = String::with_capacity(50);
+
+    for i in 0..dlp.items_visible {
+        let is_current_item = if dlp.items_cnt > 0 { dlp.top_item + i == dlp.item_idx } else { false };
+        let is_sel_item = dlp.top_item + i == dlp.sel_idx;
+        ctx.move_to(
+            dlp.coord.col as u16 + dlp.frame_size as u16,
+            dlp.coord.row as u16 + i as u16 + dlp.frame_size as u16);
+
+        strbuff.clear();
+        if dlp.top_item + i < dlp.items_cnt {
+            get_item(dlp.top_item + i, &mut strbuff);
+            strbuff.insert(0, if is_current_item {'►'} else {' '});
+            strbuff.set_displayed_width(dlp.wgt_width as i16 - 1 - dlp.frame_size as i16);
+        }
+        else {
+            // empty string - to erase old content
+            strbuff.set_displayed_width(dlp.wgt_width as i16 - 1 - dlp.frame_size as i16);
+        }
+
+        if dlp.focused && is_sel_item { ctx.push_attr(FontAttrib::Inverse); }
+        if is_current_item { ctx.push_attr(FontAttrib::Underline); }
+        ctx.write_str(strbuff.as_str());
+        if is_current_item { ctx.pop_attr(); }
+        if dlp.focused && is_sel_item { ctx.pop_attr(); }
     }
 }
 
@@ -1095,7 +1115,9 @@ fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
 
     if cl == ColorBG::Inherit {
         let parent = wgt_get_parent(wgt);
-        cl = get_widget_bg_color(parent);
+        if parent.id != wgt.id {
+            cl = get_widget_bg_color(parent);
+        }
     }
 
     return cl;
@@ -1121,7 +1143,9 @@ fn get_widget_fg_color(wgt: &Widget) -> ColorFG {
 
     if cl == ColorFG::Inherit {
         let parent = wgt_get_parent(wgt);
-        cl = get_widget_fg_color(parent);
+        if parent.id != wgt.id {
+            cl = get_widget_fg_color(parent);
+        }
     }
 
     return cl;

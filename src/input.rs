@@ -4,8 +4,7 @@
 
 /// ANSI control codes
 #[derive(PartialEq)]
-pub enum AnsiCodes
-{
+pub enum AnsiCodes {
     NUL = 0x00,  // Null
     SOH = 0x01,  // Start of Header
     STX = 0x02,  // Start of Text
@@ -43,9 +42,8 @@ pub enum AnsiCodes
 
 
 /// Special keyboard keys
-#[derive(PartialEq)]
-pub enum Key
-{
+#[derive(PartialEq, Copy, Clone, Debug)]
+pub enum Key {
     None,
     Esc,
     Tab,
@@ -78,13 +76,11 @@ pub enum Key
     F11,
     F12,
     //
-    MouseEvent
 }
 
 /// Mouse button click events
-#[derive(PartialEq)]
-pub enum MouseBtn
-{
+#[derive(PartialEq, Debug)]
+pub enum MouseEvent {
     None,
     ButtonLeft,
     ButtonMid,
@@ -97,15 +93,19 @@ pub enum MouseBtn
 }
 
 /// Mouse event representation
-pub struct Mouse
-{
-    // same as key above
-    pub key: Key,
+#[derive(Debug)]
+pub struct MouseInfo {
     // button or wheel event
-    pub btn: MouseBtn,
+    pub evt: MouseEvent,
     // 1:1 based terminal coordinates of the event
     pub col: u8,
     pub row: u8
+}
+
+impl MouseInfo {
+    pub fn new() -> Self {
+        Self{evt: MouseEvent::None, col: 0, row: 0}
+    }
 }
 
 /// Key modifiers
@@ -116,47 +116,86 @@ pub const KEY_MOD_SHIFT: u8 = 0b100;
 pub const KEY_MOD_SPECIAL: u8 = 0b1000;
 
 /// Representation of key modifiers coded on bits
-pub struct KeyMod
-{
-    pub modif: u8
+#[derive(Debug)]
+pub struct KeyMod {
+    pub mask: u8
 }
 
-impl KeyMod
-{
-    fn is_none(&self) -> bool { self.modif == 0 }
-    fn is_ctrl(&self) -> bool { self.modif & KEY_MOD_CTRL != 0 }
-    fn is_alt(&self) ->  bool { self.modif & KEY_MOD_ALT != 0 }
-    fn is_shift(&self) -> bool { self.modif & KEY_MOD_SHIFT != 0 }
-    fn is_special(&self) -> bool { self.modif & KEY_MOD_SPECIAL != 0 }
+impl KeyMod {
+    pub fn new() -> Self { Self {mask: 0 } }
+    pub fn is_none(&self) ->    bool { self.mask == 0 }
+    pub fn has_ctrl(&self) ->   bool { self.mask & KEY_MOD_CTRL != 0 }
+    pub fn has_alt(&self) ->    bool { self.mask & KEY_MOD_ALT != 0 }
+    pub fn has_shift(&self) ->  bool { self.mask & KEY_MOD_SHIFT != 0 }
+    pub fn has_special(&self) -> bool { self.mask & KEY_MOD_SPECIAL != 0 }
+
+    pub fn set_ctrl(&mut self)  { self.mask |= KEY_MOD_CTRL; }
+    pub fn set_alt(&mut self)   { self.mask |= KEY_MOD_ALT; }
+    pub fn set_shift(&mut self) { self.mask |= KEY_MOD_SHIFT; }
 }
 
-/// Decoded terminal key representation
-pub struct KeyCode
-{
-/*
-    union
-    {
-        /** used for regular text input */
-        char    utf8[5];    // NUL terminated UTF-8 code: 'a', '4', 'Ł'
-        /** used for special keys */
-        Key     key = {};   // 'F1', 'Enter'
-        /** used for mouse events (when key == Key::MouseClick) */
-        struct
-        {
-            // same as key above
-            Key      key;
-            /** button or wheel event */
-            MouseBtn btn;
-            /** 1:1 based terminal coordinates of the event */
-            uint8_t  col;
-            uint8_t  row;
-        } mouse;
-    };
- */
+/// Buffer for UTF-8 sequence
+#[derive(Debug)]
+pub struct CharBuff {
+    pub utf8seq: [u8; 4],   // UTF-8 code: 'a', '4', 'Ł'
+    pub utf8sl: u8,         // length of utf8seq seq
+}
 
-    pub utf8seq: [u8; 5],   // NUL terminated UTF-8 code: 'a', '4', 'Ł'
-    pub key: Key,           // 'F1', 'Enter'
-    pub kmod: KeyMod,       // Ctrl/Alt/Shift
-    pub mouse: Mouse,
-    pub name: &'static str
+impl CharBuff {
+    pub fn new() -> Self {
+        Self{utf8seq: [0; 4], utf8sl: 0}
+    }
+
+    /// Reset all fields to initial state
+    pub fn reset(&mut self) {
+        self.utf8seq = [0; 4];
+        self.utf8sl = 0;
+    }
+
+    /// Returns proper UTF-8 slice from self.utf8seq or empty slice in case of invalid sequence
+    pub fn utf8str(& self) -> &str {
+        let leading_seq = self.utf8seq.split_at(self.utf8sl as usize).0;
+        let res = std::str::from_utf8(leading_seq);
+        if let Ok(s) = res {
+            s
+        }
+        else {
+            ""
+        }
+    }
+}
+
+/// Decoded input type
+#[derive(Debug)]
+pub enum InputType {
+    /// No event decoded
+    None,
+    /// Single UTF-8 character
+    Char(CharBuff),
+    /// Special key, like F1, Home
+    Key(Key),
+    /// Mouse event
+    Mouse(MouseInfo),
+}
+
+/// Describes decoded input
+pub struct InputInfo {
+    /// Input type with details
+    pub typ:    InputType,
+    /// Ctrl/Alt/Shift
+    pub kmod:   KeyMod,
+    /// Human redable key combination description
+    pub name:   &'static str
+}
+
+impl InputInfo {
+    pub fn new() -> Self {
+        Self{typ: InputType::None, kmod: KeyMod::new(), name: ""}
+    }
+
+    pub fn reset(&mut self) {
+        self.typ = InputType::None;
+        self.kmod.mask = 0;
+        self.name = "";
+    }
 }

@@ -1,8 +1,8 @@
 [package]
 name = "rtwins"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Mariusz Midor <mmidor@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,6 +10,7 @@ edition = "2018"
 num_enum = "0.5.4"
 unicode-width = "0.1"
 # enum-iterator = "0.7.0"
+libc = "0.2"
 
 [profile.release]
 # https://jamesmunns.com/blog/tinyrocket/

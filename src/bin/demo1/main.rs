@@ -80,6 +80,7 @@ impl rtwins::pal::Pal for DemoPal {
 fn main() {
     test_esc_codes();
     // test_property_access();
+    // rtwins::input_decoder::print_seq();
 
     let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN_ARRAY[..]);
     let mut tw = TWins::new(Box::new(DemoPal::new()));
@@ -102,6 +103,31 @@ fn main() {
         c.write_str(rtwins::esc::LINE_ERASE_ALL);
         c.move_to_col(10).log_w("Column 10");
         c.write_char('\n').flush_buff();
+    }
+
+    println!("Press Ctrl-D to quit");
+    let mut inp = rtwins::input_tty::InputTty::new(2000);
+
+    loop {
+        let (inp_seq, q) = inp.read_input();
+
+        if q {
+            println!("Quit!");
+            break;
+        }
+        else if inp_seq[0] != 0 {
+            // let s = String::from_utf8_lossy(inp_seq);
+
+            let mut s = String::new();
+            for b in inp_seq {
+                if *b == 0 { break; }
+                if *b < b' ' { s.push('�')} else { s.push(*b as char) };
+            }
+            println!(" key={}", s);
+        }
+        else {
+            println!(" -");
+        }
     }
 }
 
@@ -141,7 +167,7 @@ fn test_property_access() {
     for (idx, w) in tui_def::WND_MAIN_ARRAY.iter().enumerate() {
         let w_par = rtwins::widget_impl::wgt_get_parent(w);
         println!("  {:2}. {:2}:{:10}, idx:{}, chidx:{}, parid {}:{}",
-            idx, w.id, w.prop, w.link.own_idx, w.link.childs_idx, w_par.id, w_par.prop);
+            idx, w.id, w.prop, w.link.own_idx, w.link.children_idx, w_par.id, w_par.prop);
     }
 
     println!(

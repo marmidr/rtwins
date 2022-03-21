@@ -1,10 +1,14 @@
 //! Demo - window state
 
-use rtwins::string_ext::*;
 use rtwins::widget;
+use rtwins::utils;
 use rtwins::esc;
+use rtwins::string_ext::*;
 use rtwins::widget::*;
 use rtwins::input::*;
+
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use super::tui_def;
 
@@ -21,7 +25,13 @@ pub struct DemoWndState {
     /// list of widgets to redraw
     invalidated: Vec<widget::WId>,
     //
-    radiogrp1_idx: i16
+    radiogrp1_idx: i16,
+    //
+    lbx_items: Vec<&'static str>,
+    // text box raw source string and source splitted into rows
+    tbx_text: String,
+    tbx_wide_lines: Rc<RefCell<Vec<String>>>,
+    tbx_narrow_lines: Rc<RefCell<Vec<String>>>
 }
 
 impl DemoWndState {
@@ -31,9 +41,50 @@ impl DemoWndState {
             focused_id: WIDGET_ID_NONE,
             text_edit_txt: String::new(),
             invalidated: vec![],
-            radiogrp1_idx: 1
+            radiogrp1_idx: 1,
+            lbx_items: vec![],
+            tbx_text: String::with_capacity(400),
+            tbx_wide_lines: Rc::new(RefCell::new(vec![])),
+            tbx_narrow_lines: Rc::new(RefCell::new(vec![])),
         };
 
+        wnd_state.lbx_items.extend_from_slice(&[
+            "Black",
+            "BlackIntense",
+            "Red",
+            "RedIntense",
+            "Green",
+            "GreenIntense",
+            "Yellow",
+            "YellowIntense",
+            "Blue",
+            "BlueIntense",
+            "Magenta",
+            "MagentaIntense",
+            "Cyan",
+            "CyanIntense",
+            "White",
+            "WhiteIntense",
+        ]);
+
+        // prepare text box content
+        let _ = wnd_state.tbx_text.stream()
+            << esc::BOLD
+            << "🔶 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam arcu magna, placerat sit amet libero at, aliquam fermentum augue.\n"
+            << esc::NORMAL
+            << esc::FG_GOLD
+            << " Morbi egestas consectetur malesuada. Mauris vehicula, libero eget tempus ullamcorper, nisi lorem efficitur velit, vel bibendum augue eros vel lorem. Duis vestibulum magna a ornare bibendum. Curabitur eleifend dictum odio, eu ultricies nunc eleifend et.\n"
+            << "Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.\n"
+            << esc::FG_GREEN_YELLOW
+            << "🔷 Interdum et malesuada fames ac ante ipsum primis in faucibus. Aenean malesuada lacus leo, a eleifend lorem suscipit sed.\n"
+            << "▄";
+
+            // << esc::BOLD
+            // << "🔶 Lorem ipsum \ndolor sit\n amet, consectetur adipiscing elit. Nam arcu magna, placerat sit amet libero at, aliquam fermentum augue. \n"
+            // << esc::NORMAL
+            // << "▄";
+
+        // setup some widgets initial properties
         use tui_def::Id;
         use prop_rt::*;
 
@@ -44,7 +95,8 @@ impl DemoWndState {
         wnd_state.rs.insert_state(Id::Prgbar3.into(),   Pgbar{ pos:8, max: 10 }.into());
         wnd_state.rs.insert_state(Id::LedLock.into(),   Led{ lit: true }.into());
         wnd_state.rs.insert_state(Id::ChbxEnbl.into(),  Chbx{ checked: true }.into());
-        wnd_state.rs.insert_state(Id::PgControl.into(), Pgctrl{ page: 0 }.into());
+        wnd_state.rs.insert_state(Id::PgControl.into(), Pgctrl{ page: 4 }.into());
+        wnd_state.rs.insert_state(Id::TbxWide.into(),   Txtbx{ top_line: 9 }.into());
         return wnd_state;
     }
 }
@@ -54,15 +106,15 @@ impl DemoWndState {
 impl WindowState for DemoWndState {
     /** events **/
 
-    fn on_button_down(&mut self, wgt: &Widget, kc: &KeyCode) {
+    fn on_button_down(&mut self, wgt: &Widget, ii: &InputInfo) {
         // self.ctx.flush_buff();
     }
 
-    fn on_button_up(&mut self, wgt: &Widget, kc: &KeyCode) {
+    fn on_button_up(&mut self, wgt: &Widget, ii: &InputInfo) {
 
     }
 
-    fn on_button_click(&mut self, wgt: &Widget, kc: &KeyCode) {
+    fn on_button_click(&mut self, wgt: &Widget, ii: &InputInfo) {
 
     }
 
@@ -70,7 +122,7 @@ impl WindowState for DemoWndState {
 
     }
 
-    fn on_text_edit_input_evt(&mut self, wgt: &Widget, kc: &KeyCode, txt: &mut String, cursor_pos: &mut i16) -> bool {
+    fn on_text_edit_input_evt(&mut self, wgt: &Widget, ii: &InputInfo, txt: &mut String, cursor_pos: &mut i16) -> bool {
         return false;
     }
 
@@ -95,34 +147,40 @@ impl WindowState for DemoWndState {
     }
 
     fn on_combo_box_select(&mut self, wgt: &Widget, new_sel_idx: i16) {
-
+        let rs = self.rs.as_cbbx(wgt.id);
+        rs.sel_idx = new_sel_idx;
     }
 
     fn on_combo_box_change(&mut self, wgt: &Widget, new_idx: i16) {
-
+        let rs = self.rs.as_cbbx(wgt.id);
+        rs.item_idx = new_idx;
     }
 
     fn on_combo_box_drop(&mut self, wgt: &Widget, drop_state: bool) {
-
+        let rs = self.rs.as_cbbx(wgt.id);
+        rs.drop_down = drop_state;
     }
 
     fn on_radio_select(&mut self, wgt: &Widget) {
-        // TODO: self.radiogrp1_idx =
+        if let Property::Radio(ref p) = wgt.prop {
+            self.radiogrp1_idx = p.radio_id;
+        }
     }
 
     fn on_text_box_scroll(&mut self, wgt: &Widget, top_line: i16) {
-
+        let rs = self.rs.as_txtbx(wgt.id);
+        rs.top_line = top_line;
     }
 
     fn on_custom_widget_draw(&mut self, wgt: &Widget) {
 
     }
 
-    fn on_custom_widget_input_evt(&mut self, wgt: &Widget, kc: &KeyCode) -> bool {
+    fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
         return false;
     }
 
-    fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, kc: &KeyCode) -> bool {
+    fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
         return false;
     }
 
@@ -137,6 +195,7 @@ impl WindowState for DemoWndState {
     }
 
     fn is_visible(&mut self, wgt: &Widget) -> bool {
+        // if wgt.id == tui_def::Id::LbxUnderoptions.into() { return false; }
         true
     }
 
@@ -159,7 +218,7 @@ impl WindowState for DemoWndState {
     }
 
     fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {
-        let _ = StrOps::new(txt)
+        let _ = txt.stream()
             << esc::BOLD
             << "** Service Menu **"
             << esc::NORMAL
@@ -187,7 +246,7 @@ impl WindowState for DemoWndState {
         }
 
         if wgt.id == tui_def::Id::LabelMultiFmt.into() {
-            let _ = StrOps::new(txt)
+            let _ = txt.stream()
                 << "  ▫▫▫▫▫ "
                 << esc::INVERSE_ON
                 << "ListBox"
@@ -240,27 +299,46 @@ impl WindowState for DemoWndState {
         let rs = self.rs.as_lbx(wgt.id);
         *item_idx = rs.item_idx;
         *sel_idx = rs.sel_idx;
-        // TODO *items_count = ???
+        *items_count = self.lbx_items.len() as i16;
     }
 
-    fn get_list_box_item(&mut self, wgt: &Widget, item_idx: &mut i16, txt: &mut String) {
-
+    fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {
+        txt.push_str(format!("{:2}. {}", item_idx, self.lbx_items[item_idx as usize]).as_str());
     }
 
     fn get_combo_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16, drop_down: &mut bool) {
-
+        let rs = self.rs.as_cbbx(wgt.id);
+        *item_idx = rs.item_idx;
+        *sel_idx = rs.sel_idx;
+        *items_count = self.lbx_items.len() as i16;
+        // *drop_down = rs.drop_down;
+        *drop_down = true;
     }
 
-    fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: &mut i16, txt: &mut String) {
-
+    fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {
+        txt.push_str(self.lbx_items[item_idx as usize]);
     }
 
     fn get_radio_index(&mut self, wgt: &Widget) -> i16 {
         return self.radiogrp1_idx;
     }
 
-    fn get_text_box_state(&mut self, wgt: &Widget, lines: &[&str], top_line: &mut i16) {
+    fn get_text_box_state(&mut self, wgt: &Widget, lines: &mut utils::StringListRc, top_line: &mut i16) {
+        let rs = self.rs.as_txtbx(wgt.id);
+        *top_line = rs.top_line;
 
+        if wgt.id == tui_def::Id::TbxWide.into() {
+            if self.tbx_wide_lines.borrow().len() == 0 {
+                self.tbx_wide_lines = utils::word_wrap(wgt.size.width as usize-2, &self.tbx_text);
+            }
+            *lines = Rc::clone(&self.tbx_wide_lines);
+        }
+        else if wgt.id == tui_def::Id::TbxNarrow.into() {
+            if self.tbx_narrow_lines.borrow().len() == 0 {
+                self.tbx_narrow_lines = utils::word_wrap(wgt.size.width as usize-2, &self.tbx_text);
+            }
+            *lines = Rc::clone(&self.tbx_narrow_lines);
+        }
     }
 
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {

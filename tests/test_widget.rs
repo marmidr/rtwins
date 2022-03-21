@@ -30,7 +30,7 @@ impl Id {
 }
 
 #[rustfmt::skip]
-const PAGE_VER_CHILDS: &[Widget] = &[
+const PAGE_VER_CHILDREN: &[Widget] = &[
     Widget {
         id: Id::PanelVersions.into(),
         link: Link::cdeflt(),
@@ -42,7 +42,7 @@ const PAGE_VER_CHILDS: &[Widget] = &[
             bg_color: ColorBG::Green,
             no_frame: false,
         }.into(),
-        childs: &[
+        children: &[
             Widget {
                 id: Id::LabelFwVersion.into(),
                 coord: Coord { col: 2, row: 1 },
@@ -102,7 +102,7 @@ const WINDOW_TEST: Widget = Widget {
         bg_color: ColorBG::Blue,
         is_popup: false,
     }.into(),
-    childs: &[
+    children: &[
         Widget {
             id: Id::BtnToaster.into(),
             coord: Coord { col: 1, row: 1 },
@@ -123,14 +123,14 @@ const WINDOW_TEST: Widget = Widget {
                 tab_width: 14,
                 vert_offs: 2
             }.into(),
-            childs: &[
+            children: &[
                 Widget {
                     id: Id::PageVer.into(),
                     prop: prop::Page {
                         title: "Version",
                         fg_color: ColorFG::Yellow,
                     }.into(),
-                    childs: &PAGE_VER_CHILDS,
+                    children: &PAGE_VER_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -139,7 +139,7 @@ const WINDOW_TEST: Widget = Widget {
                         title: "Service ∑",
                         fg_color: ColorFG::White,
                     }.into(),
-                    childs: &[
+                    children: &[
                         Widget {
                             id: Id::ChbxEnbl.into(),
                             coord: Coord { col: 30, row: 5 },

@@ -6,12 +6,14 @@
 use std::ops::{Add, Sub};
 use std::collections::HashMap;
 
-use crate::input::KeyCode;
+use crate::input::*;
+use crate::widget_impl::WidgetIter;
+use crate::utils::StringListRc;
 
 // ---------------------------------------------------------------------------------------------- //
 
 /// Widget coordinates on screen or on parent widget
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Coord {
     pub col: u8,
     pub row: u8,
@@ -39,7 +41,7 @@ impl Add for Coord {
 }
 
 /// Widget size
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Size {
     pub width: u8,
     pub height: u8,
@@ -427,7 +429,7 @@ pub struct Widget {
     /// widget properties defining it's type
     pub prop: Property,
     /// link to children widgets, 2x8B
-    pub childs: &'static [Widget],
+    pub children: &'static [Widget],
 }
 
 impl Widget {
@@ -439,8 +441,12 @@ impl Widget {
             coord: Coord::cdeflt(),
             size: Size::cdeflt(),
             prop: Property::cdeflt(),
-            childs: &[],
+            children: &[],
         }
+    }
+
+    pub fn iter(&self) -> WidgetIter {
+        WidgetIter::new(self)
     }
 }
 
@@ -455,14 +461,14 @@ impl Widget {
 pub struct Link {
     pub own_idx:    u16,
     pub parent_idx: u16,
-    pub childs_idx: u16,
-    pub childs_cnt: u16,
+    pub children_idx: u16,
+    pub children_cnt: u16,
 }
 
 impl Link {
     /// Returns default object; can be used in `const` initialization
     pub const fn cdeflt() -> Self {
-        Link{ own_idx: 0, parent_idx: 0, childs_idx: 0, childs_cnt: 0 }
+        Link{ own_idx: 0, parent_idx: 0, children_idx: 0, children_cnt: 0 }
     }
 }
 
@@ -542,7 +548,7 @@ impl Default for State {
 
 } // mod
 
-///
+/// Contains runtime states for most types of the widgets
 #[derive(Default)]
 pub struct RuntimeState {
     // widget type state
@@ -558,8 +564,8 @@ macro_rules! impl_as  {
             let rs = self.states.entry(id).or_insert(
                 prop_rt::$prop::default().into());
 
-            if let prop_rt::State::$prop(ref mut p ) = rs {
-                return p;
+            if let prop_rt::State::$prop(ref mut stat) = rs {
+                return stat;
             }
 
             panic!("Invalid widget rt state")
@@ -599,11 +605,11 @@ impl RuntimeState {
 /// Window state and event handler
 pub trait WindowState {
     /// events
-    fn on_button_down(&mut self, wgt: &Widget, kc: &KeyCode) {}
-    fn on_button_up(&mut self, wgt: &Widget, kc: &KeyCode) {}
-    fn on_button_click(&mut self, wgt: &Widget, kc: &KeyCode) {}
+    fn on_button_down(&mut self, wgt: &Widget, ii: &InputInfo) {}
+    fn on_button_up(&mut self, wgt: &Widget, ii: &InputInfo) {}
+    fn on_button_click(&mut self, wgt: &Widget, ii: &InputInfo) {}
     fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {}
-    fn on_text_edit_input_evt(&mut self, wgt: &Widget, kc: &KeyCode, txt: &mut String, cursor_pos: &mut i16) -> bool { return false; }
+    fn on_text_edit_input_evt(&mut self, wgt: &Widget, ii: &InputInfo, txt: &mut String, cursor_pos: &mut i16) -> bool { return false; }
     fn on_checkbox_toggle(&mut self, wgt: &Widget) {}
     fn on_page_control_page_change(&mut self, wgt: &Widget, new_page_idx: u8) {}
     fn on_list_box_select(&mut self, wgt: &Widget, new_sel_idx: i16) {}
@@ -614,8 +620,8 @@ pub trait WindowState {
     fn on_radio_select(&mut self, wgt: &Widget) {}
     fn on_text_box_scroll(&mut self, wgt: &Widget, new_top_line: i16) {}
     fn on_custom_widget_draw(&mut self, wgt: &Widget) {}
-    fn on_custom_widget_input_evt(&mut self, wgt: &Widget, kc: &KeyCode) -> bool { return false; }
-    fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, kc: &KeyCode) -> bool { return false; }
+    fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool { return false; }
+    fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool { return false; }
 
     /// common state queries
     fn is_enabled(&mut self, wgt: &Widget) -> bool { return true; }
@@ -636,11 +642,11 @@ pub trait WindowState {
     fn get_progress_bar_state(&mut self, wgt: &Widget, pos: &mut i32, max: &mut i32) {}
     fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u8 { return 0; }
     fn get_list_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16) {}
-    fn get_list_box_item(&mut self, wgt: &Widget, item_idx: &mut i16, txt: &mut String) {}
+    fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
     fn get_combo_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16, drop_down: &mut bool) {}
-    fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: &mut i16, txt: &mut String) {}
+    fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
     fn get_radio_index(&mut self, wgt: &Widget) -> i16 { return -1; }
-    fn get_text_box_state(&mut self, wgt: &Widget, lines: &[&str], top_line: &mut i16) {}
+    fn get_text_box_state(&mut self, wgt: &Widget, lines: &mut StringListRc, top_line: &mut i16) {}
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {}
 
     /// requests

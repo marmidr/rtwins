@@ -9,10 +9,14 @@ pub mod colors;
 pub mod esc;
 pub mod pal;
 pub mod input;
+#[cfg(target_os = "linux")]
+pub mod input_tty;
+pub mod input_decoder;
 pub mod widget;
 pub mod widget_impl;
 pub mod widget_draw;
 pub mod string_ext;
+pub mod utils;
 
 /// Library version
 pub const VER: &str = env!("CARGO_PKG_VERSION");
@@ -444,7 +448,13 @@ impl FontMementoManual {
         }
     }
 
-    // TODO: fn new_from_ctx()
+    fn from_ctx(ctx: &Ctx) -> Self {
+        let mut fm = FontMementoManual {
+            fg_stack_len: 0, bg_stack_len: 0, at_stack_len: 0
+        };
+        fm.store(ctx);
+        fm
+    }
 
     fn store(&mut self, ctx: &Ctx) {
         self.fg_stack_len = ctx.stack_cl_fg.len() as i8;

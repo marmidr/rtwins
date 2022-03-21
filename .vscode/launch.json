@@ -26,15 +26,15 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'demo'",
+            "name": "Debug executable 'demo1'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=demo",
+                    "--bin=demo1",
                     "--package=rtwins"
                 ],
                 "filter": {
-                    "name": "demo",
+                    "name": "demo1",
                     "kind": "bin"
                 }
             },
