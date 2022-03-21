@@ -36,12 +36,12 @@ fn inp_unknown_esc() {
     let mut inp = InputQue::new();
     let mut kc = KeyCode::new();
 
-    inp.push_back_str("\033[1234");
+    inp.push_back_str("\x1B[1234");
     dec.decode_input_seq(&mut inp, &mut kc);
 
     assert_eq!(KEY_MOD_NONE, kc.kmod.mask);
     assert_eq!(Key::None, kc.key);
-    assert_eq!("<.>", kc.name);
+    assert_eq!("", kc.name);
 }
 
 #[test]
@@ -169,233 +169,248 @@ fn esc_followed_by_nothing() {
     assert_eq!(Key::Esc, kc.key);
 }
 
-/*
-fn Ctrl_S)
-{
-    twins::RingBuff<char> inp(rbBuffer);
-    twins::KeyCode kc;
+#[test]
+fn ctrl_s() {
+    let mut dec = Decoder::new();
+    let mut inp = InputQue::new();
+    let mut kc = KeyCode::new();
 
-    inp.write((char)0x13);
-    decodeInputSeq(inp, kc);
+    inp.push_back(0x13);
+    dec.decode_input_seq(&mut inp, &mut kc);
 
+    assert_eq!("S", kc.utf8str());
     assert_eq!(KEY_MOD_CTRL, kc.kmod.mask);
-    assert_eq!("S", kc.utf8);
-    EXPECT_STRNE("", kc.name);
-    EXPECT_STRNE("<?>", kc.name);
 }
 
-fn Ctrl_F1)
-{
-    twins::RingBuff<char> inp(rbBuffer);
-    twins::KeyCode kc;
+#[test]
+fn ctrl_home() {
+    let mut dec = Decoder::new();
+    let mut inp = InputQue::new();
+    let mut kc = KeyCode::new();
 
-    inp.write("\033[1;5H");
-    decodeInputSeq(inp, kc);
+    inp.push_back_str("\x1B[1;5H");
+    dec.decode_input_seq(&mut inp, &mut kc);
 
-    assert_eq!(KEY_MOD_SPECIAL | KEY_MOD_CTRL, kc.kmod.mask);
     assert_eq!(Key::Home, kc.key);
-    EXPECT_STRNE("", kc.name);
-    EXPECT_STRNE("<?>", kc.name);
+    assert_eq!(KEY_MOD_SPECIAL | KEY_MOD_CTRL, kc.kmod.mask);
+    assert_eq!("C-Home", kc.name);
 }
 
-fn UnknownSeq__Ctrl_Home)
-{
-    twins::decodeInputSeqReset();
-    twins::RingBuff<char> inp(rbBuffer);
-    twins::KeyCode kc;
+#[test]
+fn ctrl_f3() {
+    let mut dec = Decoder::new();
+    let mut inp = InputQue::new();
+    let mut kc = KeyCode::new();
 
-    inp.write("\033*42~");
-    inp.write("\033[1;5H@");
+    inp.push_back_str("\x1BOR");
+    dec.decode_input_seq(&mut inp, &mut kc);
 
-    decodeInputSeq(inp, kc);
-    assert_eq!(KEY_MOD_SPECIAL | KEY_MOD_CTRL, kc.kmod.mask);
+    assert_eq!(Key::F3, kc.key);
+    assert_eq!(KEY_MOD_SPECIAL, kc.kmod.mask);
+    assert_eq!("F3", kc.name);
+}
+
+#[test]
+fn unknown_seq_ctrl_home() {
+    let mut dec = Decoder::new();
+    let mut inp = InputQue::new();
+    let mut kc = KeyCode::new();
+
+    inp.push_back_str("\x1B*42~");
+    // valid ESC followed by '+'
+    inp.push_back_str("\x1B[1;5H+");
+
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Home, kc.key);
+    assert_eq!(KEY_MOD_SPECIAL | KEY_MOD_CTRL, kc.kmod.mask);
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(KEY_MOD_NONE, kc.kmod.mask);
-    assert_eq!("@", kc.utf8);
+    assert_eq!("+", kc.utf8str());
 }
 
-fn LoongUnknownSeq__Ctrl_Home)
-{
-    twins::decodeInputSeqReset();
-    twins::RingBuff<char> inp(rbBuffer);
-    twins::KeyCode kc;
+#[test]
+fn loong_unknown_seq_ctrl_home() {
+    let mut dec = Decoder::new();
+    let mut inp = InputQue::new();
+    let mut kc = KeyCode::new();
 
     // next ESC is more that 7 bytes further,
     // so entire buffer will be cleared
-    inp.write("\033*123456789~");
-    decodeInputSeq(inp, kc);
+    inp.push_back_str("\x1B*123456789~");
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::None, kc.key);
 
-    inp.write("\033[1;5H");
-    decodeInputSeq(inp, kc);
+    inp.push_back_str("\x1B[1;5H");
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::None, kc.key);
 
-    inp.write("+");
-    decodeInputSeq(inp, kc); // 3rd try - abandon
+    inp.push_back_str("+");
+    dec.decode_input_seq(&mut inp, &mut kc); // 3rd try - abandon
     assert_eq!(Key::None, kc.key);
-    assert_eq!(0, inp.size());
+    assert_eq!(0, inp.len());
 }
 
-fn NUL_InInput)
-{
-    twins::decodeInputSeqReset();
-    twins::RingBuff<char> inp(rbBuffer);
-    twins::KeyCode kc;
+#[test]
+fn nul_in_input() {
+    let mut dec = Decoder::new();
+    let mut inp = InputQue::new();
+    let mut kc = KeyCode::new();
 
-    inp.write('\0');
-    inp.write("\t");
-    decodeInputSeq(inp, kc);
+    inp.push_back(b'\0');
+    inp.push_back(b'\t');
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::None, kc.key);
 }
 
-fn DISABLED_Ctrl_F1__incomplete)
-{
-    twins::decodeInputSeqReset();
-    twins::RingBuff<char> inp(rbBuffer);
-    twins::KeyCode kc;
+#[test]
+fn ctrl_f1_incomplete() {
+    let mut dec = Decoder::new();
+    let mut inp = InputQue::new();
+    let mut kc = KeyCode::new();
 
-    EXPECT_TRUE(inp.write("\033["));
-    assert_eq!(2, inp.size());
-    decodeInputSeq(inp, kc);
+    inp.push_back_str("\x1B[");
+    assert_eq!(2, inp.len());
+    dec.decode_input_seq(&mut inp, &mut kc);
 
-    assert_eq!(2, inp.size());
+    assert_eq!(2, inp.len());
     assert_eq!(KEY_MOD_NONE, kc.kmod.mask);
     assert_eq!(Key::None, kc.key);
 
-    // write rest of previous sequence and additional one key
-    EXPECT_TRUE(inp.write("1;5H\033"));
-    assert_eq!(7, inp.size());
-    decodeInputSeq(inp, kc);
-    assert_eq!(1, inp.size());
+    // write rest of previous sequence and additional sole ESC key
+    inp.push_back_str("1;5H\x1B");
+    assert_eq!(7, inp.len());
+    dec.decode_input_seq(&mut inp, &mut kc);
+    assert_eq!(1, inp.len());
     assert_eq!(KEY_MOD_SPECIAL | KEY_MOD_CTRL, kc.kmod.mask);
     assert_eq!(Key::Home, kc.key);
 
-    // decode rest of the inp
-    decodeInputSeq(inp, kc);
-    assert_eq!(0, inp.size());
-    assert_eq!(KEY_MOD_SPECIAL, kc.kmod.mask);
+    // decode rest of the inp - freestanding ESC
+    // after first attempt nothing happens -> waiting for some more ESC sequence data
+    dec.decode_input_seq(&mut inp, &mut kc);
+    assert_eq!(1, inp.len());
+    assert_eq!(Key::None, kc.key);
+    // second attmpt - the sole ESC will be taken into consideration
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Esc, kc.key);
+    assert_eq!(KEY_MOD_SPECIAL, kc.kmod.mask);
 }
 
-fn L__S_C_UP__O)
-{
-    twins::decodeInputSeqReset();
-    twins::RingBuff<char> inp(rbBuffer);
-    twins::KeyCode kc;
+#[test]
+fn mix_up() {
+    let mut dec = Decoder::new();
+    let mut inp = InputQue::new();
+    let mut kc = KeyCode::new();
 
     // write rest of previous sequence and additional one key
-    EXPECT_TRUE(inp.write("Ł\033[1;6AÓ*"));
+    inp.push_back_str("Ł\x1B[1;6AÓ*");
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
+    assert_eq!("Ł", kc.utf8str());
     assert_eq!(KEY_MOD_NONE, kc.kmod.mask);
-    assert_eq!("Ł", kc.utf8);
 
-    decodeInputSeq(inp, kc);
-    assert_eq!(KEY_MOD_SPECIAL | KEY_MOD_SHIFT | KEY_MOD_CTRL, kc.kmod.mask);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Up, kc.key);
+    assert_eq!(KEY_MOD_SPECIAL | KEY_MOD_SHIFT | KEY_MOD_CTRL, kc.kmod.mask);
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
+    assert_eq!("Ó", kc.utf8str());
     assert_eq!(KEY_MOD_NONE, kc.kmod.mask);
-    assert_eq!("Ó", kc.utf8);
 
     // remains '*'
-    assert_eq!(1, inp.size());
+    assert_eq!(1, inp.len());
 }
 
-fn CR)
-{
-    twins::decodeInputSeqReset();
-    twins::RingBuff<char> inp(rbBuffer);
-    twins::KeyCode kc;
+#[test]
+fn cr() {
+    let mut dec = Decoder::new();
+    let mut inp = InputQue::new();
+    let mut kc = KeyCode::new();
 
-    inp.write("\r\r\t");
+    inp.push_back_str("\r\r\t");
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Enter, kc.key);
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Enter, kc.key);
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Tab, kc.key);
 }
 
-fn LF)
-{
-    twins::decodeInputSeqReset();
-    twins::RingBuff<char> inp(rbBuffer);
-    twins::KeyCode kc;
+#[test]
+fn lf() {
+    let mut dec = Decoder::new();
+    let mut inp = InputQue::new();
+    let mut kc = KeyCode::new();
 
-    inp.write("\n\n\t");
+    inp.push_back_str("\n\n\t");
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Enter, kc.key);
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Enter, kc.key);
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Tab, kc.key);
 }
 
-fn CR_LF_CR)
-{
-    twins::decodeInputSeqReset();
-    twins::RingBuff<char> inp(rbBuffer);
-    twins::KeyCode kc;
+#[test]
+fn cr_lf_cr() {
+    let mut dec = Decoder::new();
+    let mut inp = InputQue::new();
+    let mut kc = KeyCode::new();
 
-    inp.write("\n\r\n\t\n\r\t");
+    inp.push_back_str("\n\r\n\t\n\r\t");
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Enter, kc.key);
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Enter, kc.key);
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Tab, kc.key);
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Enter, kc.key);
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Enter, kc.key);
 
-    decodeInputSeq(inp, kc);
+    dec.decode_input_seq(&mut inp, &mut kc);
     assert_eq!(Key::Tab, kc.key);
 }
 
-fn Mouse_click_at_11)
-{
-    twins::decodeInputSeqReset();
-    twins::RingBuff<char> inp(rbBuffer);
-    twins::KeyCode kc;
+#[test]
+fn mouse_click_at_11() {
+    let mut dec = Decoder::new();
+    let mut inp = InputQue::new();
+    let mut kc = KeyCode::new();
 
-    inp.write("\e[M !!");
-
-    decodeInputSeq(inp, kc);
-    assert_eq!(Key::MouseEvent, kc.key);
-    assert_eq!(twins::MouseBtn::ButtonLeft, kc.mouse.btn);
+    inp.push_back_str("\x1B[M !!");
+    dec.decode_input_seq(&mut inp, &mut kc);
+    assert_eq!(Key::None, kc.key);
+    assert_eq!(MouseBtn::ButtonLeft, kc.mouse.btn);
     assert_eq!(1, kc.mouse.col);
     assert_eq!(1, kc.mouse.row);
     assert_eq!(0, kc.kmod.mask);
 }
 
-fn Mouse_wheel_down)
-{
-    twins::decodeInputSeqReset();
-    twins::RingBuff<char> inp(rbBuffer);
-    twins::KeyCode kc;
+#[test]
+fn mouse_wheel_down() {
+    let mut dec = Decoder::new();
+    let mut inp = InputQue::new();
+    let mut kc = KeyCode::new();
 
-    inp.write("\e[Ma$\"");
+    inp.push_back_str("\x1B[Ma$\"");
 
-    decodeInputSeq(inp, kc);
-    assert_eq!(Key::MouseEvent, kc.key);
-    assert_eq!(twins::MouseBtn::WheelDown, kc.mouse.btn);
+    dec.decode_input_seq(&mut inp, &mut kc);
+    assert_eq!(Key::None, kc.key);
+    assert_eq!(MouseBtn::WheelDown, kc.mouse.btn);
     assert_eq!(4, kc.mouse.col);
     assert_eq!(2, kc.mouse.row);
     assert_eq!(0, kc.kmod.mask);
 }
- */

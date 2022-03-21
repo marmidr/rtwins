@@ -79,7 +79,7 @@ pub enum Key {
 }
 
 /// Mouse button click events
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum MouseBtn {
     None,
     ButtonLeft,
@@ -93,6 +93,7 @@ pub enum MouseBtn {
 }
 
 /// Mouse event representation
+#[derive(Debug)]
 pub struct Mouse {
     // button or wheel event
     pub btn: MouseBtn,
@@ -115,6 +116,7 @@ pub const KEY_MOD_SHIFT: u8 = 0b100;
 pub const KEY_MOD_SPECIAL: u8 = 0b1000;
 
 /// Representation of key modifiers coded on bits
+#[derive(Debug)]
 pub struct KeyMod {
     pub mask: u8
 }

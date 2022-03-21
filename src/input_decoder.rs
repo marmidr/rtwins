@@ -341,34 +341,35 @@ const fn sort<const N: usize>(mut array: [SeqMap; N]) -> [SeqMap; N] {
 
 /// Compares two SeqMap using method similar to strcmp
 const fn seqmap_cmp(left: &SeqMap, right: &SeqMap) -> Ordering {
-    seq_cmp(left.seq.as_bytes(), right.seq.as_bytes())
+    seq_cmp(left.seq.as_bytes(), right.seq.as_bytes()).1
 }
 
 /// Compares two byte slices using method similar to strcmp
-const fn seq_cmp(left: &[u8], right: &[u8]) -> Ordering {
+/// .0 == true - left begins with right, but latter they may differ
+const fn seq_cmp(left: &[u8], right: &[u8]) -> (bool, Ordering) {
     let commn_len = if left.len() < right.len() { left.len() } else { right.len() };
     let mut i = 0usize;
 
     while i < commn_len {
         if left[i] != right[i] {
             if left[i] < right[i] {
-                return Ordering::Less
+                return (false, Ordering::Less)
             }
             else {
-                return Ordering::Greater
+                return (false, Ordering::Greater)
             }
         }
         i += 1;
     }
 
     if left.len() == right.len() {
-        Ordering::Equal
+        (true, Ordering::Equal)
     }
     else if left.len() < right.len() {
-        Ordering::Less
+        (true, Ordering::Less)
     }
     else {
-        Ordering::Greater
+        (true, Ordering::Greater)
     }
 }
 
@@ -387,16 +388,16 @@ fn seq_binary_search(sequence: &[u8], map: &'static [SeqMap]) -> Option<&'static
         return None;
     }
 
-    let mut lo = 0usize;
-    let mut hi = map.len() - 1;
+    let mut lo = 0isize;
+    let mut hi = map.len() as isize - 1;
     let mut mid = (hi - lo) / 2;
 
     loop {
         // map[mid].seq must not necessary be equal to seq, but be at the beginning of it
-        let cmp = seq_cmp(sequence, map[mid].seq.as_bytes());
+        let (startswith, cmp) = seq_cmp(sequence, map[mid as usize].seq.as_bytes());
 
-        if cmp.is_eq() {
-            return Some(&map[mid]);
+        if startswith {
+            return Some(&map[mid as usize]);
         }
         else if cmp.is_gt() {
             lo = mid + 1;
@@ -458,7 +459,7 @@ impl Decoder {
             count
         };
 
-        let mut seq : [u8; crate::esc::SEQ_MAX_LENGTH] = [0; crate::esc::SEQ_MAX_LENGTH];
+        let mut seq = [0u8; crate::esc::SEQ_MAX_LENGTH];
 
         while !input.is_empty() {
             let seq_sz = read_seq_from_queue(&input, &mut seq);
@@ -510,7 +511,7 @@ impl Decoder {
                 }
 
                 // binary search: find key map in max 7 steps
-                if let Some(km) = seq_binary_search(&seq, &ESC_KEYS_MAP_SORTED) {
+                if let Some(km) = seq_binary_search(&seq[1..seq_sz], &ESC_KEYS_MAP_SORTED) {
                     output.key = km.key;
                     output.kmod.mask = km.kmod;
                     output.name = km.name;
@@ -527,6 +528,7 @@ impl Decoder {
                             esc_found = true;
                             // found next ESC, current seq is unknown
                             input.drain(..i);
+                            dbg!("found at ", i);
                             break;
                         }
                     }
@@ -592,6 +594,7 @@ impl Decoder {
                 // 3. check for one of Ctrl+[A..Z]
                 if let Some(km) = CTRL_KEYS_MAP_SORTED.iter().find(|&&x| x.code == seq[0]) {
                     output.utf8seq[0] = km.key as u8;
+                    output.utf8sl = 1;
                     output.kmod.mask = km.kmod;
                     output.name = km.name;
                     input.drain(..1);
@@ -690,8 +693,17 @@ fn test_seq_binary_search() {
 
     {
         // input unknown
-        let opt = seq_binary_search(b"[ABC", &ESC_KEYS_MAP_SORTED);
+        let opt = seq_binary_search(b"[abc", &ESC_KEYS_MAP_SORTED);
         assert!(opt.is_none());
+    }
+
+    {
+        // input followed by "BC"
+        let opt = seq_binary_search(b"[ABC", &ESC_KEYS_MAP_SORTED);
+        assert!(opt.is_some());
+        if let Some(km) = opt {
+            assert_eq!(Key::Up, km.key);
+        }
     }
 
     {
@@ -699,7 +711,7 @@ fn test_seq_binary_search() {
         let opt = seq_binary_search(b"[H", &ESC_KEYS_MAP_SORTED);
         assert!(opt.is_some());
         if let Some(km) = opt {
-            assert!(Key::Home == km.key);
+            assert_eq!(Key::Home, km.key);
         }
     }
 
@@ -708,7 +720,17 @@ fn test_seq_binary_search() {
         let opt = seq_binary_search(b"[24;5~", &ESC_KEYS_MAP_SORTED);
         assert!(opt.is_some());
         if let Some(km) = opt {
-            assert!(Key::F12 == km.key);
+            assert_eq!(Key::F12, km.key);
+        }
+    }
+
+    {
+        // valid input
+        let opt = seq_binary_search(b"[24;6~", &ESC_KEYS_MAP_SORTED);
+        assert!(opt.is_some());
+        if let Some(km) = opt {
+            assert_eq!(Key::F12, km.key);
+            assert_eq!(KEY_MOD_CTRL|KEY_MOD_SHIFT|KEY_MOD_SPECIAL, km.kmod);
         }
     }
 }
