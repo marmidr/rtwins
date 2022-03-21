@@ -23,8 +23,8 @@ Implementation is based on:
   * [x] go to home
   * [x] go to location
 * reading input
-  * [ ] regular characters (a..z)
-  * [ ] control codes (Up/Down, Del, Ctrl, Home, ...)
+  * [x] regular characters (a..z)
+  * [x] control codes (Up/Down, Del, Ctrl, Home, ...)
 * [x] buffered terminal output
 * [x] platform abstraction layer (PAL) to ease porting
 * [ ] command line interface with history (CLI)

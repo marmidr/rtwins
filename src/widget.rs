@@ -6,7 +6,7 @@
 use std::ops::{Add, Sub};
 use std::collections::HashMap;
 
-use crate::input::KeyCode;
+use crate::input::*;
 use crate::widget_impl::WidgetIter;
 use crate::utils::StringListRc;
 
@@ -605,11 +605,11 @@ impl RuntimeState {
 /// Window state and event handler
 pub trait WindowState {
     /// events
-    fn on_button_down(&mut self, wgt: &Widget, kc: &KeyCode) {}
-    fn on_button_up(&mut self, wgt: &Widget, kc: &KeyCode) {}
-    fn on_button_click(&mut self, wgt: &Widget, kc: &KeyCode) {}
+    fn on_button_down(&mut self, wgt: &Widget, ii: &InputInfo) {}
+    fn on_button_up(&mut self, wgt: &Widget, ii: &InputInfo) {}
+    fn on_button_click(&mut self, wgt: &Widget, ii: &InputInfo) {}
     fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {}
-    fn on_text_edit_input_evt(&mut self, wgt: &Widget, kc: &KeyCode, txt: &mut String, cursor_pos: &mut i16) -> bool { return false; }
+    fn on_text_edit_input_evt(&mut self, wgt: &Widget, ii: &InputInfo, txt: &mut String, cursor_pos: &mut i16) -> bool { return false; }
     fn on_checkbox_toggle(&mut self, wgt: &Widget) {}
     fn on_page_control_page_change(&mut self, wgt: &Widget, new_page_idx: u8) {}
     fn on_list_box_select(&mut self, wgt: &Widget, new_sel_idx: i16) {}
@@ -620,8 +620,8 @@ pub trait WindowState {
     fn on_radio_select(&mut self, wgt: &Widget) {}
     fn on_text_box_scroll(&mut self, wgt: &Widget, new_top_line: i16) {}
     fn on_custom_widget_draw(&mut self, wgt: &Widget) {}
-    fn on_custom_widget_input_evt(&mut self, wgt: &Widget, kc: &KeyCode) -> bool { return false; }
-    fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, kc: &KeyCode) -> bool { return false; }
+    fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool { return false; }
+    fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool { return false; }
 
     /// common state queries
     fn is_enabled(&mut self, wgt: &Widget) -> bool { return true; }

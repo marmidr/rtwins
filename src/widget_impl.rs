@@ -1,6 +1,6 @@
 //! # RTWins Widget
 
-use crate::{input, widget};
+use crate::widget;
 use crate::widget::{Coord, WId, Widget, Property, WIDGET_ID_NONE};
 
 
@@ -26,7 +26,7 @@ struct WidgetState
     // p_focused_wgt: Option<&Widget>,
     // p_mouse_down_wgt: Option<&Widget>,
     // p_drop_down_combo: Option<&Widget>,
-    mouse_down_key_code: input::KeyCode,
+    // mouse_down_key_code: input::KeyCode,
     // struct                              // state of Edit being modified
     // {
     //     const Widget *pWgt = nullptr;

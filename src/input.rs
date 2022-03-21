@@ -134,44 +134,6 @@ impl KeyMod {
     pub fn set_shift(&mut self) { self.mask |= KEY_MOD_SHIFT; }
 }
 
-/// Decoded terminal key representation
-pub struct KeyCode {
-    pub utf8seq: [u8; 4],   // UTF-8 code: 'a', '4', 'Ł'
-    pub utf8sl: u8,         // length of utf8seq seq
-    pub key:    Key,        // 'F1', 'Enter'
-    pub kmod:   KeyMod,     // Ctrl/Alt/Shift
-    pub mouse:  MouseInfo,
-    pub name:   &'static str
-}
-
-impl KeyCode {
-    pub fn new() -> Self {
-        Self{utf8seq: [0; 4], utf8sl: 0, key: Key::None, kmod: KeyMod::new(), mouse: MouseInfo::new(), name: ""}
-    }
-
-    /// Reset all fields to initial state
-    pub fn reset(&mut self) {
-        self.utf8seq[0] = b'\0';
-        self.utf8sl = 0;
-        self.key = Key::None;
-        self.kmod.mask = 0;
-        self.mouse.evt = MouseEvent::None;
-        self.name = "";
-    }
-
-    /// Returns proper UTF-8 slice from self.utf8seq or empty slice in case of invalid sequence
-    pub fn utf8str(& self) -> &str {
-        let leading_seq = self.utf8seq.split_at(self.utf8sl as usize).0;
-        let res = std::str::from_utf8(leading_seq);
-        if let Ok(s) = res {
-            s
-        }
-        else {
-            ""
-        }
-    }
-}
-
 /// Buffer for UTF-8 sequence
 #[derive(Debug)]
 pub struct CharBuff {

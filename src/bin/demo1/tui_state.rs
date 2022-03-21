@@ -106,15 +106,15 @@ impl DemoWndState {
 impl WindowState for DemoWndState {
     /** events **/
 
-    fn on_button_down(&mut self, wgt: &Widget, kc: &KeyCode) {
+    fn on_button_down(&mut self, wgt: &Widget, ii: &InputInfo) {
         // self.ctx.flush_buff();
     }
 
-    fn on_button_up(&mut self, wgt: &Widget, kc: &KeyCode) {
+    fn on_button_up(&mut self, wgt: &Widget, ii: &InputInfo) {
 
     }
 
-    fn on_button_click(&mut self, wgt: &Widget, kc: &KeyCode) {
+    fn on_button_click(&mut self, wgt: &Widget, ii: &InputInfo) {
 
     }
 
@@ -122,7 +122,7 @@ impl WindowState for DemoWndState {
 
     }
 
-    fn on_text_edit_input_evt(&mut self, wgt: &Widget, kc: &KeyCode, txt: &mut String, cursor_pos: &mut i16) -> bool {
+    fn on_text_edit_input_evt(&mut self, wgt: &Widget, ii: &InputInfo, txt: &mut String, cursor_pos: &mut i16) -> bool {
         return false;
     }
 
@@ -176,11 +176,11 @@ impl WindowState for DemoWndState {
 
     }
 
-    fn on_custom_widget_input_evt(&mut self, wgt: &Widget, kc: &KeyCode) -> bool {
+    fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
         return false;
     }
 
-    fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, kc: &KeyCode) -> bool {
+    fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
         return false;
     }
 
