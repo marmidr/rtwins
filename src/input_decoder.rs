@@ -440,8 +440,8 @@ impl Decoder {
     /// Decodes input ESC sequence fetching bytes from queue;
     /// fills the output with decoded key/mouse event,
     /// Returns number of bytes consumed from the queue; 0 if no valid data found
-    pub fn decode_input_seq(&mut self, input: &mut InputQue, output: &mut KeyCode) -> u8 {
-        output.reset();
+    pub fn decode_input_seq(&mut self, input: &mut InputQue, inp_info: &mut InputInfo) -> u8 {
+        inp_info.reset();
 
         if input.len() == 0 {
             return 0;
@@ -484,37 +484,36 @@ impl Decoder {
                     && seq[2] == b'M'
                 {
                     let mouse_btn = seq[3] - b' ';
+                    let mut mi = MouseInfo::new();
                     match mouse_btn & 0xE3 {
-                        0x00 => output.mouse.btn = MouseBtn::ButtonLeft,
-                        0x01 => output.mouse.btn = MouseBtn::ButtonMid,
-                        0x02 => output.mouse.btn = MouseBtn::ButtonRight,
-                        0x03 => output.mouse.btn = MouseBtn::ButtonReleased,
-                        0x80 => output.mouse.btn = MouseBtn::ButtonGoBack,
-                        0x81 => output.mouse.btn = MouseBtn::ButtonGoForward,
-                        0x40 => output.mouse.btn = MouseBtn::WheelUp,
-                        0x41 => output.mouse.btn = MouseBtn::WheelDown,
-                        _    => output.mouse.btn = MouseBtn::None,
+                        0x00 => mi.evt = MouseEvent::ButtonLeft,
+                        0x01 => mi.evt = MouseEvent::ButtonMid,
+                        0x02 => mi.evt = MouseEvent::ButtonRight,
+                        0x03 => mi.evt = MouseEvent::ButtonReleased,
+                        0x80 => mi.evt = MouseEvent::ButtonGoBack,
+                        0x81 => mi.evt = MouseEvent::ButtonGoForward,
+                        0x40 => mi.evt = MouseEvent::WheelUp,
+                        0x41 => mi.evt = MouseEvent::WheelDown,
+                        _    => mi.evt = MouseEvent::None,
                     }
 
-                    // TWINS_LOG_D("MouseBtn:0x%x", (unsigned)mouse_btn);
+                    if mouse_btn & 0x04 != 0 { inp_info.kmod.set_shift(); }
+                    if mouse_btn & 0x08 != 0 { inp_info.kmod.set_alt(); }
+                    if mouse_btn & 0x10 != 0 { inp_info.kmod.set_ctrl(); }
 
-                    if mouse_btn & 0x04 != 0 { output.kmod.set_shift(); }
-                    if mouse_btn & 0x08 != 0 { output.kmod.set_alt(); }
-                    if mouse_btn & 0x10 != 0 { output.kmod.set_ctrl(); }
-
-                    output.mouse.col = seq[4] - b' ';
-                    output.mouse.row = seq[5] - b' ';
-                    output.name = "MouseEvent";
-
+                    mi.col = seq[4] - b' ';
+                    mi.row = seq[5] - b' ';
+                    inp_info.typ = InputType::Mouse(mi);
+                    inp_info.name = "MouseEvent";
                     input.drain(..6);
                     return 6;
                 }
 
                 // binary search: find key map in max 7 steps
                 if let Some(km) = seq_binary_search(&seq[1..seq_sz], &ESC_KEYS_MAP_SORTED) {
-                    output.key = km.key;
-                    output.kmod.mask = km.kmod;
-                    output.name = km.name;
+                    inp_info.typ = InputType::Key(km.key);
+                    inp_info.kmod.mask = km.kmod;
+                    inp_info.name = km.name;
                     input.drain(..1 + km.seqlen as usize); // +1 for ESC
                     return 1 + km.seqlen;
                 }
@@ -579,9 +578,9 @@ impl Decoder {
                             break;
                         }
 
-                        output.key = km.key;
-                        output.kmod.mask = km.kmod;
-                        output.name = km.name;
+                        inp_info.typ = InputType::Key(km.key);
+                        inp_info.kmod.mask = km.kmod;
+                        inp_info.name = km.name;
                         input.drain(..1);
                         return 1;
                     }
@@ -593,10 +592,12 @@ impl Decoder {
 
                 // 3. check for one of Ctrl+[A..Z]
                 if let Some(km) = CTRL_KEYS_MAP_SORTED.iter().find(|&&x| x.code == seq[0]) {
-                    output.utf8seq[0] = km.key as u8;
-                    output.utf8sl = 1;
-                    output.kmod.mask = km.kmod;
-                    output.name = km.name;
+                    let mut cb = CharBuff::new();
+                    cb.utf8seq[0] = km.key as u8;
+                    cb.utf8sl = 1;
+                    inp_info.typ = InputType::Char(cb);
+                    inp_info.kmod.mask = km.kmod;
+                    inp_info.name = km.name;
                     input.drain(..1);
                     return 1;
                 }
@@ -607,13 +608,14 @@ impl Decoder {
 
                 if utf8seqlen > 0 && utf8seqlen <= seq_sz {
                     // copy valid UTF-8 seq
-                    output.utf8seq[0] = seq[0];
-                    output.utf8seq[1] = seq[1];
-                    output.utf8seq[2] = seq[2];
-                    output.utf8seq[3] = seq[3];
-                    output.utf8sl = utf8seqlen as u8;
-
-                    output.name = "<.>";
+                    let mut cb = CharBuff::new();
+                    cb.utf8seq[0] = seq[0];
+                    cb.utf8seq[1] = seq[1];
+                    cb.utf8seq[2] = seq[2];
+                    cb.utf8seq[3] = seq[3];
+                    cb.utf8sl = utf8seqlen as u8;
+                    inp_info.typ = InputType::Char(cb);
+                    inp_info.name = "<.>";
 
                     input.drain(..utf8seqlen);
                     return utf8seqlen as u8;

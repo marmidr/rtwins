@@ -80,7 +80,7 @@ pub enum Key {
 
 /// Mouse button click events
 #[derive(PartialEq, Debug)]
-pub enum MouseBtn {
+pub enum MouseEvent {
     None,
     ButtonLeft,
     ButtonMid,
@@ -94,17 +94,17 @@ pub enum MouseBtn {
 
 /// Mouse event representation
 #[derive(Debug)]
-pub struct Mouse {
+pub struct MouseInfo {
     // button or wheel event
-    pub btn: MouseBtn,
+    pub evt: MouseEvent,
     // 1:1 based terminal coordinates of the event
     pub col: u8,
     pub row: u8
 }
 
-impl Mouse {
-    fn new() -> Self {
-        Self{btn: MouseBtn::None, col: 0, row: 0}
+impl MouseInfo {
+    pub fn new() -> Self {
+        Self{evt: MouseEvent::None, col: 0, row: 0}
     }
 }
 
@@ -136,38 +136,17 @@ impl KeyMod {
 
 /// Decoded terminal key representation
 pub struct KeyCode {
-/*
-    union
-    {
-        /** used for regular text input */
-        char    utf8[5];    // NUL terminated UTF-8 code: 'a', '4', 'Ł'
-        /** used for special keys */
-        Key     key = {};   // 'F1', 'Enter'
-        /** used for mouse events (when key == Key::MouseClick) */
-        struct
-        {
-            // same as key above
-            Key      key;
-            /** button or wheel event */
-            MouseBtn btn;
-            /** 1:1 based terminal coordinates of the event */
-            uint8_t  col;
-            uint8_t  row;
-        } mouse;
-    };
- */
-
     pub utf8seq: [u8; 4],   // UTF-8 code: 'a', '4', 'Ł'
     pub utf8sl: u8,         // length of utf8seq seq
     pub key:    Key,        // 'F1', 'Enter'
     pub kmod:   KeyMod,     // Ctrl/Alt/Shift
-    pub mouse:  Mouse,
+    pub mouse:  MouseInfo,
     pub name:   &'static str
 }
 
 impl KeyCode {
     pub fn new() -> Self {
-        Self{utf8seq: [0; 4], utf8sl: 0, key: Key::None, kmod: KeyMod::new(), mouse: Mouse::new(), name: ""}
+        Self{utf8seq: [0; 4], utf8sl: 0, key: Key::None, kmod: KeyMod::new(), mouse: MouseInfo::new(), name: ""}
     }
 
     /// Reset all fields to initial state
@@ -176,7 +155,7 @@ impl KeyCode {
         self.utf8sl = 0;
         self.key = Key::None;
         self.kmod.mask = 0;
-        self.mouse.btn = MouseBtn::None;
+        self.mouse.evt = MouseEvent::None;
         self.name = "";
     }
 
@@ -190,5 +169,71 @@ impl KeyCode {
         else {
             ""
         }
+    }
+}
+
+/// Buffer for UTF-8 sequence
+#[derive(Debug)]
+pub struct CharBuff {
+    pub utf8seq: [u8; 4],   // UTF-8 code: 'a', '4', 'Ł'
+    pub utf8sl: u8,         // length of utf8seq seq
+}
+
+impl CharBuff {
+    pub fn new() -> Self {
+        Self{utf8seq: [0; 4], utf8sl: 0}
+    }
+
+    /// Reset all fields to initial state
+    pub fn reset(&mut self) {
+        self.utf8seq = [0; 4];
+        self.utf8sl = 0;
+    }
+
+    /// Returns proper UTF-8 slice from self.utf8seq or empty slice in case of invalid sequence
+    pub fn utf8str(& self) -> &str {
+        let leading_seq = self.utf8seq.split_at(self.utf8sl as usize).0;
+        let res = std::str::from_utf8(leading_seq);
+        if let Ok(s) = res {
+            s
+        }
+        else {
+            ""
+        }
+    }
+}
+
+/// Decoded input type
+#[derive(Debug)]
+pub enum InputType {
+    /// No event decoded
+    None,
+    /// Single UTF-8 character
+    Char(CharBuff),
+    /// Special key, like F1, Home
+    Key(Key),
+    /// Mouse event
+    Mouse(MouseInfo),
+}
+
+/// Describes decoded input
+pub struct InputInfo {
+    /// Input type with details
+    pub typ:    InputType,
+    /// Ctrl/Alt/Shift
+    pub kmod:   KeyMod,
+    /// Human redable key combination description
+    pub name:   &'static str
+}
+
+impl InputInfo {
+    pub fn new() -> Self {
+        Self{typ: InputType::None, kmod: KeyMod::new(), name: ""}
+    }
+
+    pub fn reset(&mut self) {
+        self.typ = InputType::None;
+        self.kmod.mask = 0;
+        self.name = "";
     }
 }
