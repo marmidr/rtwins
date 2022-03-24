@@ -84,6 +84,7 @@ fn main() {
 
     let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN_ARRAY[..]);
     let mut tw = TWins::new(Box::new(DemoPal::new()));
+    tw.lock().write_str(rtwins::esc::TERM_RESET).flush_buff();
 
     {
         let mut ctx = tw.lock();
@@ -106,24 +107,39 @@ fn main() {
     }
 
     println!("Press Ctrl-D to quit");
-    let mut inp = rtwins::input_tty::InputTty::new(2000);
+    let mut itty = rtwins::input_tty::InputTty::new(2000);
+    let mut ique = rtwins::input_decoder::InputQue::new();
+    let mut dec =  rtwins::input_decoder::Decoder::new();
+    let mut iinf = rtwins::input::InputInfo::new();
 
     loop {
-        let (inp_seq, q) = inp.read_input();
+        let (inp_seq, q) = itty.read_input();
 
         if q {
             println!("Quit!");
             break;
         }
-        else if inp_seq[0] != 0 {
-            // let s = String::from_utf8_lossy(inp_seq);
-
-            let mut s = String::new();
+        else if inp_seq.len() > 0 {
             for b in inp_seq {
-                if *b == 0 { break; }
-                if *b < b' ' { s.push('�')} else { s.push(*b as char) };
+                ique.push_back(*b);
             }
-            println!(" key={}", s);
+
+            while dec.decode_input_seq(&mut ique, &mut iinf) > 0 {
+                use rtwins::input::InputType;
+
+                match iinf.typ {
+                    InputType::Char(ref cb) => {
+                       println!("key={}", cb.utf8str());
+                    },
+                    InputType::Key(ref k) => {
+                       println!("key={}", iinf.name);
+                    },
+                    InputType::Mouse(ref m) => {
+                       println!("key={}", iinf.name);
+                    },
+                    _ => {}
+                }
+            }
         }
         else {
             println!(" -");
@@ -180,3 +196,4 @@ fn test_property_access() {
     );
     println!("sizeof Id: {}", std::mem::size_of::<tui_def::Id>());
 }
+

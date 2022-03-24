@@ -12,6 +12,7 @@ pub struct InputTty{
     eof_code:    libc::cc_t,
     input_timeout_ms: u16,
     input_buff:  [u8; crate::esc::SEQ_MAX_LENGTH],
+    input_len:   u8
 }
 
 impl Drop for InputTty {
@@ -42,7 +43,9 @@ impl InputTty {
             tty_file: None,
             c_lflag_bkp: 0, eof_code: 0,
             input_timeout_ms: timeout_ms,
-            input_buff: [0u8; crate::esc::SEQ_MAX_LENGTH]};
+            input_buff: [0u8; crate::esc::SEQ_MAX_LENGTH],
+            input_len: 0
+        };
 
         itty.tty_file = match std::fs::File::open(TTY_FILE_PATH) {
             Ok(f) =>
@@ -84,17 +87,17 @@ impl InputTty {
         }
     }
 
-    /// Returns tuple with NUL terminated ESC sequence and bool marker set to true,
+    /// Returns tuple with ESC sequence slice and bool marker set to true,
     /// if application termination was requested (C-d)
-    pub fn read_input(&mut self) -> (&[u8; 8], bool) {
+    pub fn read_input(&mut self) -> (&[u8], bool) {
         for b in self.input_buff.iter_mut() { *b = 0; }
 
         if self.wait_and_read_input_sequence() {
             let exit_requested = self.input_buff[0] == self.eof_code && self.input_buff[1] == 0;
-            return (&self.input_buff, exit_requested);
+            return (&self.input_buff[..self.input_len as usize], exit_requested);
         }
 
-        return (&self.input_buff, false);
+        return (&self.input_buff[..0], false);
     }
 
     fn wait_and_read_input_sequence(&mut self) -> bool {
@@ -105,9 +108,11 @@ impl InputTty {
                 if let Ok(nb) = res {
                     // print!("nb={} ", nb);
                     self.input_buff[nb] = 0;
+                    self.input_len = nb as u8;
                     return true;
                 }
                 else {
+                    self.input_len = 0;
                     self.input_buff[0] = 0;
                 }
             }

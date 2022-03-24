@@ -20,13 +20,11 @@ struct SeqMap {
     key:    Key,
     // key modifiers, like KEY_MOD_CTRL
     kmod:   u8,
-    // seq.len()
-    seqlen: u8
 }
 
 impl SeqMap {
     const fn cdeflt() -> Self {
-        Self{seq: "", name: "", key: Key::None, kmod: 0, seqlen: 0}
+        Self{seq: "", name: "", key: Key::None, kmod: 0}
     }
 }
 
@@ -72,7 +70,7 @@ impl SpecialMap {
 
 macro_rules! seq_def {
     ($s:literal, $n:literal, $k:expr, $m:expr) => {
-        SeqMap{seq: $s, name: $n, key: $k, kmod: $m, seqlen: $s.len() as u8}
+        SeqMap{seq: $s, name: $n, key: $k, kmod: $m}
     };
 }
 
@@ -514,8 +512,8 @@ impl Decoder {
                     inp_info.typ = InputType::Key(km.key);
                     inp_info.kmod.mask = km.kmod;
                     inp_info.name = km.name;
-                    input.drain(..1 + km.seqlen as usize); // +1 for ESC
-                    return 1 + km.seqlen;
+                    input.drain(..1 + km.seq.len()); // +1 for ESC
+                    return 1 + km.seq.len() as u8;
                 }
 
                 // ESC sequence invalid or unknown?
@@ -527,7 +525,7 @@ impl Decoder {
                             esc_found = true;
                             // found next ESC, current seq is unknown
                             input.drain(..i);
-                            dbg!("found at ", i);
+                            //dbg!("found at ", i);
                             break;
                         }
                     }
