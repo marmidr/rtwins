@@ -4,7 +4,7 @@
 
 extern crate rtwins;
 use rtwins::{TWins, widget::WindowState};
-use std::{io::Write, ops::DerefMut};
+use std::io::Write;
 
 // https://doc.rust-lang.org/cargo/guide/project-layout.html
 mod tui_def;
@@ -78,45 +78,41 @@ impl rtwins::pal::Pal for DemoPal {
 // -----------------------------------------------------------------------------------------------
 
 fn main() {
-    test_esc_codes();
+    // test_esc_codes();
     // test_property_access();
     // rtwins::input_decoder::print_seq();
 
+    gui();
+}
+
+fn gui() {
     let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN_ARRAY[..]);
     let mut tw = TWins::new(Box::new(DemoPal::new()));
-    tw.lock().write_str(rtwins::esc::TERM_RESET).flush_buff();
+    let mut mouse_on = true;
+
+    tw.lock().write_str(rtwins::esc::TERM_RESET);
+    tw.lock().draw_wnd(&mut dws);
+    tw.lock().mouse_mode(rtwins::MouseMode::M2);
+    tw.lock().flush_buff();
 
     {
-        let mut ctx = tw.lock();
-        ctx.draw_wnd(&mut dws);
-    }
-
-    {
-        let mut ctx = tw.lock();
+        let mut twl = tw.lock();
         use tui_def::Id::*;
         dws.invalidate(&[LabelDate.into(), BtnYes.into(), Prgbar3.into()]);
-        ctx.draw_invalidated(&mut dws);
-    }
-
-    {
-        let mut ctx = tw.lock();
-        let c = ctx.deref_mut();
-        c.write_str(rtwins::esc::LINE_ERASE_ALL);
-        c.move_to_col(10).log_w("Column 10");
-        c.write_char('\n').flush_buff();
+        twl.draw_invalidated(&mut dws);
     }
 
     println!("Press Ctrl-D to quit");
     let mut itty = rtwins::input_tty::InputTty::new(2000);
     let mut ique = rtwins::input_decoder::InputQue::new();
     let mut dec =  rtwins::input_decoder::Decoder::new();
-    let mut iinf = rtwins::input::InputInfo::new();
+    let mut inp = rtwins::input::InputInfo::new();
 
     loop {
         let (inp_seq, q) = itty.read_input();
 
         if q {
-            println!("Quit!");
+            tw.lock().log_w("Quit!");
             break;
         }
         else if inp_seq.len() > 0 {
@@ -124,25 +120,77 @@ fn main() {
                 ique.push_back(*b);
             }
 
-            while dec.decode_input_seq(&mut ique, &mut iinf) > 0 {
-                use rtwins::input::InputType;
+            // print raw sequence
+            if false {
+                let mut s = String::with_capacity(10);
+                for b in inp_seq {
+                    if *b == 0 { break; }
+                    if *b < b' ' { s.push('�') } else { s.push(*b as char) };
+                }
+                tw.lock().log_d(format!("seq={}", s).as_str());
+            }
 
-                match iinf.typ {
+            while dec.decode_input_seq(&mut ique, &mut inp) > 0 {
+                use rtwins::input::InputType;
+                use rtwins::input::Key;
+
+                // input debug info
+                match inp.typ {
                     InputType::Char(ref cb) => {
-                       println!("key={}", cb.utf8str());
+                       tw.lock().log_d(format!("char={}", cb.utf8str()).as_str());
                     },
                     InputType::Key(ref k) => {
-                       println!("key={}", iinf.name);
+                       tw.lock().log_d(format!("key={}", inp.name).as_str());
                     },
                     InputType::Mouse(ref m) => {
-                       println!("key={}", iinf.name);
+                       tw.lock().log_d(format!("mouse={:?} at {}:{}", m.evt, m.col, m.row).as_str());
                     },
                     _ => {}
                 }
-            }
+
+                // input processing
+                if let InputType::Key(ref k) = inp.typ {
+                    let mut twl = tw.lock();
+
+                    if *k == Key::F2 {
+                        // wndMain.wndEnabled = !wndMain.wndEnabled;
+                        // wndMain.invalidate(ID_WND);
+                    }
+                    else if *k == Key::F4 {
+                        mouse_on = !mouse_on;
+                        twl.log_i(format!("Mouse {}", if mouse_on {"ON"} else {"OFF"}).as_str());
+                        twl.mouse_mode( if mouse_on {rtwins::MouseMode::M2} else {rtwins::MouseMode::Off});
+                        twl.flush_buff();
+                    }
+                    else if *k == Key::F5 {
+                        twl.screen_clr_all();
+
+                        // draw windows from bottom to top
+                        twl.draw_invalidated(&mut dws);
+                        twl.flush_buff();
+                        // twins::glob::wMngr.redrawAll();
+                    }
+                    else if *k == Key::F6 {
+                        twl.cursor_save_pos();
+                        // twins::moveTo(0, twins::glob::pal.getLogsRow());
+                        twl.screen_clr_below();
+                        twl.cursor_restore_pos();
+                    }
+                    else if inp.kmod.has_ctrl() && (*k == Key::PgUp || *k == Key::PgDown) {
+                        // if (twins::glob::wMngr.topWnd() == &wndMain)
+                        //     twins::wgt::selectNextPage(wndMain.getWidgets(), ID_PGCONTROL, kc.key == twins::Key::PgDown);
+                    }
+                    else if *k == Key::F9 || *k == Key::F10 {
+                        // if (twins::glob::wMngr.topWnd() == &wndMain)
+                        //     twins::wgt::selectNextPage(wndMain.getWidgets(), ID_PGCONTROL, kc.key == twins::Key::F10);
+                    }
+                }
+
+                tw.lock().flush_buff();
+            } // decode_input_seq
         }
         else {
-            println!(" -");
+            tw.lock().log_d(" -");
         }
     }
 }

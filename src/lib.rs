@@ -125,6 +125,7 @@ impl Ctx {
         self.pal.write_str(prefix);
         self.pal.write_str(msg);
         self.pal.write_str(esc::FG_DEFAULT);
+        self.pal.write_char('\n');
         // TODO: restore cursor pos
         self.pal.flush_buff();
         self.pal.set_logging(false);
@@ -388,6 +389,17 @@ impl Ctx {
 
     // -----------------
 
+    /// Mouse reporting
+    pub fn mouse_mode(&mut self, mode: MouseMode) {
+        match mode {
+            MouseMode::Off => { self.write_str(esc::MOUSE_REPORTING_M1_OFF); self.write_str(esc::MOUSE_REPORTING_M2_OFF); },
+            MouseMode::M1  => { self.write_str(esc::MOUSE_REPORTING_M1_ON); },
+            MouseMode::M2  => { self.write_str(esc::MOUSE_REPORTING_M2_ON); },
+        }
+    }
+
+    // -----------------
+
     /// Draw given widgets; flushes the buffer
     pub fn draw(&mut self, ws: &mut dyn widget::WindowState, wids: &[widget::WId]) {
         widget_draw::draw_widgets(self, ws, wids);
@@ -511,4 +523,11 @@ impl <'b, 'a> Drop for FontMemento<'b, 'a> {
         ctx.pop_cl_bg_n(new_bg);
         ctx.pop_attr_n(new_at);
     }
+}
+
+/// Mouse reporting modes
+pub enum MouseMode {
+    Off,
+    M1,
+    M2
 }

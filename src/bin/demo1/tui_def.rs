@@ -650,7 +650,7 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
 const WINDOW_MAIN: Widget = Widget {
     id: Id::WndMain.into(),
     link: Link::cdeflt(),
-    coord: Coord { col: 15, row: 2 },
+    coord: Coord { col: 5, row: 2 },
     size: Size { width: 80, height: 15 },
     prop: prop::Window {
         title: "",
