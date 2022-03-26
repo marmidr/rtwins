@@ -171,10 +171,38 @@ const WINDOW_TEST: Widget = Widget {
 const WND_TEST_ARRAY: [Widget; rtwins::widget_impl::wgt_count(&WINDOW_TEST)] =
     rtwins::widget_impl::wgt_transform_array(&WINDOW_TEST);
 
+#[derive(Default)]
+struct WndTestState {
+    pub wnd_visible: bool,
+    pub wnd_enabled: bool,
+    pub lbl_about_visible: bool,
+    pub lbl_about_enabled: bool,
+}
+
+impl WindowState for WndTestState {
+    /** common state queries **/
+
+    fn is_enabled(&mut self, wgt: &Widget) -> bool {
+        if wgt.id == Id::WndTest.into() { self.wnd_enabled }
+        else if wgt.id == Id::LabelAbout.into() { self.lbl_about_enabled }
+        else { true }
+    }
+
+    fn is_focused(&mut self, _wgt: &Widget) -> bool {
+        true
+    }
+
+    fn is_visible(&mut self, wgt: &Widget) -> bool {
+        if wgt.id == Id::WndTest.into() { self.wnd_visible }
+        else if wgt.id == Id::LabelAbout.into() { self.lbl_about_visible }
+        else { true }
+    }
+}
+
 // -----------------------------------------------------------------------------------------------
 
 #[test]
-fn test_wgt_get_parent() {
+fn get_parent() {
     // window parent is the window itself
     {
         let wgt = &WND_TEST_ARRAY[0];
@@ -199,16 +227,16 @@ fn test_wgt_get_parent() {
 }
 
 #[test]
-fn test_wgt_iter() {
+fn widget_iter() {
     // iterate over panel
     {
         let pnl_vers = wgt_find_by_id(Id::PanelVersions.into(), &WND_TEST_ARRAY);
         assert!(pnl_vers.is_some());
         let pnl_vers = pnl_vers.unwrap();
 
-        assert_eq!(2, WidgetIter::new(pnl_vers).count());
+        assert_eq!(2, SiblingIter::new(pnl_vers).count());
 
-        for wgt in WidgetIter::new(pnl_vers) {
+        for wgt in SiblingIter::new(pnl_vers) {
             assert_eq!(pnl_vers.link.own_idx, wgt.link.parent_idx);
         }
     }
@@ -217,6 +245,41 @@ fn test_wgt_iter() {
     {
         let chbx = wgt_find_by_id(Id::ChbxEnbl.into(), &WND_TEST_ARRAY);
         assert!(chbx.is_some());
-        assert_eq!(0, WidgetIter::new(chbx.unwrap()).count());
+        assert_eq!(0, SiblingIter::new(chbx.unwrap()).count());
     }
+}
+
+#[test]
+fn screen_coord() {
+    let lbl = wgt_find_by_id(Id::LabelAbout.into(), &WND_TEST_ARRAY);
+    assert!(lbl.is_some());
+    let coord = wgt_get_screen_coord(lbl.unwrap());
+    assert_eq!(33, coord.col);
+    assert_eq!(7, coord.row);
+}
+
+#[test]
+fn is_visible() {
+    let mut ws = WndTestState::default();
+    let lbl = wgt_find_by_id(Id::LabelAbout.into(), &WND_TEST_ARRAY);
+    assert!(lbl.is_some());
+
+    assert!(!wgt_is_visible(&mut ws, lbl.unwrap()));
+    ws.lbl_about_visible = true;
+    assert!(!wgt_is_visible(&mut ws, lbl.unwrap()));
+    ws.wnd_visible = true;
+    assert!(wgt_is_visible(&mut ws, lbl.unwrap()));
+}
+
+#[test]
+fn is_enabled() {
+    let mut ws = WndTestState::default();
+    let lbl = wgt_find_by_id(Id::LabelAbout.into(), &WND_TEST_ARRAY);
+    assert!(lbl.is_some());
+
+    assert!(!wgt_is_enabled(&mut ws, lbl.unwrap()));
+    ws.lbl_about_enabled = true;
+    assert!(!wgt_is_enabled(&mut ws, lbl.unwrap()));
+    ws.wnd_enabled = true;
+    assert!(wgt_is_enabled(&mut ws, lbl.unwrap()));
 }

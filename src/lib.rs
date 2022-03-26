@@ -481,7 +481,7 @@ impl FontMementoManual {
     }
 }
 
-/// Helper for automatic restoring of terminal font attributes
+/// Helper for automatic restoring terminal font attributes
 // https://doc.rust-lang.org/stable/rust-by-example/scope/lifetime/lifetime_coercion.html
 // lifetime of `a` is >= lifetime of `b`
 struct FontMemento<'b, 'a: 'b> {

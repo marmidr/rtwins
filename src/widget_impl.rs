@@ -1,8 +1,7 @@
 //! # RTWins Widget
 
 use crate::widget;
-use crate::widget::{Coord, WId, Widget, Property, WIDGET_ID_NONE};
-
+use crate::widget::*;
 
 #[allow(dead_code)]
 pub struct WidgetSearchStruct
@@ -156,13 +155,7 @@ pub fn wgt_get_parent<'a>(wgt: &'a Widget) -> &'a Widget {
 
 /// Search for Widget with given `id` in window array
 pub fn wgt_find_by_id<'a>(id: WId, wndarray: &'a [Widget]) -> Option<&'a Widget> {
-    for wgt in wndarray {
-        if wgt.id == id {
-            return Some(wgt);
-        }
-    }
-
-    None
+    wndarray.iter().find(|&&item| item.id == id)
 }
 
 pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
@@ -172,8 +165,7 @@ pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
         // go up the widgets hierarchy
         let mut parent = wgt_get_parent(wgt);
 
-        loop
-        {
+        loop {
             if let widget::Property::Window(_) = wgt.prop {
                 // TODO: for popups must be centered on parent window
                 coord = coord + parent.coord;
@@ -198,17 +190,60 @@ pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
     coord
 }
 
+pub fn wgt_is_visible(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
+    let mut vis = ws.is_visible(wgt);
+
+    if wgt.link.own_idx > 0 {
+        // go up the widgets hierarchy
+        let mut wgt = wgt_get_parent(wgt);
+
+        while vis {
+            vis &= ws.is_visible(wgt);
+
+            // top-level parent reached
+            if wgt.link.own_idx == 0 {
+                break;
+            }
+
+            wgt = wgt_get_parent(wgt);
+        }
+    }
+
+    vis
+}
+
+pub fn wgt_is_enabled(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
+    let mut en = ws.is_enabled(wgt);
+
+    if wgt.link.own_idx > 0 {
+        // go up the widgets hierarchy
+        let mut wgt = wgt_get_parent(wgt);
+
+        while en {
+            en &= ws.is_enabled(wgt);
+
+            // top-level parent reached
+            if wgt.link.own_idx == 0 {
+                break;
+            }
+
+            wgt = wgt_get_parent(wgt);
+        }
+    }
+
+    en
+}
 
 // -----------------------------------------------------------------------------------------------
 
 /// Iterator over parent-type Widget children
-pub struct WidgetIter <'a> {
+pub struct SiblingIter <'a> {
     children: &'a Widget,
     children_idx: u16,
     children_cnt: u16
 }
 
-impl <'a> WidgetIter <'a> {
+impl <'a> SiblingIter<'a> {
     /// Creates a new iterator.
     ///
     /// If the given widget happen to be not a parent-type widget,
@@ -220,12 +255,12 @@ impl <'a> WidgetIter <'a> {
             let children_offs = parent_wgt.link.children_idx as isize - parent_wgt.link.own_idx as isize;
             let p_children = p_parent.offset(children_offs);
 
-            WidgetIter { children: &*p_children, children_idx: 0, children_cnt: parent_wgt.link.children_cnt }
+            SiblingIter { children: &*p_children, children_idx: 0, children_cnt: parent_wgt.link.children_cnt }
         }
     }
 }
 
-impl <'a> Iterator for WidgetIter<'a> {
+impl <'a> Iterator for SiblingIter<'a> {
     type Item = &'a Widget;
 
     fn next(&mut self) -> Option<Self::Item> {

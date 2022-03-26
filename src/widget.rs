@@ -7,7 +7,7 @@ use std::ops::{Add, Sub};
 use std::collections::HashMap;
 
 use crate::input::*;
-use crate::widget_impl::WidgetIter;
+use crate::widget_impl::SiblingIter;
 use crate::utils::StringListRc;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -89,6 +89,21 @@ impl Rect {
         self.coord.row = 1;
         self.size.width = u8::MAX;
         self.size.height = u8::MAX;
+    }
+
+    pub fn is_point_within(&self, col: u8, row: u8) -> bool {
+        col >= self.coord.col &&
+        col <  self.coord.col + self.size.width &&
+        row >= self.coord.row &&
+        row <  self.coord.row + self.size.height
+    }
+
+    pub fn is_rect_within(i: &Rect, e: &Rect) -> bool {
+        // i'ntern <= e'xtern
+        i.coord.col                 >= e.coord.col &&
+        i.coord.col + i.size.width  <= e.coord.col + e.size.width &&
+        i.coord.row                 >= e.coord.row &&
+        i.coord.row + i.size.height <= e.coord.row + e.size.height
     }
 }
 
@@ -445,8 +460,8 @@ impl Widget {
         }
     }
 
-    pub fn iter(&self) -> WidgetIter {
-        WidgetIter::new(self)
+    pub fn iter(&self) -> SiblingIter {
+        SiblingIter::new(self)
     }
 }
 
