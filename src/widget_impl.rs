@@ -159,79 +159,32 @@ pub fn wgt_find_by_id<'a>(id: WId, wndarray: &'a [Widget]) -> Option<&'a Widget>
 }
 
 pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
-    let mut coord = wgt.coord;
-
-    if wgt.link.own_idx > 0 {
-        // go up the widgets hierarchy
-        let mut parent = wgt_get_parent(wgt);
-
-        loop {
-            if let widget::Property::Window(_) = wgt.prop {
+    ParentsIter::new(wgt).skip(1).fold(wgt.coord,
+        |c, parent| {
+            let mut c = c;
+            if let widget::Property::Window(_) = parent.prop {
                 // TODO: for popups must be centered on parent window
-                coord = coord + parent.coord;
+                c = c + parent.coord;
             }
             else {
-                coord = coord + parent.coord;
+                c = c + parent.coord;
             }
 
             if let widget::Property::PageCtrl(ref p) = parent.prop {
-                coord.col += p.tab_width;
+                c.col += p.tab_width;
             }
 
-            // top-level parent reached
-            if parent.link.own_idx == 0 {
-                break;
-            }
-
-            parent = wgt_get_parent(parent);
+            return c;
         }
-    }
-
-    coord
+    )
 }
 
 pub fn wgt_is_visible(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
-    let mut vis = ws.is_visible(wgt);
-
-    if wgt.link.own_idx > 0 {
-        // go up the widgets hierarchy
-        let mut wgt = wgt_get_parent(wgt);
-
-        while vis {
-            vis &= ws.is_visible(wgt);
-
-            // top-level parent reached
-            if wgt.link.own_idx == 0 {
-                break;
-            }
-
-            wgt = wgt_get_parent(wgt);
-        }
-    }
-
-    vis
+    ParentsIter::new(wgt).fold(true, |vis, wgt| vis && ws.is_visible(wgt))
 }
 
 pub fn wgt_is_enabled(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
-    let mut en = ws.is_enabled(wgt);
-
-    if wgt.link.own_idx > 0 {
-        // go up the widgets hierarchy
-        let mut wgt = wgt_get_parent(wgt);
-
-        while en {
-            en &= ws.is_enabled(wgt);
-
-            // top-level parent reached
-            if wgt.link.own_idx == 0 {
-                break;
-            }
-
-            wgt = wgt_get_parent(wgt);
-        }
-    }
-
-    en
+    ParentsIter::new(wgt).fold(true, |en, wgt| en && ws.is_enabled(wgt))
 }
 
 // -----------------------------------------------------------------------------------------------
@@ -278,3 +231,32 @@ impl <'a> Iterator for SiblingIter<'a> {
     }
 }
 
+// -----------------------------------------------------------------------------------------------
+
+/// Iterator that traverses over parents hierarchy, starting at `wgt`, up to the root Window
+pub struct ParentsIter <'a> {
+    wgt: &'a Widget,
+    finished: bool
+}
+
+impl <'a> ParentsIter<'a> {
+    pub fn new(wgt: &'a Widget) -> Self {
+        ParentsIter{wgt, finished: false}
+    }
+}
+
+impl <'a> Iterator for ParentsIter<'a> {
+    type Item = &'a Widget;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.finished {
+            let ret = Some(self.wgt);
+            self.finished = self.wgt.link.own_idx == 0;
+            self.wgt = wgt_get_parent(self.wgt);
+            ret
+        }
+        else {
+            None
+        }
+    }
+}
