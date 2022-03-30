@@ -89,7 +89,16 @@ fn gui() {
     let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN_ARRAY[..]);
     let mut tw = TWins::new(Box::new(DemoPal::new()));
     let mut mouse_on = true;
+    // let mut wm = WndManager::new();
+    let logs_row = {
+        let mut coord = rtwins::widget::Coord::cdeflt();
+        let mut sz= rtwins::widget::Size::cdeflt();
+        dws.get_window_coord(&mut coord);
+        dws.get_window_size(&mut sz);
+        coord.row as u16 + sz.height as u16 + 1
+    };
 
+    tw.lock().get_logs_row = Box::new(move || logs_row);
     tw.lock().write_str(rtwins::esc::TERM_RESET);
     tw.lock().draw_wnd(&mut dws);
     tw.lock().mouse_mode(rtwins::MouseMode::M2);
@@ -159,30 +168,33 @@ fn gui() {
                     else if *k == Key::F4 {
                         mouse_on = !mouse_on;
                         twl.log_i(format!("Mouse {}", if mouse_on {"ON"} else {"OFF"}).as_str());
-                        twl.mouse_mode( if mouse_on {rtwins::MouseMode::M2} else {rtwins::MouseMode::Off});
+                        twl.mouse_mode(if mouse_on {rtwins::MouseMode::M2} else {rtwins::MouseMode::Off});
                         twl.flush_buff();
                     }
                     else if *k == Key::F5 {
                         twl.screen_clr_all();
 
                         // draw windows from bottom to top
-                        twl.draw_invalidated(&mut dws);
+                        // twl.draw_invalidated(&mut dws);
                         twl.flush_buff();
-                        // twins::glob::wMngr.redrawAll();
+                        // wm.redraw_all();
                     }
                     else if *k == Key::F6 {
                         twl.cursor_save_pos();
-                        // twins::moveTo(0, twins::glob::pal.getLogsRow());
+                        let row = (*twl.get_logs_row)();
+                        twl.move_to(0, row);
                         twl.screen_clr_below();
                         twl.cursor_restore_pos();
                     }
                     else if inp.kmod.has_ctrl() && (*k == Key::PgUp || *k == Key::PgDown) {
-                        // if (twins::glob::wMngr.topWnd() == &wndMain)
+                        // if wm.is_top_wnd(&dws) {
                         //     twins::wgt::selectNextPage(wndMain.getWidgets(), ID_PGCONTROL, kc.key == twins::Key::PgDown);
+                        // }
                     }
                     else if *k == Key::F9 || *k == Key::F10 {
-                        // if (twins::glob::wMngr.topWnd() == &wndMain)
+                        // if wm.is_top_wnd(&dws) {
                         //     twins::wgt::selectNextPage(wndMain.getWidgets(), ID_PGCONTROL, kc.key == twins::Key::F10);
+                        // }
                     }
                 }
 

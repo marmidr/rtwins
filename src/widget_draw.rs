@@ -122,7 +122,7 @@ fn draw_widget_internal(dctx: &mut DrawCtx)
 fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
 {
     let mut wnd_coord = Coord::cdeflt();
-    dctx.wnd_state.get_window_coord(dctx.wgt, &mut wnd_coord);
+    dctx.wnd_state.get_window_coord(&mut wnd_coord);
 
     draw_area(&mut dctx.ctx.borrow_mut(), wnd_coord, dctx.wgt.size,
             prp.bg_color, prp.fg_color, FrameStyle::Double, true, prp.is_popup);

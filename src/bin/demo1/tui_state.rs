@@ -199,6 +199,10 @@ impl WindowState for DemoWndState {
         true
     }
 
+    fn is_desktop(&self) -> bool {
+        true
+    }
+
     fn get_focused_id(&mut self) -> WId {
         self.focused_id
     }
@@ -213,8 +217,16 @@ impl WindowState for DemoWndState {
 
     /** widget-specific queries; all mutable params are outputs **/
 
-    fn get_window_coord(&mut self, wgt: &Widget, coord: &mut Coord) {
-        *coord = wgt.coord;
+    fn get_window_coord(&mut self, coord: &mut Coord) {
+        if let Some(ref w) = self.widgets.first() {
+            *coord = w.coord;
+        }
+    }
+
+    fn get_window_size(&mut self, sz: &mut Size) {
+        if let Some(ref w) = self.widgets.first() {
+            *sz = w.size;
+        }
     }
 
     fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {

@@ -642,12 +642,14 @@ pub trait WindowState {
     fn is_enabled(&mut self, wgt: &Widget) -> bool { return true; }
     fn is_focused(&mut self, wgt: &Widget) -> bool { return false; }
     fn is_visible(&mut self, wgt: &Widget) -> bool { return true; }
+    fn is_desktop(&self) -> bool { return false; }
     fn get_focused_id(&mut self) -> WId { return WIDGET_ID_NONE; }
     fn set_focused_id(&mut self, wid: WId) {}
     fn get_widgets(&self) -> &'static [Widget] { return &[]; }
 
     /// widget-specific queries; all mutable params are outputs
-    fn get_window_coord(&mut self, wgt: &Widget, coord: &mut Coord) {}
+    fn get_window_coord(&mut self, coord: &mut Coord) {}
+    fn get_window_size(&mut self, sz: &mut Size) {}
     fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {}
     fn get_checkbox_checked(&mut self, wgt: &Widget) -> bool { return false; }
     fn get_label_text(&mut self, wgt: &Widget, txt: &mut String) {}
