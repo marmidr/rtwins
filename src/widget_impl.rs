@@ -188,7 +188,7 @@ pub fn wgt_is_enabled(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
     ParentsIter::new(wgt).fold(true, |en, wgt| en && ws.is_enabled(wgt))
 }
 
-pub fn get_widget_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) -> Option<&'a Widget> {
+pub fn wgt_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) -> Option<&'a Widget> {
     let mut found_wgt: Option<&'a Widget> = None;
     let mut best_rect = Rect::cdeflt();
     best_rect.set_max();
@@ -265,7 +265,7 @@ pub fn get_widget_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect
                 best_rect = wgt_screen_rect;
                 *wgt_rect = wgt_screen_rect;
 
-                // visible and clickable widget found?
+                // visible widget found?
                 if stop_searching {
                     break;
                 }
@@ -276,16 +276,30 @@ pub fn get_widget_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect
     found_wgt
 }
 
+pub fn wgt_page_pageno(wgt: &Widget) -> Option<u8> {
+    if let Property::Page(_) = wgt.prop {
+        let pgctrl = wgt_get_parent(wgt);
+
+        for (idx, page) in pgctrl.iter_children().enumerate() {
+            if page.id == wgt.id {
+                return Some(idx as u8);
+            }
+        }
+    }
+
+    None
+}
+
 // -----------------------------------------------------------------------------------------------
 
 /// Iterator over parent-type Widget children
-pub struct SiblingIter <'a> {
+pub struct ChildrenIter <'a> {
     children: &'a Widget,
     children_idx: u16,
     children_cnt: u16
 }
 
-impl <'a> SiblingIter<'a> {
+impl <'a> ChildrenIter<'a> {
     /// Creates a new iterator.
     ///
     /// If the given widget happen to be not a parent-type widget,
@@ -297,12 +311,12 @@ impl <'a> SiblingIter<'a> {
             let children_offs = parent_wgt.link.children_idx as isize - parent_wgt.link.own_idx as isize;
             let p_children = p_parent.offset(children_offs);
 
-            SiblingIter { children: &*p_children, children_idx: 0, children_cnt: parent_wgt.link.children_cnt }
+            ChildrenIter { children: &*p_children, children_idx: 0, children_cnt: parent_wgt.link.children_cnt }
         }
     }
 }
 
-impl <'a> Iterator for SiblingIter<'a> {
+impl <'a> Iterator for ChildrenIter<'a> {
     type Item = &'a Widget;
 
     fn next(&mut self) -> Option<Self::Item> {

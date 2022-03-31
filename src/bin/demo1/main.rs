@@ -151,7 +151,14 @@ fn tui_demo() {
                        tw.lock().log_d(format!("key={}", inp.name).as_str());
                     },
                     InputType::Mouse(ref m) => {
-                       tw.lock().log_d(format!("mouse={:?} at {}:{}", m.evt, m.col, m.row).as_str());
+                       let mut r = rtwins::widget::Rect::cdeflt();
+                       let wgt_opt = rtwins::widget_impl::wgt_at(&mut dws, m.col, m.row, &mut r);
+                       if let Some(w) = wgt_opt {
+                           tw.lock().log_d(format!("mouse={:?} at {}:{} ({})", m.evt, m.col, m.row, w.prop).as_str());
+                       }
+                       else {
+                           tw.lock().log_d(format!("mouse={:?} at {}:{}", m.evt, m.col, m.row).as_str());
+                       }
                     },
                     _ => {}
                 }

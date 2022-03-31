@@ -281,9 +281,9 @@ fn widget_iter() {
         assert!(pnl_vers.is_some());
         let pnl_vers = pnl_vers.unwrap();
 
-        assert_eq!(2, SiblingIter::new(pnl_vers).count());
+        assert_eq!(2, ChildrenIter::new(pnl_vers).count());
 
-        for wgt in SiblingIter::new(pnl_vers) {
+        for wgt in ChildrenIter::new(pnl_vers) {
             assert_eq!(pnl_vers.link.own_idx, wgt.link.parent_idx);
         }
     }
@@ -292,7 +292,7 @@ fn widget_iter() {
     {
         let chbx = wgt_find_by_id(Id::ChbxEnbl.into(), &WND_TEST_ARRAY);
         assert!(chbx.is_some());
-        assert_eq!(0, SiblingIter::new(chbx.unwrap()).count());
+        assert_eq!(0, ChildrenIter::new(chbx.unwrap()).count());
     }
 }
 
@@ -361,7 +361,6 @@ fn widget_at() {
         let opt_b = get_widget_at(&mut ws, btn_coord.col+2, btn_coord.row, &mut wgt_r);
         assert!(opt_b.is_some());
         if let Some(wgt) = opt_b {
-            eprintln!("btn={}", wgt.id);
             assert!(wgt.id == Id::BtnYes.into());
         }
     }

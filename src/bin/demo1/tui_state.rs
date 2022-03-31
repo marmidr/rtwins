@@ -6,6 +6,7 @@ use rtwins::esc;
 use rtwins::string_ext::*;
 use rtwins::widget::*;
 use rtwins::input::*;
+use rtwins::widget_impl::wgt_get_parent;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -95,7 +96,7 @@ impl DemoWndState {
         wnd_state.rs.insert_state(Id::Prgbar3.into(),   Pgbar{ pos:8, max: 10 }.into());
         wnd_state.rs.insert_state(Id::LedLock.into(),   Led{ lit: true }.into());
         wnd_state.rs.insert_state(Id::ChbxEnbl.into(),  Chbx{ checked: true }.into());
-        wnd_state.rs.insert_state(Id::PgControl.into(), Pgctrl{ page: 4 }.into());
+        wnd_state.rs.insert_state(Id::PgControl.into(), Pgctrl{ page: 0 }.into());
         wnd_state.rs.insert_state(Id::TbxWide.into(),   Txtbx{ top_line: 9 }.into());
         return wnd_state;
     }
@@ -195,7 +196,15 @@ impl WindowState for DemoWndState {
     }
 
     fn is_visible(&mut self, wgt: &Widget) -> bool {
-        // if wgt.id == tui_def::Id::LbxUnderoptions.into() { return false; }
+        if let rtwins::widget::Property::Page(_) = wgt.prop {
+            let pgctrl = wgt_get_parent(wgt);
+            let active_page_no = self.rs.as_pgctrl(pgctrl.id).page;
+
+            if let Some(pn) = rtwins::widget_impl::wgt_page_pageno(wgt) {
+                return pn == active_page_no;
+            }
+        }
+
         true
     }
 

@@ -7,7 +7,7 @@ use std::ops::{Add, Sub};
 use std::collections::HashMap;
 
 use crate::input::*;
-use crate::widget_impl::SiblingIter;
+use crate::widget_impl::ChildrenIter;
 use crate::utils::StringListRc;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -448,7 +448,7 @@ pub struct Widget {
     pub link: Link,
     /// widget properties defining it's type
     pub prop: Property,
-    /// link to children widgets, 2x8B
+    /// link to children widgets, 2x8B; empty after processing with `wgt_transform_array()`
     pub children: &'static [Widget],
 }
 
@@ -465,8 +465,8 @@ impl Widget {
         }
     }
 
-    pub fn iter(&self) -> SiblingIter {
-        SiblingIter::new(self)
+    pub fn iter_children(&self) -> ChildrenIter {
+        ChildrenIter::new(self)
     }
 }
 

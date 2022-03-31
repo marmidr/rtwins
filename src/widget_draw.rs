@@ -152,7 +152,7 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
     {
         let wnd = dctx.wgt;
 
-        for wgt in wnd.iter() {
+        for wgt in wnd.iter_children() {
             dctx.wgt = wgt;
             draw_widget_internal(dctx);
         }
@@ -202,7 +202,7 @@ fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
         dctx.parent_coord = my_coord;
         let pnl = dctx.wgt;
 
-        for wgt in pnl.iter() {
+        for wgt in pnl.iter_children() {
             dctx.wgt = wgt;
             draw_widget_internal(dctx);
         }
@@ -596,7 +596,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
         let focused = dctx.wnd_state.is_focused(pgctrl);
         dctx.parent_coord.col += prp.tab_width;
 
-        for (idx, page) in pgctrl.iter().enumerate() {
+        for (idx, page) in pgctrl.iter_children().enumerate() {
             // check if page is below lower border
             if idx as i16 == pgctrl.size.height as i16 - 1 - prp.vert_offs as i16 {
                 break;
@@ -672,7 +672,7 @@ fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/)
     {
         let page = dctx.wgt;
 
-        for wgt in page.iter() {
+        for wgt in page.iter_children() {
             dctx.wgt = wgt;
             draw_widget_internal(dctx);
         }
@@ -897,7 +897,7 @@ fn draw_layer(dctx: &mut DrawCtx, _: &prop::Layer)
     // draw only childrens; to erase, redraw layer's parent
     let layer = dctx.wgt;
 
-    for wgt in layer.iter() {
+    for wgt in layer.iter_children() {
         dctx.wgt = wgt;
         draw_widget_internal(dctx);
     }
