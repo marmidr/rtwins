@@ -82,27 +82,29 @@ fn main() {
     // test_property_access();
     // rtwins::input_decoder::print_seq();
 
-    gui();
+    tui_demo();
 }
 
-fn gui() {
+fn tui_demo() {
     let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN_ARRAY[..]);
     let mut tw = TWins::new(Box::new(DemoPal::new()));
     let mut mouse_on = true;
     // let mut wm = WndManager::new();
-    let logs_row = {
-        let mut coord = rtwins::widget::Coord::cdeflt();
-        let mut sz= rtwins::widget::Size::cdeflt();
-        dws.get_window_coord(&mut coord);
-        dws.get_window_size(&mut sz);
-        coord.row as u16 + sz.height as u16 + 1
-    };
 
-    tw.lock().get_logs_row = Box::new(move || logs_row);
-    tw.lock().write_str(rtwins::esc::TERM_RESET);
-    tw.lock().draw_wnd(&mut dws);
-    tw.lock().mouse_mode(rtwins::MouseMode::M2);
-    tw.lock().flush_buff();
+    {
+        let mut twl = tw.lock();
+        twl.logs_row = {
+            let mut coord = rtwins::widget::Coord::cdeflt();
+            let mut sz= rtwins::widget::Size::cdeflt();
+            dws.get_window_coord(&mut coord);
+            dws.get_window_size(&mut sz);
+            coord.row as u16 + sz.height as u16 + 1
+        };
+        twl.write_str(rtwins::esc::TERM_RESET);
+        twl.draw_wnd(&mut dws);
+        twl.mouse_mode(rtwins::MouseMode::M2);
+        twl.flush_buff();
+    }
 
     {
         let mut twl = tw.lock();
@@ -121,7 +123,6 @@ fn gui() {
         let (inp_seq, q) = itty.read_input();
 
         if q {
-            tw.lock().log_w("Quit!");
             break;
         }
         else if inp_seq.len() > 0 {
@@ -180,11 +181,7 @@ fn gui() {
                         // wm.redraw_all();
                     }
                     else if *k == Key::F6 {
-                        twl.cursor_save_pos();
-                        let row = (*twl.get_logs_row)();
-                        twl.move_to(0, row);
-                        twl.screen_clr_below();
-                        twl.cursor_restore_pos();
+                        twl.log_clear();
                     }
                     else if inp.kmod.has_ctrl() && (*k == Key::PgUp || *k == Key::PgDown) {
                         // if wm.is_top_wnd(&dws) {
@@ -204,6 +201,13 @@ fn gui() {
         else {
             tw.lock().log_d(" -");
         }
+    }
+
+    {
+        let mut twl = tw.lock();
+        twl.mouse_mode(rtwins::MouseMode::Off);
+        twl.log_clear();
+        twl.flush_buff();
     }
 }
 

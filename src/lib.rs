@@ -62,7 +62,7 @@ pub type PalBox = Box<dyn crate::pal::Pal>;
 ///
 pub struct Ctx {
     pub pal: PalBox,
-    pub get_logs_row: Box<dyn FnMut() -> u16>,
+    pub logs_row: u16,
     current_cl_fg: ColorFG,
     current_cl_bg: ColorBG,
     attr_faint: i8,
@@ -77,7 +77,7 @@ impl Ctx {
     pub fn new(p: PalBox) -> Self {
         Ctx{
             pal: p,
-            get_logs_row: Box::new(|| {0}),
+            logs_row: 0,
             current_cl_fg: ColorFG::Default,
             current_cl_bg: ColorBG::Default,
             attr_faint: 0,
@@ -123,8 +123,7 @@ impl Ctx {
         self.pal.flush_buff();
         self.pal.set_logging(true);
         self.cursor_save_pos();
-        let lrow = (*self.get_logs_row)();
-        self.move_to(0, lrow);
+        self.move_to(0, self.logs_row);
         self.insert_lines(1);
         self.pal.write_str(fg);
         self.pal.write_str(prefix);
@@ -154,6 +153,14 @@ impl Ctx {
     /// Print Error message
     pub fn log_e(&mut self, msg: &str) {
         self.log(esc::FG_RED, "-E- ", msg);
+    }
+
+    /// Clear logs
+    pub fn log_clear(&mut self) {
+        self.cursor_save_pos();
+        self.move_to(0, self.logs_row);
+        self.screen_clr_below();
+        self.cursor_restore_pos();
     }
 
     // Cursor manipulation
