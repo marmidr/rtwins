@@ -1,5 +1,6 @@
 //! # RTWins Widget
 
+use crate::string_ext::StrExt;
 use crate::widget;
 use crate::widget::*;
 
@@ -185,6 +186,94 @@ pub fn wgt_is_visible(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
 
 pub fn wgt_is_enabled(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
     ParentsIter::new(wgt).fold(true, |en, wgt| en && ws.is_enabled(wgt))
+}
+
+pub fn get_widget_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) -> Option<&'a Widget> {
+    let mut found_wgt: Option<&'a Widget> = None;
+    let mut best_rect = Rect::cdeflt();
+    best_rect.set_max();
+    let wgts = ws.get_widgets();
+
+    for wgt in wgts.iter() {
+        let mut stop_searching = true;
+        let mut wgt_screen_rect = Rect::cdeflt();
+
+        wgt_screen_rect.coord = wgt_get_screen_coord(wgt);
+        wgt_screen_rect.size = wgt.size;
+
+        // eprintln!("{1:2}:{0:} at {2:2}:{3:-2}", wgt.prop, wgt.id, wgt_screen_rect.coord.col, wgt_screen_rect.coord.row);
+
+        // correct the widget size
+        match wgt.prop {
+            Property::TextEdit(ref _p) => {
+            },
+            Property::CheckBox(ref p) => {
+                wgt_screen_rect.size.height = 1;
+                wgt_screen_rect.size.width = 4 + p.text.displayed_width() as u8;
+            },
+            Property::Radio(ref p) => {
+                wgt_screen_rect.size.height = 1;
+                wgt_screen_rect.size.width = 4 + p.text.displayed_width() as u8;
+            },
+            Property::Button(ref p) => {
+                let txt_w;
+
+                if !p.text.is_empty() {
+                    txt_w = p.text.displayed_width() as u8;
+                }
+                else if wgt.size.width > 0 {
+                    txt_w = wgt.size.width;
+                }
+                else {
+                    let mut s = String::new();
+                    ws.get_button_text(wgt, &mut s);
+                    txt_w = s.displayed_width() as u8;
+                }
+
+                match p.style {
+                    ButtonStyle::Simple => {
+                        wgt_screen_rect.size.height = 1;
+                        wgt_screen_rect.size.width = 4 + txt_w;
+                    },
+                    ButtonStyle::Solid => {
+                        wgt_screen_rect.size.height = 1;
+                        wgt_screen_rect.size.width = 2 + txt_w;
+                    },
+                    ButtonStyle::Solid1p5 => {
+                        wgt_screen_rect.size.height = 3;
+                        wgt_screen_rect.size.width = 2 + txt_w;
+                    },
+                }
+            },
+            Property::PageCtrl(ref p) => {
+                wgt_screen_rect.size.width = p.tab_width;
+            },
+            Property::ListBox(ref _p) => {
+            },
+            Property::ComboBox(ref _p) => {
+            },
+            _ => {
+                stop_searching = false;
+            }
+        }
+
+        if wgt_screen_rect.is_point_within(col, row) {
+            let is_visible = wgt_is_visible(ws, wgt); // controls on tabs? solved
+
+            if is_visible && best_rect.is_rect_within(&wgt_screen_rect) {
+                found_wgt = Some(wgt);
+                best_rect = wgt_screen_rect;
+                *wgt_rect = wgt_screen_rect;
+
+                // visible and clickable widget found?
+                if stop_searching {
+                    break;
+                }
+            }
+        }
+    }
+
+    found_wgt
 }
 
 // -----------------------------------------------------------------------------------------------

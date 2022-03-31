@@ -217,15 +217,21 @@ impl WindowState for DemoWndState {
 
     /** widget-specific queries; all mutable params are outputs **/
 
-    fn get_window_coord(&mut self, coord: &mut Coord) {
+    fn get_window_coord(&mut self) -> Coord {
         if let Some(ref w) = self.widgets.first() {
-            *coord = w.coord;
+            w.coord
+        }
+        else {
+            Coord::cdeflt()
         }
     }
 
-    fn get_window_size(&mut self, sz: &mut Size) {
+    fn get_window_size(&mut self) -> Size {
         if let Some(ref w) = self.widgets.first() {
-            *sz = w.size;
+            w.size
+        }
+        else {
+            Size::cdeflt()
         }
     }
 

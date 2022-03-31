@@ -6,35 +6,35 @@ use rtwins::string_ext::*;
 
 #[test]
 fn test_ansi_esc_len() {
-    assert_eq!(0, "".ansi_esc_len());
+    assert_eq!(0, "".esc_seq_len());
     // Up prefixed with space
-    assert_eq!(0, " \x1B[A".ansi_esc_len());
+    assert_eq!(0, " \x1B[A".esc_seq_len());
     // Up
-    assert_eq!(3, "\x1B[A".ansi_esc_len());
+    assert_eq!(3, "\x1B[A".esc_seq_len());
     // Home
-    assert_eq!(4, "\x1B[1~".ansi_esc_len());
+    assert_eq!(4, "\x1B[1~".esc_seq_len());
     // F1
-    assert_eq!(5, "\x1B[23^".ansi_esc_len());
+    assert_eq!(5, "\x1B[23^".esc_seq_len());
     // F1
-    assert_eq!(3, "\x1BOP".ansi_esc_len());
+    assert_eq!(3, "\x1BOP".esc_seq_len());
     // C-S-F1
-    assert_eq!(5, "\x1B[23@".ansi_esc_len());
+    assert_eq!(5, "\x1B[23@".esc_seq_len());
     // Mouse l-click
-    assert_eq!(6, "\x1B[M !!".ansi_esc_len());
+    assert_eq!(6, "\x1B[M !!".esc_seq_len());
     // Mouse wheel down
-    assert_eq!(6, "\x1B[Ma$\"".ansi_esc_len());
+    assert_eq!(6, "\x1B[Ma$\"".esc_seq_len());
     // Home - incomplete
-    assert_eq!(0, "\x1B[1".ansi_esc_len());
+    assert_eq!(0, "\x1B[1".esc_seq_len());
     //  Mouse wheel down - incomplete
-    assert_eq!(0, "\x1B[Ma".ansi_esc_len());
+    assert_eq!(0, "\x1B[Ma".esc_seq_len());
 }
 
 #[test]
 fn test_ansi_displayed_width() {
-    assert_eq!(0, "".ansi_displayed_width());
-    assert_eq!(5, "Title".ansi_displayed_width());
-    assert_eq!(5, format!("{}Title{}", esc::BOLD, esc::NORMAL).as_str().ansi_displayed_width());
-    assert_eq!(7, "-😉-🍺-".ansi_displayed_width());
+    assert_eq!(0, "".displayed_width());
+    assert_eq!(5, "Title".displayed_width());
+    assert_eq!(5, format!("{}Title{}", esc::BOLD, esc::NORMAL).as_str().displayed_width());
+    assert_eq!(7, "-😉-🍺-".displayed_width());
 }
 
 #[test]

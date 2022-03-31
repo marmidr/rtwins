@@ -11,7 +11,7 @@ pub type StringListRc = std::rc::Rc<std::cell::RefCell<Vec<String>>>;
 pub fn word_wrap(max_disp_w: usize, src: &String) -> StringListRc {
     let it = src.split_inclusive(char::is_whitespace)
         .scan((0usize, 0usize, 0usize), |state, word| {
-            let word_w = word.ansi_displayed_width();
+            let word_w = word.displayed_width();
             // println!("w:'{}', wl:{}", word, word.len());
 
             if state.0 + word_w > max_disp_w {
@@ -59,7 +59,7 @@ pub fn word_wrap(max_disp_w: usize, src: &String) -> StringListRc {
     out
 }
 
-// copied from code::str::validations.rs
+// copied from core::str::validations.rs
 // https://tools.ietf.org/html/rfc3629
 const UTF8_CHAR_WIDTH: &[u8; 256] = &[
     // 1  2  3  4  5  6  7  8  9  A  B  C  D  E  F

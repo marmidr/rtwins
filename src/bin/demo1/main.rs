@@ -94,10 +94,8 @@ fn tui_demo() {
     {
         let mut twl = tw.lock();
         twl.logs_row = {
-            let mut coord = rtwins::widget::Coord::cdeflt();
-            let mut sz= rtwins::widget::Size::cdeflt();
-            dws.get_window_coord(&mut coord);
-            dws.get_window_size(&mut sz);
+            let coord = dws.get_window_coord();
+            let sz = dws.get_window_size();
             coord.row as u16 + sz.height as u16 + 1
         };
         twl.write_str(rtwins::esc::TERM_RESET);

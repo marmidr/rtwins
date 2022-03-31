@@ -71,26 +71,31 @@ impl Sub for Size {
 /// Rectangle area
 #[derive(Clone, Copy)]
 pub struct Rect {
-    coord: Coord,
-    size: Size,
+    pub coord: Coord,
+    pub size: Size,
 }
 
 impl Rect {
     /// Returns default object; can be used in `const` initialization
-    const fn cdeflt() -> Rect {
+    pub const fn cdeflt() -> Rect {
         Rect {
             coord: Coord::cdeflt(),
             size: Size::cdeflt(),
         }
     }
 
+    pub fn new(c: u8, r: u8, w: u8, h: u8) -> Rect {
+        Rect{coord: Coord::new(c, r), size: Size::new(w, h)}
+    }
+
     pub fn set_max(&mut self) {
-        self.coord.col = 1;
-        self.coord.row = 1;
+        self.coord.col = 0;
+        self.coord.row = 0;
         self.size.width = u8::MAX;
         self.size.height = u8::MAX;
     }
 
+    /// Checks if given point at `col:row` is within this rectangle
     pub fn is_point_within(&self, col: u8, row: u8) -> bool {
         col >= self.coord.col &&
         col <  self.coord.col + self.size.width &&
@@ -98,12 +103,12 @@ impl Rect {
         row <  self.coord.row + self.size.height
     }
 
-    pub fn is_rect_within(i: &Rect, e: &Rect) -> bool {
-        // i'ntern <= e'xtern
-        i.coord.col                 >= e.coord.col &&
-        i.coord.col + i.size.width  <= e.coord.col + e.size.width &&
-        i.coord.row                 >= e.coord.row &&
-        i.coord.row + i.size.height <= e.coord.row + e.size.height
+    /// Check if `r` fits within this rectangle
+    pub fn is_rect_within(&self, r: &Rect) -> bool {
+        r.coord.col                 >= self.coord.col &&
+        r.coord.col + r.size.width  <= self.coord.col + self.size.width &&
+        r.coord.row                 >= self.coord.row &&
+        r.coord.row + r.size.height <= self.coord.row + self.size.height
     }
 }
 
@@ -648,8 +653,8 @@ pub trait WindowState {
     fn get_widgets(&self) -> &'static [Widget] { return &[]; }
 
     /// widget-specific queries; all mutable params are outputs
-    fn get_window_coord(&mut self, coord: &mut Coord) {}
-    fn get_window_size(&mut self, sz: &mut Size) {}
+    fn get_window_coord(&mut self) -> Coord { Coord::cdeflt() }
+    fn get_window_size(&mut self) -> Size { Size::cdeflt() }
     fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {}
     fn get_checkbox_checked(&mut self, wgt: &Widget) -> bool { return false; }
     fn get_label_text(&mut self, wgt: &Widget, txt: &mut String) {}

@@ -121,9 +121,7 @@ fn draw_widget_internal(dctx: &mut DrawCtx)
 
 fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
 {
-    let mut wnd_coord = Coord::cdeflt();
-    dctx.wnd_state.get_window_coord(&mut wnd_coord);
-
+    let wnd_coord = dctx.wnd_state.get_window_coord();
     draw_area(&mut dctx.ctx.borrow_mut(), wnd_coord, dctx.wgt.size,
             prp.bg_color, prp.fg_color, FrameStyle::Double, true, prp.is_popup);
 
@@ -138,7 +136,7 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
     }
 
     if !wnd_title.is_empty() {
-        let title_width = wnd_title.as_str().ansi_displayed_width() as u16 + 4;
+        let title_width = wnd_title.as_str().displayed_width() as u16 + 4;
         let mut ctx = dctx.ctx.borrow_mut();
         ctx.move_to(
             wnd_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width) / 2,
@@ -186,7 +184,7 @@ fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
 
     // title
     if !prp.title.is_empty() {
-        let title_width = prp.title.ansi_displayed_width() as u16;
+        let title_width = prp.title.displayed_width() as u16;
         let mut ctx = dctx.ctx.borrow_mut();
         ctx.move_to(
             my_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width - 2)/2,
@@ -449,7 +447,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
             }
         }
 
-        let shadow_len = 2 + txt.ansi_displayed_width() as i16;
+        let shadow_len = 2 + txt.displayed_width() as i16;
 
         if pressed {
             // erase trailing shadow
@@ -491,7 +489,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
 
         let clbg = get_widget_bg_color(dctx.wgt);
         let clparbg = get_widget_bg_color(wgt_get_parent(dctx.wgt));
-        let bnt_len = 2 + txt.ansi_displayed_width() as i16;
+        let bnt_len = 2 + txt.displayed_width() as i16;
         let scl_shadow = crate::bg_color!(233);
         let scl_bg2fg = transcode_cl_bg_2_fg(encode_cl_bg(clbg));
 
@@ -866,7 +864,7 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
                         let esc = line.as_str();
                         // get the sequence and push it to the output stream
                         let esc = &esc[it.0..esc.len()];
-                        let esclen = esc.ansi_esc_len();
+                        let esclen = esc.esc_seq_len();
                         let sequence = &esc[0..esclen];
                         dctx.strbuff.push_str(sequence);
                     }

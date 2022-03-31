@@ -35,7 +35,7 @@ impl StringExt for String {
     }
 
     fn set_displayed_width(&mut self, expected_disp_w: i16) {
-        let disp_width = self.as_str().ansi_displayed_width();
+        let disp_width = self.as_str().displayed_width();
         let n = expected_disp_w - disp_width as i16;
 
         if n > 0 {
@@ -74,13 +74,13 @@ impl StringExt for String {
 
 pub trait StrExt {
     /// Returns ANSI escape sequence length, if begins with `\x1B`
-    fn ansi_esc_len(&self) -> usize;
+    fn esc_seq_len(&self) -> usize;
     /// Calculate UTF-8 terminal text width, ignoring ESC sequences inside it
-    fn ansi_displayed_width(&self) -> usize;
+    fn displayed_width(&self) -> usize;
 }
 
 impl StrExt for str {
-    fn ansi_esc_len(&self) -> usize {
+    fn esc_seq_len(&self) -> usize {
         // ESC sequence always ends with:
         // - A..Z
         // - a..z
@@ -125,13 +125,13 @@ impl StrExt for str {
         return 0;
     }
 
-    fn ansi_displayed_width(&self) -> usize {
+    fn displayed_width(&self) -> usize {
         let mut disp_width = UnicodeWidthStr::width(self) as i32;
         let mut it = self.char_indices();
 
         loop {
             if let Some((idx, _)) = it.next() {
-                let esc_len = self[idx..].ansi_esc_len() as i32;
+                let esc_len = self[idx..].esc_seq_len() as i32;
                 if esc_len > 0 {
                     // UnicodeWidthStr::width() returns 0 for \e, thus, esc_len decreased by 1
                     disp_width -= esc_len - 1;

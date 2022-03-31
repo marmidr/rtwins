@@ -171,12 +171,23 @@ const WINDOW_TEST: Widget = Widget {
 const WND_TEST_ARRAY: [Widget; rtwins::widget_impl::wgt_count(&WINDOW_TEST)] =
     rtwins::widget_impl::wgt_transform_array(&WINDOW_TEST);
 
-#[derive(Default)]
 struct WndTestState {
+    widgets: &'static [Widget],
     pub wnd_visible: bool,
     pub wnd_enabled: bool,
     pub lbl_about_visible: bool,
     pub lbl_about_enabled: bool,
+}
+
+impl WndTestState {
+    fn new(widgets: &'static [Widget]) -> Self {
+        WndTestState{widgets,
+            wnd_visible: false,
+            wnd_enabled: false,
+            lbl_about_visible: false,
+            lbl_about_enabled: false
+        }
+    }
 }
 
 impl WindowState for WndTestState {
@@ -197,9 +208,45 @@ impl WindowState for WndTestState {
         else if wgt.id == Id::LabelAbout.into() { self.lbl_about_visible }
         else { true }
     }
+
+    fn get_widgets(&self) -> &'static [Widget] {
+        self.widgets
+    }
+
+    fn get_window_coord(&mut self) -> Coord {
+        if let Some(ref w) = self.widgets.first() {
+            w.coord
+        }
+        else {
+            Coord::cdeflt()
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------------------------
+
+#[test]
+fn rect_within() {
+    let r = Rect::new(2, 2, 10, 5);
+    assert!(r.is_rect_within(&Rect::new(2, 2, 10, 5)));
+    assert!(r.is_rect_within(&Rect::new(3, 3, 8, 4)));
+    assert!(!r.is_rect_within(&Rect::new(1, 2, 10, 5)));
+    assert!(!r.is_rect_within(&Rect::new(2, 1, 10, 5)));
+    assert!(!r.is_rect_within(&Rect::new(2, 2, 11, 5)));
+    assert!(!r.is_rect_within(&Rect::new(2, 2, 10, 6)));
+}
+
+#[test]
+fn point_within() {
+    let r = Rect::new(2, 2, 10, 5);
+    assert!(r.is_point_within(2, 2));
+    assert!(r.is_point_within(2+10-1, 2));
+    assert!(r.is_point_within(2+10-1, 2+5-1));
+    assert!(!r.is_point_within(2+10, 2));
+    assert!(!r.is_point_within(2+10-1, 2+5));
+    assert!(!r.is_point_within(1, 2));
+    assert!(!r.is_point_within(2, 1));
+}
 
 #[test]
 fn get_parent() {
@@ -260,7 +307,7 @@ fn screen_coord() {
 
 #[test]
 fn is_visible() {
-    let mut ws = WndTestState::default();
+    let mut ws = WndTestState::new(&WND_TEST_ARRAY);
     let lbl = wgt_find_by_id(Id::LabelAbout.into(), &WND_TEST_ARRAY);
     assert!(lbl.is_some());
 
@@ -273,7 +320,7 @@ fn is_visible() {
 
 #[test]
 fn is_enabled() {
-    let mut ws = WndTestState::default();
+    let mut ws = WndTestState::new(&WND_TEST_ARRAY);
     let lbl = wgt_find_by_id(Id::LabelAbout.into(), &WND_TEST_ARRAY);
     assert!(lbl.is_some());
 
@@ -282,4 +329,40 @@ fn is_enabled() {
     assert!(!wgt_is_enabled(&mut ws, lbl.unwrap()));
     ws.wnd_enabled = true;
     assert!(wgt_is_enabled(&mut ws, lbl.unwrap()));
+}
+
+#[test]
+fn widget_at() {
+    let mut ws = WndTestState::new(&WND_TEST_ARRAY);
+    ws.wnd_visible = true;
+    let mut wgt_r = Rect::cdeflt();
+
+    // point beyound main window
+    assert!(get_widget_at(&mut ws, 1, 1, &mut wgt_r).is_none());
+
+    // origin of main window
+    {
+        let wnd_coord = ws.get_window_coord();
+        let opt_w = get_widget_at(&mut ws, wnd_coord.col, wnd_coord.row, &mut wgt_r);
+        assert!(opt_w.is_some());
+        if let Some(wgt) = opt_w {
+            assert!(wgt.id == Id::WndTest.into());
+        }
+    }
+
+    // origin of button - this one is always visible
+    {
+        let btn = wgt_find_by_id(Id::BtnYes.into(), &WND_TEST_ARRAY);
+        assert!(btn.is_some());
+        let btn_coord = wgt_get_screen_coord(btn.unwrap());
+        assert_eq!(60, btn_coord.col);
+        assert_eq!(10, btn_coord.row);
+
+        let opt_b = get_widget_at(&mut ws, btn_coord.col+2, btn_coord.row, &mut wgt_r);
+        assert!(opt_b.is_some());
+        if let Some(wgt) = opt_b {
+            eprintln!("btn={}", wgt.id);
+            assert!(wgt.id == Id::BtnYes.into());
+        }
+    }
 }
