@@ -1,7 +1,7 @@
 //! Simple widget-based interface definition as const
 
 use rtwins::colors::{ColorBG, ColorFG};
-use rtwins::widget::{prop, Coord, Size, Widget, Link, ButtonStyle, WId, WIDGET_ID_NONE, PgBarStyle};
+use rtwins::{prop, Coord, Size, Widget, Link, ButtonStyle, WId, WIDGET_ID_NONE, PgBarStyle};
 // use rtwins::{bold, normal};
 
 #[allow(dead_code)]
@@ -762,5 +762,5 @@ const WINDOW_MAIN: Widget = Widget {
 };
 
 /// Example of const-evaluated and translated Widgets tree into Widgets array
-pub const WND_MAIN_ARRAY: [Widget; rtwins::widget_impl::wgt_count(&WINDOW_MAIN)] =
-    rtwins::widget_impl::wgt_transform_array(&WINDOW_MAIN);
+pub const WND_MAIN_ARRAY: [Widget; rtwins::wgt_count(&WINDOW_MAIN)] =
+    rtwins::wgt_transform_array(&WINDOW_MAIN);

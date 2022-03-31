@@ -1,12 +1,10 @@
 //! Demo - window state
 
-use rtwins::widget;
+use rtwins::widget::*;
 use rtwins::utils;
 use rtwins::esc;
 use rtwins::string_ext::*;
-use rtwins::widget::*;
 use rtwins::input::*;
-use rtwins::widget_impl::wgt_get_parent;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -24,7 +22,7 @@ pub struct DemoWndState {
     /// text of focused text edit widget
     text_edit_txt: String,
     /// list of widgets to redraw
-    invalidated: Vec<widget::WId>,
+    invalidated: Vec<WId>,
     //
     radiogrp1_idx: i16,
     //
@@ -196,8 +194,8 @@ impl WindowState for DemoWndState {
     }
 
     fn is_visible(&mut self, wgt: &Widget) -> bool {
-        if let rtwins::widget::Property::Page(_) = wgt.prop {
-            let pgctrl = wgt_get_parent(wgt);
+        if let rtwins::Property::Page(_) = wgt.prop {
+            let pgctrl = rtwins::wgt_get_parent(wgt);
             let active_page_no = self.rs.as_pgctrl(pgctrl.id).page;
 
             if let Some(pn) = rtwins::widget_impl::wgt_page_pageno(wgt) {
@@ -374,7 +372,7 @@ impl WindowState for DemoWndState {
 
     /* */
 
-    fn invalidate(&mut self, wids: &[widget::WId]) {
+    fn invalidate(&mut self, wids: &[WId]) {
         self.invalidated.extend(wids.iter());
         // self.invalidated.sort();
         // self.invalidated.dedup();

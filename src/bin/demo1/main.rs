@@ -3,7 +3,7 @@
 #![allow(unused_variables)]
 
 extern crate rtwins;
-use rtwins::{TWins, widget::WindowState};
+use rtwins::{TWins, WindowState};
 use std::io::Write;
 
 // https://doc.rust-lang.org/cargo/guide/project-layout.html
@@ -151,8 +151,8 @@ fn tui_demo() {
                        tw.lock().log_d(format!("key={}", inp.name).as_str());
                     },
                     InputType::Mouse(ref m) => {
-                       let mut r = rtwins::widget::Rect::cdeflt();
-                       let wgt_opt = rtwins::widget_impl::wgt_at(&mut dws, m.col, m.row, &mut r);
+                       let mut r = rtwins::Rect::cdeflt();
+                       let wgt_opt = rtwins::wgt_at(&mut dws, m.col, m.row, &mut r);
                        if let Some(w) = wgt_opt {
                            tw.lock().log_d(format!("mouse={:?} at {}:{} ({})", m.evt, m.col, m.row, w.prop).as_str());
                        }
@@ -244,24 +244,24 @@ fn test_esc_codes() {
 
 #[allow(dead_code)]
 fn test_property_access() {
-    let title = |wgt: &rtwins::widget::Widget| match wgt.prop {
-        rtwins::widget::Property::Window(ref wp) => wp.title,
+    let title = |wgt: &rtwins::Widget| match wgt.prop {
+        rtwins::Property::Window(ref wp) => wp.title,
         _ => "<?>",
     };
 
     for (idx, w) in tui_def::WND_MAIN_ARRAY.iter().enumerate() {
-        let w_par = rtwins::widget_impl::wgt_get_parent(w);
+        let w_par = rtwins::wgt_get_parent(w);
         println!("  {:2}. {:2}:{:10}, idx:{}, chidx:{}, parid {}:{}",
             idx, w.id, w.prop, w.link.own_idx, w.link.children_idx, w_par.id, w_par.prop);
     }
 
     println!(
         "sizeof Widget: {}",
-        std::mem::size_of::<rtwins::widget::Widget>()
+        std::mem::size_of::<rtwins::Widget>()
     );
     println!(
         "sizeof Type: {}",
-        std::mem::size_of::<rtwins::widget::Property>()
+        std::mem::size_of::<rtwins::Property>()
     );
     println!("sizeof Id: {}", std::mem::size_of::<tui_def::Id>());
 }

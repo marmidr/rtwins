@@ -24,6 +24,8 @@ pub const VER: &str = env!("CARGO_PKG_VERSION");
 use std::sync::{Mutex, MutexGuard, TryLockResult};
 
 use colors::*;
+pub use widget::*;
+pub use widget_impl::*;
 
 // ---------------------------------------------------------------------------------------------- //
 

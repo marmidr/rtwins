@@ -1,9 +1,9 @@
 //! # RTWins Widget tests
 
 extern crate rtwins;
+use rtwins::colors::*;
 use rtwins::widget::*;
 use rtwins::widget_impl::*;
-use rtwins::colors::*;
 
 #[rustfmt::skip]
 #[repr(u16)]
@@ -168,8 +168,8 @@ const WINDOW_TEST: Widget = Widget {
 };
 
 
-const WND_TEST_ARRAY: [Widget; rtwins::widget_impl::wgt_count(&WINDOW_TEST)] =
-    rtwins::widget_impl::wgt_transform_array(&WINDOW_TEST);
+const WND_TEST_ARRAY: [Widget; rtwins::wgt_count(&WINDOW_TEST)] =
+    rtwins::wgt_transform_array(&WINDOW_TEST);
 
 struct WndTestState {
     widgets: &'static [Widget],
@@ -338,12 +338,12 @@ fn widget_at() {
     let mut wgt_r = Rect::cdeflt();
 
     // point beyound main window
-    assert!(get_widget_at(&mut ws, 1, 1, &mut wgt_r).is_none());
+    assert!(wgt_at(&mut ws, 1, 1, &mut wgt_r).is_none());
 
     // origin of main window
     {
         let wnd_coord = ws.get_window_coord();
-        let opt_w = get_widget_at(&mut ws, wnd_coord.col, wnd_coord.row, &mut wgt_r);
+        let opt_w = wgt_at(&mut ws, wnd_coord.col, wnd_coord.row, &mut wgt_r);
         assert!(opt_w.is_some());
         if let Some(wgt) = opt_w {
             assert!(wgt.id == Id::WndTest.into());
@@ -358,7 +358,7 @@ fn widget_at() {
         assert_eq!(60, btn_coord.col);
         assert_eq!(10, btn_coord.row);
 
-        let opt_b = get_widget_at(&mut ws, btn_coord.col+2, btn_coord.row, &mut wgt_r);
+        let opt_b = wgt_at(&mut ws, btn_coord.col+2, btn_coord.row, &mut wgt_r);
         assert!(opt_b.is_some());
         if let Some(wgt) = opt_b {
             assert!(wgt.id == Id::BtnYes.into());
