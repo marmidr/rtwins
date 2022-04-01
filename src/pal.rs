@@ -28,4 +28,7 @@ pub trait Pal {
 
     /// Get difference between current and previous timestamp, in milliseconds
     fn get_time_diff(&mut self, prev_timestamp: u32) -> u32;
+
+    /// Returns formated time, used for logs timestamp
+    fn get_time_str(&mut self) -> String;
 }

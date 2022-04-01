@@ -18,14 +18,14 @@ pub mod widget_draw;
 pub mod string_ext;
 pub mod utils;
 
+pub use widget::*;
+pub use widget_impl::*;
+
 /// Library version
 pub const VER: &str = env!("CARGO_PKG_VERSION");
 
 use std::sync::{Mutex, MutexGuard, TryLockResult};
-
 use colors::*;
-pub use widget::*;
-pub use widget_impl::*;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -122,12 +122,15 @@ impl Ctx {
     // Logs
 
     fn log(&mut self, fg: &str, prefix: &str, msg: &str) {
+        let time_str = self.pal.get_time_str();
+
         self.pal.flush_buff();
         self.pal.mark_logging(true);
         self.cursor_save_pos();
         self.move_to(0, self.logs_row);
         self.insert_lines(1);
         self.pal.write_str(fg);
+        self.pal.write_str(&time_str);
         self.pal.write_str(prefix);
         self.pal.write_str(msg);
         self.pal.write_str(esc::FG_DEFAULT);

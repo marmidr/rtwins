@@ -5,6 +5,7 @@
 extern crate rtwins;
 use rtwins::{TWins, WindowState};
 use std::io::Write;
+use chrono::prelude::*;
 
 // https://doc.rust-lang.org/cargo/guide/project-layout.html
 mod tui_def;
@@ -72,6 +73,11 @@ impl rtwins::pal::Pal for DemoPal {
     fn get_time_diff(&mut self, prev_timestamp: u32) -> u32 {
         let dif = std::time::Instant::now() - self.started_at;
         dif.as_millis() as u32 - prev_timestamp
+    }
+
+    fn get_time_str(&mut self) -> String {
+        let local_time = Local::now();
+        local_time.format("%H:%M:%S%.3f ").to_string()
     }
 }
 
