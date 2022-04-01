@@ -6,7 +6,7 @@ use rtwins::esc;
 use rtwins::string_ext::StringExt;
 
 #[test]
-fn test_word_wrap() {
+fn word_wrap() {
     let mut txt = String::new();
     let _ = txt.stream()
         << esc::BOLD

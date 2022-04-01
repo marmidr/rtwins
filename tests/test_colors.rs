@@ -6,7 +6,7 @@ use rtwins::esc;
 use rtwins::{bg_color, fg_color};
 
 #[test]
-fn test_encode_cl_fg() {
+fn encode_cl_fg() {
     // test incorrect values
     assert_eq!("", colors::encode_cl_fg(colors::ColorFG::Inherit));
 
@@ -17,7 +17,7 @@ fn test_encode_cl_fg() {
 }
 
 #[test]
-fn test_encode_cl_bg() {
+fn encode_cl_bg() {
     // test incorrect values
     assert_eq!("", colors::encode_cl_bg(colors::ColorBG::Inherit));
 
@@ -28,7 +28,7 @@ fn test_encode_cl_bg() {
 }
 
 #[test]
-fn test_transcode_cl_bg_2_fg() {
+fn transcode_cl_bg_2_fg() {
     // test invalid values
     assert_eq!("", colors::transcode_cl_bg_2_fg(""));
     assert_eq!("", colors::transcode_cl_bg_2_fg("\x1B["));
@@ -45,7 +45,7 @@ fn test_transcode_cl_bg_2_fg() {
 }
 
 #[test]
-fn test_intensify_cl_fg() {
+fn intensify_cl_fg() {
     // test unsupported values
     assert_eq!(colors::ColorFG::Inherit, colors::intensify_cl_fg(colors::ColorFG::Inherit));
     assert_eq!(colors::ColorFG::WhiteIntense, colors::intensify_cl_fg(colors::ColorFG::Default));
@@ -59,7 +59,7 @@ fn test_intensify_cl_fg() {
 }
 
 #[test]
-fn test_intensify_cl_bg() {
+fn intensify_cl_bg() {
     // test unsupported values
     assert_eq!(colors::ColorBG::Inherit, colors::intensify_cl_bg(colors::ColorBG::Inherit));
     assert_eq!(colors::ColorBG::WhiteIntense, colors::intensify_cl_bg(colors::ColorBG::Default));

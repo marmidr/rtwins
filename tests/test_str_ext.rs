@@ -5,7 +5,7 @@ use rtwins::esc;
 use rtwins::string_ext::*;
 
 #[test]
-fn test_ansi_esc_len() {
+fn esc_len() {
     assert_eq!(0, "".esc_seq_len());
     // Up prefixed with space
     assert_eq!(0, " \x1B[A".esc_seq_len());
@@ -30,7 +30,7 @@ fn test_ansi_esc_len() {
 }
 
 #[test]
-fn test_ansi_displayed_width() {
+fn displayed_width() {
     assert_eq!(0, "".displayed_width());
     assert_eq!(5, "Title".displayed_width());
     assert_eq!(5, format!("{}Title{}", esc::BOLD, esc::NORMAL).as_str().displayed_width());
@@ -38,7 +38,7 @@ fn test_ansi_displayed_width() {
 }
 
 #[test]
-fn test_str_stream() {
+fn str_stream() {
     let mut s = String::from("Hello");
 
     let _ = s.stream()
@@ -51,7 +51,7 @@ fn test_str_stream() {
 }
 
 #[test]
-fn test_str_append() {
+fn str_append() {
     let mut s = String::from("Hello");
 
     s.append(" darkness")
@@ -64,7 +64,7 @@ fn test_str_append() {
 }
 
 #[test]
-fn test_push_esc_fmt() {
+fn push_esc_fmt() {
     {
         let mut s = String::new();
         s.push_esc_fmt("ABCD", 13);
@@ -79,7 +79,7 @@ fn test_push_esc_fmt() {
 }
 
 #[test]
-fn test_set_displayed_width() {
+fn set_displayed_width() {
     // no change
     {
         let mut s = String::from("");
