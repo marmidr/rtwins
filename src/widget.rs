@@ -6,7 +6,7 @@
 use std::ops::{Add, Sub};
 use std::collections::HashMap;
 
-use crate::input::*;
+use crate::{input::*, ParentsIter};
 use crate::widget_impl::ChildrenIter;
 use crate::utils::StringListRc;
 
@@ -465,8 +465,14 @@ impl Widget {
         }
     }
 
+    /// Returns iterator going through widget children
     pub fn iter_children(&self) -> ChildrenIter {
         ChildrenIter::new(self)
+    }
+
+    /// Returns iterator going up the parents hierarhy, but starting at the widget itself
+    pub fn iter_parents(&self) -> ParentsIter {
+        ParentsIter::new(self)
     }
 }
 

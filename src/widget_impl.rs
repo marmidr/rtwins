@@ -158,7 +158,7 @@ pub fn wgt_find_by_id<'a>(id: WId, wndarray: &'a [Widget]) -> Option<&'a Widget>
 }
 
 pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
-    ParentsIter::new(wgt).skip(1).fold(wgt.coord,
+    wgt.iter_parents().skip(1).fold(wgt.coord,
         |c, parent| {
             let mut c = c;
             if let widget::Property::Window(_) = parent.prop {
@@ -179,11 +179,11 @@ pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
 }
 
 pub fn wgt_is_visible(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
-    ParentsIter::new(wgt).all(|wgt| ws.is_visible(wgt))
+    wgt.iter_parents().all(|wgt| ws.is_visible(wgt))
 }
 
 pub fn wgt_is_enabled(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
-    ParentsIter::new(wgt).all(|wgt| ws.is_enabled(wgt))
+    wgt.iter_parents().all(|wgt| ws.is_enabled(wgt))
 }
 
 pub fn wgt_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) -> Option<&'a Widget> {
