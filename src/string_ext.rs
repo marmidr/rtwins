@@ -122,23 +122,18 @@ impl StrExt for str {
             }
         }
 
-        return 0;
+        0
     }
 
     fn displayed_width(&self) -> usize {
         let mut disp_width = UnicodeWidthStr::width(self) as i32;
         let mut it = self.char_indices();
 
-        loop {
-            if let Some((idx, _)) = it.next() {
-                let esc_len = self[idx..].esc_seq_len() as i32;
-                if esc_len > 0 {
-                    // UnicodeWidthStr::width() returns 0 for \e, thus, esc_len decreased by 1
-                    disp_width -= esc_len - 1;
-                }
-            }
-            else {
-                break;
+        while let Some((idx, _)) = it.next() {
+            let esc_len = self[idx..].esc_seq_len() as i32;
+            if esc_len > 0 {
+                // UnicodeWidthStr::width() returns 0 for \e, thus, esc_len decreased by 1
+                disp_width -= esc_len - 1;
             }
         }
 
@@ -179,7 +174,7 @@ impl<'a> StrStreamOp<'a> {
 
     // return nonmutable internal string
     pub fn as_string(&'a self) -> &'a String {
-        &self.intern
+        self.intern
     }
 }
 

@@ -18,7 +18,7 @@ pub trait Pal {
     fn flush_buff(&mut self);
 
     /// Tell the PAL that we are writing logs
-    fn set_logging(&mut self, on: bool);
+    fn mark_logging(&mut self, active: bool);
 
     /// Sleep for `ms` milliseconds
     fn sleep(&mut self, ms: u16);

@@ -629,7 +629,7 @@ pub trait WindowState {
     fn on_button_up(&mut self, wgt: &Widget, ii: &InputInfo) {}
     fn on_button_click(&mut self, wgt: &Widget, ii: &InputInfo) {}
     fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {}
-    fn on_text_edit_input_evt(&mut self, wgt: &Widget, ii: &InputInfo, txt: &mut String, cursor_pos: &mut i16) -> bool { return false; }
+    fn on_text_edit_input_evt(&mut self, wgt: &Widget, ii: &InputInfo, txt: &mut String, cursor_pos: &mut i16) -> bool { false }
     fn on_checkbox_toggle(&mut self, wgt: &Widget) {}
     fn on_page_control_page_change(&mut self, wgt: &Widget, new_page_idx: u8) {}
     fn on_list_box_select(&mut self, wgt: &Widget, new_sel_idx: i16) {}
@@ -640,34 +640,34 @@ pub trait WindowState {
     fn on_radio_select(&mut self, wgt: &Widget) {}
     fn on_text_box_scroll(&mut self, wgt: &Widget, new_top_line: i16) {}
     fn on_custom_widget_draw(&mut self, wgt: &Widget) {}
-    fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool { return false; }
-    fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool { return false; }
+    fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool { false }
+    fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool { false }
 
     /// common state queries
-    fn is_enabled(&mut self, wgt: &Widget) -> bool { return true; }
-    fn is_focused(&mut self, wgt: &Widget) -> bool { return false; }
-    fn is_visible(&mut self, wgt: &Widget) -> bool { return true; }
-    fn is_desktop(&self) -> bool { return false; }
-    fn get_focused_id(&mut self) -> WId { return WIDGET_ID_NONE; }
+    fn is_enabled(&mut self, wgt: &Widget) -> bool { true }
+    fn is_focused(&mut self, wgt: &Widget) -> bool { false }
+    fn is_visible(&mut self, wgt: &Widget) -> bool { true }
+    fn is_desktop(&self) -> bool { false }
+    fn get_focused_id(&mut self) -> WId { WIDGET_ID_NONE }
     fn set_focused_id(&mut self, wid: WId) {}
-    fn get_widgets(&self) -> &'static [Widget] { return &[]; }
+    fn get_widgets(&self) -> &'static [Widget] { &[] }
 
     /// widget-specific queries; all mutable params are outputs
     fn get_window_coord(&mut self) -> Coord { Coord::cdeflt() }
     fn get_window_size(&mut self) -> Size { Size::cdeflt() }
     fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {}
-    fn get_checkbox_checked(&mut self, wgt: &Widget) -> bool { return false; }
+    fn get_checkbox_checked(&mut self, wgt: &Widget) -> bool { false }
     fn get_label_text(&mut self, wgt: &Widget, txt: &mut String) {}
     fn get_text_edit_text(&mut self, wgt: &Widget, txt: &mut String, edit_mode: bool) {}
-    fn get_led_lit(&mut self, wgt: &Widget) -> bool { return false; }
+    fn get_led_lit(&mut self, wgt: &Widget) -> bool { false }
     fn get_led_text(&mut self, wgt: &Widget, txt: &mut String) {}
     fn get_progress_bar_state(&mut self, wgt: &Widget, pos: &mut i32, max: &mut i32) {}
-    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u8 { return 0; }
+    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u8 { 0 }
     fn get_list_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16) {}
     fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
     fn get_combo_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16, drop_down: &mut bool) {}
     fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
-    fn get_radio_index(&mut self, wgt: &Widget) -> i16 { return -1; }
+    fn get_radio_index(&mut self, wgt: &Widget) -> i16 { -1 }
     fn get_text_box_state(&mut self, wgt: &Widget, lines: &mut StringListRc, top_line: &mut i16) {}
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {}
 

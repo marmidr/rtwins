@@ -55,7 +55,7 @@ pub enum ColorBG {
 }
 
 
-const MAP_CL_FG: [&'static str; 18] =
+const MAP_CL_FG: [&str; 18] =
 [
     "",
     FG_DEFAULT,
@@ -77,7 +77,7 @@ const MAP_CL_FG: [&'static str; 18] =
     FG_WHITE_INTENSE
 ];
 
-const MAP_CL_BG: [&'static str; 18] =
+const MAP_CL_BG: [&str; 18] =
 [
     "",
     BG_DEFAULT,

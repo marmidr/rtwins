@@ -56,8 +56,8 @@ impl rtwins::pal::Pal for DemoPal {
         self.line_buff.clear();
     }
 
-    fn set_logging(&mut self, on: bool) {
-        self.logging = on;
+    fn mark_logging(&mut self, active: bool) {
+        self.logging = active;
     }
 
     fn sleep(&mut self, ms: u16) {

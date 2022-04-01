@@ -50,12 +50,10 @@ pub const fn wgt_count(wgt: &Widget) -> usize {
 
 /// Checks if given widget is parent-type
 pub const fn wgt_is_parent(wgt: &Widget) -> bool {
-    match wgt.prop {
+    matches!(wgt.prop,
         Property::Window(_) |
         Property::Panel(_)  |
-        Property::Page(_)   => true,
-        _                   => false
-    }
+        Property::Page(_))
 }
 
 /// Flattens tree-like TUI definition into array of widgets
@@ -72,7 +70,7 @@ const fn wgt_transform<const N: usize>(mut out: [Widget; N], wgt: &Widget, out_i
 
     let mut out_child_idx = next_free_idx;
 
-    if wgt.children.len() > 0 {
+    if !wgt.children.is_empty() {
         out[out_idx].link.children_idx = out_child_idx as u16;
         out[out_idx].link.children_cnt = wgt.children.len() as u16;
         next_free_idx += wgt.children.len();
@@ -175,17 +173,17 @@ pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
                 c.col += p.tab_width;
             }
 
-            return c;
+            c
         }
     )
 }
 
 pub fn wgt_is_visible(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
-    ParentsIter::new(wgt).fold(true, |vis, wgt| vis && ws.is_visible(wgt))
+    ParentsIter::new(wgt).all(|wgt| ws.is_visible(wgt))
 }
 
 pub fn wgt_is_enabled(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
-    ParentsIter::new(wgt).fold(true, |en, wgt| en && ws.is_enabled(wgt))
+    ParentsIter::new(wgt).all(|wgt| ws.is_enabled(wgt))
 }
 
 pub fn wgt_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) -> Option<&'a Widget> {

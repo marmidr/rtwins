@@ -79,12 +79,7 @@ impl InputTty {
 
     /// Checks if the input is initialized properly
     pub fn opened(&self) -> bool {
-        if let Some(_) = self.tty_file {
-            true
-        }
-        else {
-            false
-        }
+        self.tty_file.is_some()
     }
 
     /// Returns tuple with ESC sequence slice and bool marker set to true,
@@ -97,7 +92,7 @@ impl InputTty {
             return (&self.input_buff[..self.input_len as usize], exit_requested);
         }
 
-        return (&self.input_buff[..0], false);
+        (&self.input_buff[..0], false)
     }
 
     fn wait_and_read_input_sequence(&mut self) -> bool {
@@ -138,7 +133,7 @@ impl InputTty {
                 std::ptr::null_mut(),
                 &mut tv as *mut libc::timeval);
 
-            return sel > 0;
+            sel > 0
         }
     }
 }

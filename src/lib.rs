@@ -123,7 +123,7 @@ impl Ctx {
 
     fn log(&mut self, fg: &str, prefix: &str, msg: &str) {
         self.pal.flush_buff();
-        self.pal.set_logging(true);
+        self.pal.mark_logging(true);
         self.cursor_save_pos();
         self.move_to(0, self.logs_row);
         self.insert_lines(1);
@@ -134,7 +134,7 @@ impl Ctx {
         self.pal.write_char('\n');
         self.cursor_restore_pos();
         self.pal.flush_buff();
-        self.pal.set_logging(false);
+        self.pal.mark_logging(false);
     }
 
     /// Print Debug message

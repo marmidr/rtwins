@@ -109,10 +109,10 @@ impl MouseInfo {
 }
 
 /// Key modifiers
-pub const KEY_MOD_NONE: u8 = 0b0;
-pub const KEY_MOD_CTRL: u8 = 0b1;
-pub const KEY_MOD_ALT: u8 = 0b10;
-pub const KEY_MOD_SHIFT: u8 = 0b100;
+pub const KEY_MOD_NONE:    u8 = 0b0000;
+pub const KEY_MOD_CTRL:    u8 = 0b0001;
+pub const KEY_MOD_ALT:     u8 = 0b0010;
+pub const KEY_MOD_SHIFT:   u8 = 0b0100;
 pub const KEY_MOD_SPECIAL: u8 = 0b1000;
 
 /// Representation of key modifiers coded on bits
@@ -122,8 +122,8 @@ pub struct KeyMod {
 }
 
 impl KeyMod {
-    pub fn new() -> Self { Self {mask: 0 } }
-    pub fn is_none(&self) ->    bool { self.mask == 0 }
+    pub fn new() -> Self { Self { mask: 0 } }
+    pub fn has_none(&self) ->   bool { self.mask == 0 }
     pub fn has_ctrl(&self) ->   bool { self.mask & KEY_MOD_CTRL != 0 }
     pub fn has_alt(&self) ->    bool { self.mask & KEY_MOD_ALT != 0 }
     pub fn has_shift(&self) ->  bool { self.mask & KEY_MOD_SHIFT != 0 }
@@ -153,7 +153,7 @@ impl CharBuff {
     }
 
     /// Returns proper UTF-8 slice from self.utf8seq or empty slice in case of invalid sequence
-    pub fn utf8str(& self) -> &str {
+    pub fn utf8str(&self) -> &str {
         let leading_seq = self.utf8seq.split_at(self.utf8sl as usize).0;
         let res = std::str::from_utf8(leading_seq);
         if let Ok(s) = res {
@@ -184,7 +184,7 @@ pub struct InputInfo {
     pub typ:    InputType,
     /// Ctrl/Alt/Shift
     pub kmod:   KeyMod,
-    /// Human redable key combination description
+    /// Human readable event description
     pub name:   &'static str
 }
 
@@ -193,6 +193,7 @@ impl InputInfo {
         Self{typ: InputType::None, kmod: KeyMod::new(), name: ""}
     }
 
+    /// Reset input to None
     pub fn reset(&mut self) {
         self.typ = InputType::None;
         self.kmod.mask = 0;

@@ -323,7 +323,7 @@ const fn sort<const N: usize>(mut array: [SeqMap; N]) -> [SeqMap; N] {
             let mut r = l + 1;
             while r < array.len() {
                 if seqmap_cmp(&array[l], &array[r]).is_gt() {
-                    // swap
+                    // manual swap; array.swap() not available in const function
                     let tmp = array[l];
                     array[l] = array[r];
                     array[r] = tmp;
@@ -441,7 +441,7 @@ impl Decoder {
     pub fn decode_input_seq(&mut self, input: &mut InputQue, inp_info: &mut InputInfo) -> u8 {
         inp_info.reset();
 
-        if input.len() == 0 {
+        if input.is_empty() {
             return 0;
         }
 
@@ -460,7 +460,7 @@ impl Decoder {
         let mut seq = [0u8; crate::esc::SEQ_MAX_LENGTH];
 
         while !input.is_empty() {
-            let seq_sz = read_seq_from_queue(&input, &mut seq);
+            let seq_sz = read_seq_from_queue(input, &mut seq);
             self.prev_cr >>= 1; // set = 2 and then shift is faster than: if(prevCR) prevCR--;
 
             // 1. ANSI escape sequence
@@ -632,7 +632,7 @@ impl Decoder {
             }
         }
 
-        return 0;
+        0
     }
 }
 

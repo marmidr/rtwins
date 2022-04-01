@@ -35,7 +35,7 @@ struct DrawCtx<'a>
 /// If `wids` contains only `WIDGET_ID_ALL`, draw entire window
 pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
 {
-    if wids.len() == 0 {
+    if wids.is_empty() {
         return;
     }
 
@@ -54,8 +54,8 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
         draw_widget_internal(&mut dctx);
     }
     else {
-        for i in 0..wids.len() {
-            let _wss = WidgetSearchStruct::new(wids[i]);
+        for w in wids {
+            let _wss = WidgetSearchStruct::new(*w);
         /*
             if (getWidgetWSS(dctx, wss) && wss.isVisible)
             {
@@ -132,7 +132,7 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
         wnd_title = prp.title.to_string();
     }
     else {
-        dctx.wnd_state.get_window_title(&dctx.wgt, &mut wnd_title);
+        dctx.wnd_state.get_window_title(dctx.wgt, &mut wnd_title);
     }
 
     if !wnd_title.is_empty() {
@@ -430,9 +430,9 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
 
             {
                 let mut ctx = dctx.ctx.borrow_mut();
-                dctx.strbuff.push_str(" ");
+                dctx.strbuff.push(' ');
                 dctx.strbuff.push_str(txt.as_str());
-                dctx.strbuff.push_str(" ");
+                dctx.strbuff.push(' ');
 
                 ctx.move_to(
                     dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
@@ -483,9 +483,9 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
     }
     else if prp.style == ButtonStyle::Solid1p5 {
         let _fm = FontMemento::new(&dctx.ctx);
-        dctx.strbuff.push_str(" ");
+        dctx.strbuff.push(' ');
         dctx.strbuff.push_str(txt.as_str());
-        dctx.strbuff.push_str(" ");
+        dctx.strbuff.push(' ');
 
         let clbg = get_widget_bg_color(dctx.wgt);
         let clparbg = get_widget_bg_color(wgt_get_parent(dctx.wgt));
@@ -611,10 +611,10 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
             dctx.strbuff.clear();
 
             if idx == cur_pg_idx {
-                dctx.strbuff.push_str("►");
+                dctx.strbuff.push('►');
             }
             else {
-                dctx.strbuff.push_str(" ");
+                dctx.strbuff.push(' ');
             }
 
             dctx.strbuff.push_str(page_prp.title);
@@ -692,7 +692,7 @@ fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar)
     let mut pos = 0i32;
     let mut max = 1i32;
     let style = prp.style as usize;
-    dctx.wnd_state.get_progress_bar_state(&dctx.wgt, &mut pos, &mut max);
+    dctx.wnd_state.get_progress_bar_state(dctx.wgt, &mut pos, &mut max);
 
     if max <= 0 { max = 1; }
     if pos > max { pos = max; }
@@ -984,7 +984,7 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
     if shadow {
         // trailing shadow
         strbuff.push_str(esc::FG_BLACK);
-        strbuff.push_str("█");
+        strbuff.push('█');
         strbuff.push_str(colors::encode_cl_fg(cl_fg));
     }
 
@@ -1003,7 +1003,7 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
     if shadow {
         // trailing shadow
         strbuff.push_str(esc::FG_BLACK);
-        strbuff.push_str("█");
+        strbuff.push('█');
     }
 
     ctx.write_str(strbuff.as_str());
@@ -1118,7 +1118,7 @@ fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
         }
     }
 
-    return cl;
+    cl
 }
 
 fn get_widget_fg_color(wgt: &Widget) -> ColorFG {
@@ -1146,5 +1146,5 @@ fn get_widget_fg_color(wgt: &Widget) -> ColorFG {
         }
     }
 
-    return cl;
+    cl
 }

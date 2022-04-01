@@ -8,7 +8,7 @@ pub type StringListRc = std::rc::Rc<std::cell::RefCell<Vec<String>>>;
 ///
 /// Display width is calculated using Unicode data to determine if character is single or double width.
 /// Returns Vector of String's (not slices)
-pub fn word_wrap(max_disp_w: usize, src: &String) -> StringListRc {
+pub fn word_wrap(max_disp_w: usize, src: &str) -> StringListRc {
     let it = src.split_inclusive(char::is_whitespace)
         .scan((0usize, 0usize, 0usize), |state, word| {
             let word_w = word.displayed_width();
@@ -21,10 +21,9 @@ pub fn word_wrap(max_disp_w: usize, src: &String) -> StringListRc {
                 state.0 = word_w;       // line_w = word_w
                 state.1 = state.2;      // begin = end
                 state.2 += word.len();  // end += word.len
-                return Some(outslice.to_string());
+                Some(outslice.to_string())
             }
-            else {
-                if word.ends_with('\n') {
+            else if word.ends_with('\n') {
                     // shorter than possible, but ends with new line
                     state.2 += word.len();  // end += word.len
                     state.2 -= 1;           // do not put '\n' to the output
@@ -33,22 +32,21 @@ pub fn word_wrap(max_disp_w: usize, src: &String) -> StringListRc {
                     state.0 = 0;
                     state.2 += 1;           // do not put '\n' to the output
                     state.1 = state.2;      // begin = end
-                    return Some(outslice.to_string());
+                    Some(outslice.to_string())
+            }
+            else {
+                // single word not ending with \n
+                state.0 += word_w;      // line_w += word_w
+                state.2 += word.len();  // end += word.len
+
+                if state.2 == src.len() {
+                    // `word` is the last item in a string -> output it
+                    // println!("<'{}'", src[state.1..state.2].to_string());
+                    Some(word.to_string())
                 }
                 else {
-                    // single word not ending with \n
-                    state.0 += word_w;      // line_w += word_w
-                    state.2 += word.len();  // end += word.len
-
-                    if state.2 == src.len() {
-                        // `word` is the last item in a string -> output it
-                        // println!("<'{}'", src[state.1..state.2].to_string());
-                        Some(word.to_string())
-                    }
-                    else {
-                        // keep iterating -> return Some
-                        Some("".to_string())    // empty str -> will be filtered out
-                    }
+                    // keep iterating -> return Some
+                    Some("".to_string())    // empty str -> will be filtered out
                 }
             }
         })
