@@ -23,12 +23,12 @@ pub trait Pal {
     /// Sleep for `ms` milliseconds
     fn sleep(&mut self, ms: u16);
 
-    /// Get current timestamp in milliseconds
-    fn get_time_stamp(&mut self) -> u32;
+    /// Get current timestamp (since program start) in milliseconds
+    fn get_timestamp(&mut self) -> u32;
 
     /// Get difference between current and previous timestamp, in milliseconds
-    fn get_time_diff(&mut self, prev_timestamp: u32) -> u32;
+    fn get_timespan_ms(&mut self, prev_timestamp: u32) -> u32;
 
     /// Returns formated time, used for logs timestamp
-    fn get_time_str(&mut self) -> String;
+    fn get_logs_timestr(&mut self) -> String;
 }

@@ -8,8 +8,7 @@ use crate::common::*;
 
 /// Widget drawing state object
 #[allow(dead_code)]
-struct WidgetState
-{
+struct WidgetState {
     // p_focused_wgt: Option<&Widget>,
     // p_mouse_down_wgt: Option<&Widget>,
     // p_drop_down_combo: Option<&Widget>,
@@ -23,8 +22,7 @@ struct WidgetState
 }
 
 #[allow(dead_code)]
-pub struct WidgetSearchStruct
-{
+pub struct WidgetSearchStruct {
     searched_id: WId,       // given
     parent_coord: Coord,    // expected
     is_visible: bool,       // expected
@@ -42,6 +40,7 @@ impl WidgetSearchStruct {
 pub mod transform {
 
 use super::*;
+
 /// Counts total number of widgets in tree-like definition
 pub const fn tree_wgt_count(wgt: &Widget) -> usize {
     let mut n: usize = 1;
@@ -98,8 +97,7 @@ pub const fn is_parent(wgt: &Widget) -> bool {
 }
 
 ///
-pub fn wgt_get_wss(/* CallCtx &ctx,*/ wss: &mut WidgetSearchStruct) -> bool
-{
+pub fn wgt_get_wss(/* CallCtx &ctx,*/ wss: &mut WidgetSearchStruct) -> bool {
     if wss.searched_id == WIDGET_ID_NONE {
         return false;
     }
@@ -146,11 +144,11 @@ pub fn wgt_get_wss(/* CallCtx &ctx,*/ wss: &mut WidgetSearchStruct) -> bool
     false
 }
 
-/// Get `wgt`'s parent, using flat widgets layout produced by `wgt_transform_array()`
+/// Get `wgt`'s parent, using flat widgets layout produced by `tree_to_array()`
 pub fn get_parent<'a>(wgt: &'a Widget) -> &'a Widget {
     unsafe {
         // SAFETY:
-        // it is guaranted thanks to how the `wgt_transform_array()` places widgets
+        // it is guaranted thanks to how the `tree_to_array()` places widgets
         // in the contiguous array, thus, having self/parent/children indexes in that array
         // we can safely find any of them having only particular widget handle, without entire array
         let parent_idx_offset = wgt.link.parent_idx as isize - wgt.link.own_idx as isize;

@@ -75,7 +75,7 @@ impl Ctx {
     // Logs
 
     fn log(&mut self, fg: &str, prefix: &str, msg: &str) {
-        let time_str = self.pal.get_time_str();
+        let time_str = self.pal.get_logs_timestr();
 
         self.pal.flush_buff();
         self.pal.mark_logging(true);
@@ -132,7 +132,7 @@ impl Ctx {
         self
     }
 
-    /// Set cursol at column `col`
+    /// Set cursor at column `col`
     pub fn move_to_col(&mut self, col: u16) -> &mut Self {
         let s = String::from(esc::CURSOR_COLUMN_FMT)
             .replace("{0}", &col.to_string());
@@ -140,7 +140,7 @@ impl Ctx {
         self
     }
 
-    /// Move curson by given offsets
+    /// Move cursor by given offsets
     pub fn move_by(&mut self, cols: i16, rows: i16) -> &mut Self {
         if cols != 0 {
             let fmt;

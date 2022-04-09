@@ -1,7 +1,5 @@
 //! # RTWins common definitions
 
-use std::ops::{Add, Sub};
-
 use crate::Ctx;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -19,12 +17,13 @@ impl Coord {
         Coord { col: 0, row: 0 }
     }
 
+    /// Creates a new coordinates with column and row set to given `c` and `r`
     pub const fn new(c: u8, r: u8) -> Self {
         Coord { col: c, row: r }
     }
 }
 
-impl Add for Coord {
+impl std::ops::Add for Coord {
     type Output = Self;
     fn add(self, other: Coord) -> Coord {
         Coord {
@@ -47,12 +46,13 @@ impl Size {
         Size { width: 0, height: 0 }
     }
 
+    /// Creates a new size object with width and height set to `w` and `h`
     pub const fn new(w: u8, h: u8) -> Self {
         Size { width: w, height: h }
     }
 }
 
-impl Sub for Size {
+impl std::ops::Sub for Size {
     type Output = Self;
     fn sub(self, other: Size) -> Size {
         Size {
@@ -78,6 +78,7 @@ impl Rect {
         }
     }
 
+    /// Creates a new rect object with coordinates and size set according to `c, r` and `w, h`
     pub fn new(c: u8, r: u8, w: u8, h: u8) -> Rect {
         Rect{coord: Coord::new(c, r), size: Size::new(w, h)}
     }
@@ -215,7 +216,10 @@ impl <'b, 'a> Drop for FontMemento<'b, 'a> {
 
 /// Mouse reporting modes
 pub enum MouseMode {
+    /// reporting disabled
     Off,
+    /// only buttons
     M1,
+    /// buttons and wheel
     M2
 }

@@ -40,7 +40,7 @@ pub enum FrameStyle {
     ListBox
 }
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
 /// Widget unique identifier
 pub type WId = u16;
@@ -50,7 +50,7 @@ pub const WIDGET_ID_NONE: WId = WId::MIN;
 /// Used as a special function parameter
 pub const WIDGET_ID_ALL: WId = WId::MAX;
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
 /// Widget static properties
 pub mod prop {
@@ -314,25 +314,25 @@ impl Property {
         Self::NoWgt
     }
 
-    /// Extract window properties from enum
-    // pub fn prop_wnd<'a>(&'a self) -> &'a wp::Window {
-    pub fn prop_wnd(&self) -> &prop::Window {
-        match self {
-            Self::Window(ref wp) => wp,
-            _ => panic!(),
-        }
-    }
+//     /// Extract window properties from enum
+//     // pub fn prop_wnd<'a>(&'a self) -> &'a wp::Window {
+//     pub fn prop_wnd(&self) -> &prop::Window {
+//         match self {
+//             Self::Window(ref wp) => wp,
+//             _ => panic!(),
+//         }
+//     }
 
-    /// Extract panel properties from enum
-    pub fn prop_pnl(&self) -> &prop::Panel {
-        match self {
-            Self::Panel(ref wp) => wp,
-            _ => panic!(),
-        }
-    }
+//     /// Extract panel properties from enum
+//     pub fn prop_pnl(&self) -> &prop::Panel {
+//         match self {
+//             Self::Panel(ref wp) => wp,
+//             _ => panic!(),
+//         }
+//     }
 }
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
 /// Widget itself
 #[derive(Copy, Clone)]
@@ -347,7 +347,7 @@ pub struct Widget {
     pub link: Link,
     /// widget properties defining it's type
     pub prop: Property,
-    /// link to children widgets, 2x8B; empty after processing with `wgt_transform_array()`
+    /// link to children widgets, 2x8B; empty after processing with `tree_to_array()`
     pub children: &'static [Widget],
 }
 
@@ -397,7 +397,7 @@ impl Link {
     }
 }
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
 /// Widget RunTime properties
 pub mod prop_rt {
@@ -532,7 +532,7 @@ impl RuntimeState {
     impl_as!(as_pgctrl, Pgctrl);
 }
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
 /// Window state and event handler
 pub trait WindowState {
@@ -589,7 +589,7 @@ pub trait WindowState {
     fn get_invalidated(&mut self) -> Vec<WId> { vec![] }
 }
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
 struct WindowStateStub;
 
@@ -603,4 +603,4 @@ impl WindowState for WindowStateStub {
     //
 }
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //

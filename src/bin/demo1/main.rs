@@ -66,17 +66,17 @@ impl rtwins::pal::Pal for DemoPal {
         std::thread::sleep(std::time::Duration::from_millis(ms as u64));
     }
 
-    fn get_time_stamp(&mut self) -> u32 {
+    fn get_timestamp(&mut self) -> u32 {
         let dif = std::time::Instant::now() - self.started_at;
         dif.as_millis() as u32
     }
 
-    fn get_time_diff(&mut self, prev_timestamp: u32) -> u32 {
+    fn get_timespan_ms(&mut self, prev_timestamp: u32) -> u32 {
         let dif = std::time::Instant::now() - self.started_at;
         dif.as_millis() as u32 - prev_timestamp
     }
 
-    fn get_time_str(&mut self) -> String {
+    fn get_logs_timestr(&mut self) -> String {
         let local_time = chrono::Local::now();
         local_time.format("%H:%M:%S%.3f ").to_string()
     }
@@ -253,11 +253,6 @@ fn test_esc_codes() {
 
 #[allow(dead_code)]
 fn test_property_access() {
-    let title = |wgt: &rtwins::Widget| match wgt.prop {
-        rtwins::Property::Window(ref wp) => wp.title,
-        _ => "<?>",
-    };
-
     for (idx, w) in tui_def::WND_MAIN_ARRAY.iter().enumerate() {
         let w_par = wgt::get_parent(w);
         println!("  {:2}. {:2}:{:10}, idx:{}, chidx:{}, parid {}:{}",

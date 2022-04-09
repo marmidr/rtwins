@@ -4,8 +4,7 @@ extern crate rtwins;
 
 use rtwins::esc::*;
 
-fn count_esc(s: &str) -> u32
-{
+fn count_esc(s: &str) -> u32 {
     let n_esc = s.chars().fold(
         0u32, |acc, item| if item == '\x1B' { acc + 1 } else { acc }
     );

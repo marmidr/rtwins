@@ -12,8 +12,7 @@ use crate::widget_def::*;
 
 // ---------------------------------------------------------------------------------------------- //
 
-struct DrawCtx<'a>
-{
+struct DrawCtx<'a> {
     /// Reference to a drawer instance
     ctx: RefCell<&'a mut Ctx>,
     /// Reference to a widget to be drawn
@@ -30,8 +29,7 @@ struct DrawCtx<'a>
 
 /// Draw `wids` widgets of the given window.
 /// If `wids` contains only `WIDGET_ID_ALL`, draw entire window
-pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
-{
+pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId]) {
     if wids.is_empty() {
         return;
     }
@@ -75,10 +73,9 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
     ctx.flush_buff();
 }
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
-fn draw_widget_internal(dctx: &mut DrawCtx)
-{
+fn draw_widget_internal(dctx: &mut DrawCtx) {
     if !dctx.wnd_state.is_visible(dctx.wgt) {
         return;
     }
@@ -114,10 +111,9 @@ fn draw_widget_internal(dctx: &mut DrawCtx)
     dctx.ctx.borrow_mut().flush_buff();
 }
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
-fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
-{
+fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window) {
     let wnd_coord = dctx.wnd_state.get_window_coord();
     draw_area(&mut dctx.ctx.borrow_mut(), wnd_coord, dctx.wgt.size,
             prp.bg_color, prp.fg_color, FrameStyle::Double, true, prp.is_popup);
@@ -166,8 +162,7 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window)
     }
 }
 
-fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
-{
+fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel) {
     let mut fm = FontMementoManual::from_ctx(&dctx.ctx.borrow());
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
@@ -212,8 +207,7 @@ fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel)
     fm.restore(&mut dctx.ctx.borrow_mut());
 }
 
-fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label)
-{
+fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label) {
     // label text
     let mut title = String::new();
     if !prp.title.is_empty() {
@@ -255,8 +249,7 @@ fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label)
     }
 }
 
-fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit)
-{
+fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit) {
     /*
     g_w s.str.clear();
     int16_t display_pos = 0;
@@ -309,11 +302,11 @@ fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit)
     moveTo(dctx.parentCoord.col + dctx.wgt->coord.col, dctx.parentCoord.row + dctx.wgt->coord.row);
     pushClBg(clbg);
     pushClFg(getWidgetFgColor(dctx.wgt));
-    ctx.write_str(dctx.strbuff.as_str()); */
+    ctx.write_str(dctx.strbuff.as_str());
+    */
 }
 
-fn draw_led(dctx: &mut DrawCtx, prp: &prop::Led)
-{
+fn draw_led(dctx: &mut DrawCtx, prp: &prop::Led) {
     let clbg = if dctx.wnd_state.get_led_lit(dctx.wgt) { prp.bg_color_on } else { prp.bg_color_off };
 
     if !prp.text.is_empty() {
@@ -334,8 +327,7 @@ fn draw_led(dctx: &mut DrawCtx, prp: &prop::Led)
     ctx.write_str(dctx.strbuff.as_str());
 }
 
-fn draw_checkbox(dctx: &mut DrawCtx, prp: &prop::CheckBox)
-{
+fn draw_checkbox(dctx: &mut DrawCtx, prp: &prop::CheckBox) {
     let chk_state = if dctx.wnd_state.get_checkbox_checked(dctx.wgt) { "[■] " } else { "[ ] " };
     let focused = dctx.wnd_state.is_focused(dctx.wgt);
     let clfg = {
@@ -356,8 +348,7 @@ fn draw_checkbox(dctx: &mut DrawCtx, prp: &prop::CheckBox)
     ctx.write_str(prp.text);
 }
 
-fn draw_radio(dctx: &mut DrawCtx, prp: &prop::Radio)
-{
+fn draw_radio(dctx: &mut DrawCtx, prp: &prop::Radio) {
     let radio_state = {
         let ridx = dctx.wnd_state.get_radio_index(dctx.wgt);
         if prp.radio_id == ridx { "(●) " } else { "( ) " }
@@ -382,8 +373,7 @@ fn draw_radio(dctx: &mut DrawCtx, prp: &prop::Radio)
     ctx.write_str(prp.text);
 }
 
-fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
-{
+fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button) {
     let focused = dctx.wnd_state.is_focused(dctx.wgt);
     let pressed = false; // TODO:dctx.wgt == g_ws.pMouseDownWgt;
     let clfg = {
@@ -550,8 +540,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
     }
 }
 
-fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
-{
+fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl) {
     let mut fm = FontMementoManual::from_ctx(&dctx.ctx.borrow());
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
@@ -646,8 +635,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
     fm.restore(&mut dctx.ctx.borrow_mut());
 }
 
-fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/)
-{
+fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/) {
     if erase_bg {
         let pgctrl = wgt::get_parent(dctx.wgt);
 
@@ -678,8 +666,7 @@ fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/)
     dctx.strbuff.clear();
 }
 
-fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar)
-{
+fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar) {
     const STYLE_DATA: [[char;2];3] = [
         ['#', '.'],
         ['█', '▒'],
@@ -713,8 +700,7 @@ fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar)
     //  ▁▂▃▄▅▆▇█ - for vertical ▂▄▆█
 }
 
-fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox)
-{
+fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox) {
     let mut fm = FontMementoManual::from_ctx(&dctx.ctx.borrow());
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
@@ -752,8 +738,7 @@ fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox)
     fm.restore(&mut ctx);
 }
 
-fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox)
-{
+fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox) {
     let _fm = FontMemento::new(&dctx.ctx);
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
     let focused = dctx.wnd_state.is_focused(dctx.wgt);
@@ -808,13 +793,11 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox)
     }
 }
 
-fn draw_custom_wgt(dctx: &mut DrawCtx, _: &prop::CustomWgt)
-{
+fn draw_custom_wgt(dctx: &mut DrawCtx, _: &prop::CustomWgt) {
     dctx.wnd_state.on_custom_widget_draw(dctx.wgt);
 }
 
-fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
-{
+fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
     let _fm = FontMemento::new(&dctx.ctx);
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
@@ -889,8 +872,7 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox)
     }
 }
 
-fn draw_layer(dctx: &mut DrawCtx, _: &prop::Layer)
-{
+fn draw_layer(dctx: &mut DrawCtx, _: &prop::Layer) {
     // draw only childrens; to erase, redraw layer's parent
     let layer = dctx.wgt;
 
@@ -904,43 +886,37 @@ fn draw_layer(dctx: &mut DrawCtx, _: &prop::Layer)
 
 // ---------------------------------------------------------------------------------------------- //
 
-const FRAME_NONE: [char; 9] =
-[
+const FRAME_NONE: [char; 9] = [
     ' ', ' ', ' ',
     ' ', ' ', ' ',
     ' ', ' ', ' ',
 ];
 
-const FRAME_SINGLE: [char; 9] =
-[
+const FRAME_SINGLE: [char; 9] = [
     '┌', '─', '┐',
     '│', ' ', '│',
     '└', '─', '┘',
 ];
 
-const FRAME_LISTBOX: [char; 9] =
-[
+const FRAME_LISTBOX: [char; 9] = [
     '┌', '─', '┐',
     '│', ' ', '▒',
     '└', '─', '┘',
 ];
 
-const FRAME_PGCONTROL: [char; 9] =
-[
+const FRAME_PGCONTROL: [char; 9] = [
     '├', '─', '┐',
     '│', ' ', '│',
     '├', '─', '┘',
 ];
 
-const FRAME_DOUBLE: [char; 9] =
-[
+const FRAME_DOUBLE: [char; 9] = [
     '╔', '═', '╗',
     '║', ' ', '║',
     '╚', '═', '╝',
 ];
 
-fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: ColorFG, style: FrameStyle, filled: bool, shadow: bool)
-{
+fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: ColorFG, style: FrameStyle, filled: bool, shadow: bool) {
     ctx.move_to(coord.col.into(), coord.row.into());
 
     let frame = match style {
@@ -1058,8 +1034,7 @@ struct DrawListParams {
     frame_size: u8,
 }
 
-fn draw_list<Cb: FnMut(i16, &mut String)>(ctx: &mut Ctx, dlp: &DrawListParams, mut get_item: Cb)
-{
+fn draw_list<Cb: FnMut(i16, &mut String)>(ctx: &mut Ctx, dlp: &DrawListParams, mut get_item: Cb) {
     if dlp.items_cnt > dlp.items_visible {
         draw_list_scroll_bar_v(ctx,
             dlp.coord + Coord::new(dlp.wgt_width-1, dlp.frame_size),
