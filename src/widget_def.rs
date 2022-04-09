@@ -3,114 +3,13 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::ops::{Add, Sub};
 use std::collections::HashMap;
 
-use crate::{input::*, ParentsIter};
-use crate::widget_impl::ChildrenIter;
+use crate::*;
+use crate::input::*;
 use crate::utils::StringListRc;
 
 // ---------------------------------------------------------------------------------------------- //
-
-/// Widget coordinates on screen or on parent widget
-#[derive(Clone, Copy, Default)]
-pub struct Coord {
-    pub col: u8,
-    pub row: u8,
-}
-
-impl Coord {
-    /// Returns default object; can be used in `const` initialization
-    pub const fn cdeflt() -> Self {
-        Coord { col: 0, row: 0 }
-    }
-
-    pub const fn new(c: u8, r: u8) -> Self {
-        Coord { col: c, row: r }
-    }
-}
-
-impl Add for Coord {
-    type Output = Self;
-    fn add(self, other: Coord) -> Coord {
-        Coord {
-            col: self.col.saturating_add(other.col),
-            row: self.row.saturating_add(other.row),
-        }
-    }
-}
-
-/// Widget size
-#[derive(Clone, Copy, Default)]
-pub struct Size {
-    pub width: u8,
-    pub height: u8,
-}
-
-impl Size {
-    /// Returns default object; can be used in `const` initialization
-    pub const fn cdeflt() -> Size {
-        Size { width: 0, height: 0 }
-    }
-
-    pub const fn new(w: u8, h: u8) -> Self {
-        Size { width: w, height: h }
-    }
-}
-
-impl Sub for Size {
-    type Output = Self;
-    fn sub(self, other: Size) -> Size {
-        Size {
-            width:  self.width.saturating_sub(other.width),
-            height: self.height.saturating_sub(other.height),
-        }
-    }
-}
-
-/// Rectangle area
-#[derive(Clone, Copy)]
-pub struct Rect {
-    pub coord: Coord,
-    pub size: Size,
-}
-
-impl Rect {
-    /// Returns default object; can be used in `const` initialization
-    pub const fn cdeflt() -> Rect {
-        Rect {
-            coord: Coord::cdeflt(),
-            size: Size::cdeflt(),
-        }
-    }
-
-    pub fn new(c: u8, r: u8, w: u8, h: u8) -> Rect {
-        Rect{coord: Coord::new(c, r), size: Size::new(w, h)}
-    }
-
-    pub fn set_max(&mut self) {
-        self.coord.col = 0;
-        self.coord.row = 0;
-        self.size.width = u8::MAX;
-        self.size.height = u8::MAX;
-    }
-
-    /// Checks if given point at `col:row` is within this rectangle
-    pub fn is_point_within(&self, col: u8, row: u8) -> bool {
-        col >= self.coord.col &&
-        col <  self.coord.col + self.size.width &&
-        row >= self.coord.row &&
-        row <  self.coord.row + self.size.height
-    }
-
-    /// Check if `r` fits within this rectangle
-    pub fn is_rect_within(&self, r: &Rect) -> bool {
-        r.coord.col                 >= self.coord.col &&
-        r.coord.col + r.size.width  <= self.coord.col + self.size.width &&
-        r.coord.row                 >= self.coord.row &&
-        r.coord.row + r.size.height <= self.coord.row + self.size.height
-    }
-}
 
 /// Visual style of button
 #[derive(Copy, Clone, PartialEq, PartialOrd)]
@@ -466,13 +365,13 @@ impl Widget {
     }
 
     /// Returns iterator going through widget children
-    pub fn iter_children(&self) -> ChildrenIter {
-        ChildrenIter::new(self)
+    pub fn iter_children(&self) -> wgt::ChildrenIter {
+        wgt::ChildrenIter::new(self)
     }
 
     /// Returns iterator going up the parents hierarhy, but starting at the widget itself
-    pub fn iter_parents(&self) -> ParentsIter {
-        ParentsIter::new(self)
+    pub fn iter_parents(&self) -> wgt::ParentsIter {
+        wgt::ParentsIter::new(self)
     }
 }
 
@@ -503,22 +402,26 @@ impl Link {
 /// Widget RunTime properties
 pub mod prop_rt {
 
+/// CheckBox
 #[derive(Default)]
 pub struct Chbx {
     pub checked: bool,
 }
 
+/// Led
 #[derive(Default)]
 pub struct Led {
     pub lit: bool,
 }
 
+/// ListBox
 #[derive(Default)]
 pub struct Lbx {
     pub item_idx: i16,
     pub sel_idx: i16,
 }
 
+/// ComboBox
 #[derive(Default)]
 pub struct Cbbx {
     pub item_idx: i16,
@@ -526,17 +429,20 @@ pub struct Cbbx {
     pub drop_down: bool,
 }
 
+/// ProgressBar
 #[derive(Default)]
 pub struct Pgbar {
     pub pos: i32,
     pub max: i32,
 }
 
+/// TextBox
 #[derive(Default)]
 pub struct Txtbx {
     pub top_line: i16,
 }
 
+/// PageControl
 #[derive(Default)]
 pub struct Pgctrl {
     pub page: u8
@@ -685,7 +591,6 @@ pub trait WindowState {
 
 // -----------------------------------------------------------------------------------------------
 
-
 struct WindowStateStub;
 
 impl WindowStateStub {
@@ -697,3 +602,5 @@ impl WindowStateStub {
 impl WindowState for WindowStateStub {
     //
 }
+
+// -----------------------------------------------------------------------------------------------

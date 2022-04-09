@@ -1,11 +1,12 @@
-//! # RTwins demo app
+//! # RTWins demo app
 
 #![allow(unused_variables)]
 
 extern crate rtwins;
-use rtwins::{TWins, WindowState};
+use rtwins::wgt;
+use rtwins::WindowState; // to use trait implementation
+
 use std::io::Write;
-use chrono::prelude::*;
 
 // https://doc.rust-lang.org/cargo/guide/project-layout.html
 mod tui_def;
@@ -76,7 +77,7 @@ impl rtwins::pal::Pal for DemoPal {
     }
 
     fn get_time_str(&mut self) -> String {
-        let local_time = Local::now();
+        let local_time = chrono::Local::now();
         local_time.format("%H:%M:%S%.3f ").to_string()
     }
 }
@@ -93,7 +94,7 @@ fn main() {
 
 fn tui_demo() {
     let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN_ARRAY[..]);
-    let mut tw = TWins::new(Box::new(DemoPal::new()));
+    let mut tw = rtwins::TWins::new(Box::new(DemoPal::new()));
     let mut mouse_on = true;
     // let mut wm = WndManager::new();
 
@@ -125,6 +126,7 @@ fn tui_demo() {
 
     loop {
         let (inp_seq, q) = itty.read_input();
+        // TODO: detect that application was sent to background and restore terminal config
 
         if q {
             break;
@@ -151,22 +153,23 @@ fn tui_demo() {
                 // input debug info
                 match inp.typ {
                     InputType::Char(ref cb) => {
-                       tw.lock().log_d(format!("char={}", cb.utf8str()).as_str());
+                        tw.lock().log_d(format!("char={}", cb.utf8str()).as_str());
                     },
                     InputType::Key(ref k) => {
-                       tw.lock().log_d(format!("key={}", inp.name).as_str());
+                        tw.lock().log_d(format!("key={}", inp.name).as_str());
                     },
                     InputType::Mouse(ref m) => {
-                       let mut r = rtwins::Rect::cdeflt();
-                       let wgt_opt = rtwins::wgt_at(&mut dws, m.col, m.row, &mut r);
-                       if let Some(w) = wgt_opt {
-                           tw.lock().log_d(format!("mouse={:?} at {}:{} ({})", m.evt, m.col, m.row, w.prop).as_str());
-                       }
-                       else {
-                           tw.lock().log_d(format!("mouse={:?} at {}:{}", m.evt, m.col, m.row).as_str());
-                       }
+                        let mut r = rtwins::Rect::cdeflt();
+                        let wgt_opt = wgt::at(&mut dws, m.col, m.row, &mut r);
+                        if let Some(w) = wgt_opt {
+                            tw.lock().log_d(format!("mouse={:?} at {}:{} ({})", m.evt, m.col, m.row, w.prop).as_str());
+                        }
+                        else {
+                            tw.lock().log_d(format!("mouse={:?} at {}:{}", m.evt, m.col, m.row).as_str());
+                        }
                     },
-                    _ => {}
+                    InputType::None => {
+                    },
                 }
 
                 // input processing
@@ -231,7 +234,7 @@ fn test_esc_codes() {
     println!(
         "** {}{}{} ** demo; lib v{}{}{}",
         esc::BOLD,
-        rtwins::link!("https://github.com/marmidr/rtwins", "RTWins"),
+        rtwins::url_link!("https://github.com/marmidr/rtwins", "RTWins"),
         esc::NORMAL,
         esc::FG_HOT_PINK,
         rtwins::VER,
@@ -256,7 +259,7 @@ fn test_property_access() {
     };
 
     for (idx, w) in tui_def::WND_MAIN_ARRAY.iter().enumerate() {
-        let w_par = rtwins::wgt_get_parent(w);
+        let w_par = wgt::get_parent(w);
         println!("  {:2}. {:2}:{:10}, idx:{}, chidx:{}, parid {}:{}",
             idx, w.id, w.prop, w.link.own_idx, w.link.children_idx, w_par.id, w_par.prop);
     }

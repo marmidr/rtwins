@@ -690,7 +690,7 @@ pub const SEQ_MAX_LENGTH        : usize = 8;
 // }
 
 #[macro_export]
-macro_rules! link {
+macro_rules! url_link {
     ($url:literal , $capt:literal ) => {
         concat!(
             $crate::osc!("8;;"),

@@ -2,8 +2,8 @@
 
 extern crate rtwins;
 use rtwins::colors::*;
-use rtwins::widget::*;
-use rtwins::widget_impl::*;
+use rtwins::wgt;
+use rtwins::*;
 
 #[rustfmt::skip]
 #[repr(u16)]
@@ -168,8 +168,8 @@ const WINDOW_TEST: Widget = Widget {
 };
 
 
-const WND_TEST_ARRAY: [Widget; rtwins::wgt_count(&WINDOW_TEST)] =
-    rtwins::wgt_transform_array(&WINDOW_TEST);
+const WND_TEST_ARRAY: [Widget; rtwins::wgt::transform::tree_wgt_count(&WINDOW_TEST)] =
+    rtwins::wgt::transform::tree_to_array(&WINDOW_TEST);
 
 struct WndTestState {
     widgets: &'static [Widget],
@@ -253,22 +253,22 @@ fn get_parent() {
     // window parent is the window itself
     {
         let wgt = &WND_TEST_ARRAY[0];
-        let par = wgt_get_parent(wgt);
+        let par = wgt::get_parent(wgt);
         assert!(par.id == wgt.id);
     }
 
     // panel parent is the window
     {
         let wnd = &WND_TEST_ARRAY[0];
-        let wgt = wgt_find_by_id(Id::PgControl.into(), &WND_TEST_ARRAY);
+        let wgt = wgt::find_by_id(Id::PgControl.into(), &WND_TEST_ARRAY);
         assert!(wgt.is_some());
-        let par = wgt_get_parent(wgt.unwrap());
+        let par = wgt::get_parent(wgt.unwrap());
         assert!(par.id == wnd.id);
     }
 
     // try to find invalid widget
     {
-        let wgt = wgt_find_by_id(Id::NotExistingWgt.into(), &WND_TEST_ARRAY);
+        let wgt = wgt::find_by_id(Id::NotExistingWgt.into(), &WND_TEST_ARRAY);
         assert!(wgt.is_none());
     }
 }
@@ -277,30 +277,30 @@ fn get_parent() {
 fn widget_iter() {
     // iterate over panel
     {
-        let pnl_vers = wgt_find_by_id(Id::PanelVersions.into(), &WND_TEST_ARRAY);
+        let pnl_vers = wgt::find_by_id(Id::PanelVersions.into(), &WND_TEST_ARRAY);
         assert!(pnl_vers.is_some());
         let pnl_vers = pnl_vers.unwrap();
 
-        assert_eq!(2, ChildrenIter::new(pnl_vers).count());
+        assert_eq!(2, pnl_vers.iter_children().count());
 
-        for wgt in ChildrenIter::new(pnl_vers) {
+        for wgt in pnl_vers.iter_children() {
             assert_eq!(pnl_vers.link.own_idx, wgt.link.parent_idx);
         }
     }
 
     // iterate over ... checkbox
     {
-        let chbx = wgt_find_by_id(Id::ChbxEnbl.into(), &WND_TEST_ARRAY);
+        let chbx = wgt::find_by_id(Id::ChbxEnbl.into(), &WND_TEST_ARRAY);
         assert!(chbx.is_some());
-        assert_eq!(0, ChildrenIter::new(chbx.unwrap()).count());
+        assert_eq!(0, wgt::ChildrenIter::new(chbx.unwrap()).count());
     }
 }
 
 #[test]
 fn screen_coord() {
-    let lbl = wgt_find_by_id(Id::LabelAbout.into(), &WND_TEST_ARRAY);
+    let lbl = wgt::find_by_id(Id::LabelAbout.into(), &WND_TEST_ARRAY);
     assert!(lbl.is_some());
-    let coord = wgt_get_screen_coord(lbl.unwrap());
+    let coord = wgt::get_screen_coord(lbl.unwrap());
     assert_eq!(33, coord.col);
     assert_eq!(7, coord.row);
 }
@@ -308,27 +308,27 @@ fn screen_coord() {
 #[test]
 fn is_visible() {
     let mut ws = WndTestState::new(&WND_TEST_ARRAY);
-    let lbl = wgt_find_by_id(Id::LabelAbout.into(), &WND_TEST_ARRAY);
+    let lbl = wgt::find_by_id(Id::LabelAbout.into(), &WND_TEST_ARRAY);
     assert!(lbl.is_some());
 
-    assert!(!wgt_is_visible(&mut ws, lbl.unwrap()));
+    assert!(!wgt::is_visible(&mut ws, lbl.unwrap()));
     ws.lbl_about_visible = true;
-    assert!(!wgt_is_visible(&mut ws, lbl.unwrap()));
+    assert!(!wgt::is_visible(&mut ws, lbl.unwrap()));
     ws.wnd_visible = true;
-    assert!(wgt_is_visible(&mut ws, lbl.unwrap()));
+    assert!(wgt::is_visible(&mut ws, lbl.unwrap()));
 }
 
 #[test]
 fn is_enabled() {
     let mut ws = WndTestState::new(&WND_TEST_ARRAY);
-    let lbl = wgt_find_by_id(Id::LabelAbout.into(), &WND_TEST_ARRAY);
+    let lbl = wgt::find_by_id(Id::LabelAbout.into(), &WND_TEST_ARRAY);
     assert!(lbl.is_some());
 
-    assert!(!wgt_is_enabled(&mut ws, lbl.unwrap()));
+    assert!(!wgt::is_enabled(&mut ws, lbl.unwrap()));
     ws.lbl_about_enabled = true;
-    assert!(!wgt_is_enabled(&mut ws, lbl.unwrap()));
+    assert!(!wgt::is_enabled(&mut ws, lbl.unwrap()));
     ws.wnd_enabled = true;
-    assert!(wgt_is_enabled(&mut ws, lbl.unwrap()));
+    assert!(wgt::is_enabled(&mut ws, lbl.unwrap()));
 }
 
 #[test]
@@ -338,30 +338,32 @@ fn widget_at() {
     let mut wgt_r = Rect::cdeflt();
 
     // point beyound main window
-    assert!(wgt_at(&mut ws, 1, 1, &mut wgt_r).is_none());
+    assert!(wgt::at(&mut ws, 1, 1, &mut wgt_r).is_none());
 
     // origin of main window
     {
         let wnd_coord = ws.get_window_coord();
-        let opt_w = wgt_at(&mut ws, wnd_coord.col, wnd_coord.row, &mut wgt_r);
+        let opt_w = wgt::at(&mut ws, wnd_coord.col, wnd_coord.row, &mut wgt_r);
         assert!(opt_w.is_some());
         if let Some(wgt) = opt_w {
             assert!(wgt.id == Id::WndTest.into());
+            assert!(wgt::is_parent(wgt));
         }
     }
 
     // origin of button - this one is always visible
     {
-        let btn = wgt_find_by_id(Id::BtnYes.into(), &WND_TEST_ARRAY);
+        let btn = wgt::find_by_id(Id::BtnYes.into(), &WND_TEST_ARRAY);
         assert!(btn.is_some());
-        let btn_coord = wgt_get_screen_coord(btn.unwrap());
+        let btn_coord = wgt::get_screen_coord(btn.unwrap());
         assert_eq!(60, btn_coord.col);
         assert_eq!(10, btn_coord.row);
 
-        let opt_b = wgt_at(&mut ws, btn_coord.col+2, btn_coord.row, &mut wgt_r);
+        let opt_b = wgt::at(&mut ws, btn_coord.col+2, btn_coord.row, &mut wgt_r);
         assert!(opt_b.is_some());
         if let Some(wgt) = opt_b {
             assert!(wgt.id == Id::BtnYes.into());
+            assert!(!wgt::is_parent(wgt));
         }
     }
 }

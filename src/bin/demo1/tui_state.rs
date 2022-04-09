@@ -1,10 +1,11 @@
 //! Demo - window state
 
-use rtwins::widget::*;
 use rtwins::utils;
 use rtwins::esc;
+use rtwins::wgt::*;
 use rtwins::string_ext::*;
 use rtwins::input::*;
+use rtwins::*;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -102,7 +103,7 @@ impl DemoWndState {
 
 // -----------------------------------------------------------------------------------------------
 
-impl WindowState for DemoWndState {
+impl rtwins::WindowState for DemoWndState {
     /** events **/
 
     fn on_button_down(&mut self, wgt: &Widget, ii: &InputInfo) {
@@ -194,11 +195,11 @@ impl WindowState for DemoWndState {
     }
 
     fn is_visible(&mut self, wgt: &Widget) -> bool {
-        if let rtwins::Property::Page(_) = wgt.prop {
-            let pgctrl = rtwins::wgt_get_parent(wgt);
+        if let Property::Page(_) = wgt.prop {
+            let pgctrl = get_parent(wgt);
             let active_page_no = self.rs.as_pgctrl(pgctrl.id).page;
 
-            if let Some(pn) = rtwins::widget_impl::wgt_page_pageno(wgt) {
+            if let Some(pn) = page_pageno(wgt) {
                 return pn == active_page_no;
             }
         }
@@ -266,8 +267,7 @@ impl WindowState for DemoWndState {
         }
 
         if wgt.id == tui_def::Id::LabelAbout.into() {
-            use rtwins::link;
-            txt.push_str(link!("https://bitbucket.org/marmidr/twins", "About..."));
+            txt.push_str(url_link!("https://bitbucket.org/marmidr/twins", "About..."));
         }
 
         if wgt.id == tui_def::Id::LabelMultiFmt.into() {

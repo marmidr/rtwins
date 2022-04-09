@@ -1,23 +1,10 @@
 //! # RTWins Widget
 
 use crate::string_ext::StrExt;
-use crate::widget;
-use crate::widget::*;
+use crate::widget_def::*;
+use crate::common::*;
 
-#[allow(dead_code)]
-pub struct WidgetSearchStruct
-{
-    searched_id: WId,       // given
-    parent_coord: Coord,    // expected
-    is_visible: bool,       // expected
-    // p_widget: &Widget    // expected
-}
-
-impl WidgetSearchStruct {
-    pub fn new(searched_id: WId) -> Self {
-        WidgetSearchStruct{searched_id, parent_coord: Coord::cdeflt(), is_visible: true}
-    }
-}
+// ---------------------------------------------------------------------------------------------- //
 
 /// Widget drawing state object
 #[allow(dead_code)]
@@ -35,35 +22,45 @@ struct WidgetState
     // } textEditState;
 }
 
-// -----------------------------------------------------------------------------------------------
+#[allow(dead_code)]
+pub struct WidgetSearchStruct
+{
+    searched_id: WId,       // given
+    parent_coord: Coord,    // expected
+    is_visible: bool,       // expected
+    // p_widget: &Widget    // expected
+}
 
+impl WidgetSearchStruct {
+    pub fn new(searched_id: WId) -> Self {
+        WidgetSearchStruct{searched_id, parent_coord: Coord::cdeflt(), is_visible: true}
+    }
+}
+
+// ---------------------------------------------------------------------------------------------- //
+
+pub mod transform {
+
+use super::*;
 /// Counts total number of widgets in tree-like definition
-pub const fn wgt_count(wgt: &Widget) -> usize {
+pub const fn tree_wgt_count(wgt: &Widget) -> usize {
     let mut n: usize = 1;
     let mut i: usize = 0;
     while i < wgt.children.len() {
-        n += wgt_count(&wgt.children[i]);
+        n += tree_wgt_count(&wgt.children[i]);
         i += 1;
     }
     n
 }
 
-/// Checks if given widget is parent-type
-pub const fn wgt_is_parent(wgt: &Widget) -> bool {
-    matches!(wgt.prop,
-        Property::Window(_) |
-        Property::Panel(_)  |
-        Property::Page(_))
-}
-
 /// Flattens tree-like TUI definition into array of widgets
-pub const fn wgt_transform_array<const N: usize>(wgt: &Widget) -> [Widget; N] {
+pub const fn tree_to_array<const N: usize>(wgt: &Widget) -> [Widget; N] {
     let out: [Widget; N] = [Widget::cdeflt(); N];
-    let (_, out) = wgt_transform(out, wgt, 0, 1);
+    let (_, out) = do_transform(out, wgt, 0, 1);
     out
 }
 
-const fn wgt_transform<const N: usize>(mut out: [Widget; N], wgt: &Widget, out_idx: usize, mut next_free_idx: usize) -> (usize, [Widget; N]) {
+const fn do_transform<const N: usize>(mut out: [Widget; N], wgt: &Widget, out_idx: usize, mut next_free_idx: usize) -> (usize, [Widget; N]) {
     out[out_idx] = *wgt;
     out[out_idx].link.own_idx = out_idx as u16;
     out[out_idx].children = &[];
@@ -78,7 +75,7 @@ const fn wgt_transform<const N: usize>(mut out: [Widget; N], wgt: &Widget, out_i
 
     let mut ch_idx = 0;
     while ch_idx < wgt.children.len() {
-        let (nfidx, o) = wgt_transform(out, &wgt.children[ch_idx], out_child_idx, next_free_idx);
+        let (nfidx, o) = do_transform(out, &wgt.children[ch_idx], out_child_idx, next_free_idx);
         out = o;
         out[out_child_idx].link.parent_idx = out_idx as u16;
         next_free_idx = nfidx;
@@ -88,6 +85,16 @@ const fn wgt_transform<const N: usize>(mut out: [Widget; N], wgt: &Widget, out_i
     }
 
     (next_free_idx, out)
+}
+
+} // mod
+
+/// Checks if given widget is parent-type
+pub const fn is_parent(wgt: &Widget) -> bool {
+    matches!(wgt.prop,
+        Property::Window(_) |
+        Property::Panel(_)  |
+        Property::Page(_))
 }
 
 ///
@@ -140,7 +147,7 @@ pub fn wgt_get_wss(/* CallCtx &ctx,*/ wss: &mut WidgetSearchStruct) -> bool
 }
 
 /// Get `wgt`'s parent, using flat widgets layout produced by `wgt_transform_array()`
-pub fn wgt_get_parent<'a>(wgt: &'a Widget) -> &'a Widget {
+pub fn get_parent<'a>(wgt: &'a Widget) -> &'a Widget {
     unsafe {
         // SAFETY:
         // it is guaranted thanks to how the `wgt_transform_array()` places widgets
@@ -153,15 +160,15 @@ pub fn wgt_get_parent<'a>(wgt: &'a Widget) -> &'a Widget {
 }
 
 /// Search for Widget with given `id` in window array
-pub fn wgt_find_by_id<'a>(id: WId, wndarray: &'a [Widget]) -> Option<&'a Widget> {
+pub fn find_by_id<'a>(id: WId, wndarray: &'a [Widget]) -> Option<&'a Widget> {
     wndarray.iter().find(|&&item| item.id == id)
 }
 
-pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
+pub fn get_screen_coord(wgt: &Widget) -> Coord {
     wgt.iter_parents().skip(1).fold(wgt.coord,
         |c, parent| {
             let mut c = c;
-            if let widget::Property::Window(_) = parent.prop {
+            if let Property::Window(_) = parent.prop {
                 // TODO: for popups must be centered on parent window
                 c = c + parent.coord;
             }
@@ -169,7 +176,7 @@ pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
                 c = c + parent.coord;
             }
 
-            if let widget::Property::PageCtrl(ref p) = parent.prop {
+            if let Property::PageCtrl(ref p) = parent.prop {
                 c.col += p.tab_width;
             }
 
@@ -178,15 +185,15 @@ pub fn wgt_get_screen_coord(wgt: &Widget) -> Coord {
     )
 }
 
-pub fn wgt_is_visible(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
+pub fn is_visible(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
     wgt.iter_parents().all(|wgt| ws.is_visible(wgt))
 }
 
-pub fn wgt_is_enabled(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
+pub fn is_enabled(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
     wgt.iter_parents().all(|wgt| ws.is_enabled(wgt))
 }
 
-pub fn wgt_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) -> Option<&'a Widget> {
+pub fn at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) -> Option<&'a Widget> {
     let mut found_wgt: Option<&'a Widget> = None;
     let mut best_rect = Rect::cdeflt();
     best_rect.set_max();
@@ -196,7 +203,7 @@ pub fn wgt_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut 
         let mut stop_searching = true;
         let mut wgt_screen_rect = Rect::cdeflt();
 
-        wgt_screen_rect.coord = wgt_get_screen_coord(wgt);
+        wgt_screen_rect.coord = get_screen_coord(wgt);
         wgt_screen_rect.size = wgt.size;
 
         // eprintln!("{1:2}:{0:} at {2:2}:{3:-2}", wgt.prop, wgt.id, wgt_screen_rect.coord.col, wgt_screen_rect.coord.row);
@@ -256,7 +263,7 @@ pub fn wgt_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut 
         }
 
         if wgt_screen_rect.is_point_within(col, row) {
-            let is_visible = wgt_is_visible(ws, wgt); // controls on tabs? solved
+            let is_visible = is_visible(ws, wgt); // controls on tabs? solved
 
             if is_visible && best_rect.is_rect_within(&wgt_screen_rect) {
                 found_wgt = Some(wgt);
@@ -274,9 +281,9 @@ pub fn wgt_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut 
     found_wgt
 }
 
-pub fn wgt_page_pageno(wgt: &Widget) -> Option<u8> {
+pub fn page_pageno(wgt: &Widget) -> Option<u8> {
     if let Property::Page(_) = wgt.prop {
-        let pgctrl = wgt_get_parent(wgt);
+        let pgctrl = get_parent(wgt);
 
         for (idx, page) in pgctrl.iter_children().enumerate() {
             if page.id == wgt.id {
@@ -353,7 +360,7 @@ impl <'a> Iterator for ParentsIter<'a> {
         if !self.finished {
             let ret = Some(self.wgt);
             self.finished = self.wgt.link.own_idx == 0;
-            self.wgt = wgt_get_parent(self.wgt);
+            self.wgt = get_parent(self.wgt);
             ret
         }
         else {
@@ -361,3 +368,7 @@ impl <'a> Iterator for ParentsIter<'a> {
         }
     }
 }
+
+// -----------------------------------------------------------------------------------------------
+// ---- TWINS PRIVATE FUNCTIONS ------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------

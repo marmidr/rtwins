@@ -5,13 +5,10 @@
 
 use std::cell::RefCell;
 
-use crate::{FontMementoManual, FontMemento, FontAttrib, colors};
-use crate::widget_impl::*;
-use crate::widget::*;
+use crate::*;
 use crate::colors::*;
-use crate::Ctx;
 use crate::string_ext::*;
-use crate::esc;
+use crate::widget_def::*;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -55,7 +52,7 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId])
     }
     else {
         for w in wids {
-            let _wss = WidgetSearchStruct::new(*w);
+            let _wss = wgt::WidgetSearchStruct::new(*w);
         /*
             if (getWidgetWSS(dctx, wss) && wss.isVisible)
             {
@@ -418,7 +415,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
 
             if focused { ctx.push_attr(FontAttrib::Bold); }
             if pressed { ctx.push_attr(FontAttrib::Inverse); }
-            let clbg = if pressed { get_widget_bg_color(dctx.wgt) } else { get_widget_bg_color(wgt_get_parent(dctx.wgt)) };
+            let clbg = if pressed { get_widget_bg_color(dctx.wgt) } else { get_widget_bg_color(wgt::get_parent(dctx.wgt)) };
             ctx.push_cl_bg(clbg);
             ctx.push_cl_fg(clfg);
             ctx.write_str(dctx.strbuff.as_str());
@@ -453,7 +450,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
             // erase trailing shadow
             let mut ctx = dctx.ctx.borrow_mut();
 
-            ctx.push_cl_bg(get_widget_bg_color(wgt_get_parent(dctx.wgt)));
+            ctx.push_cl_bg(get_widget_bg_color(wgt::get_parent(dctx.wgt)));
             ctx.write_char(' ');
 
             // erase shadow below
@@ -470,7 +467,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
             {
                 let mut ctx = dctx.ctx.borrow_mut();
 
-                ctx.push_cl_bg(get_widget_bg_color(wgt_get_parent(dctx.wgt)));
+                ctx.push_cl_bg(get_widget_bg_color(wgt::get_parent(dctx.wgt)));
                 ctx.write_str(crate::fg_color!(233));
                 ctx.write_char('▄');
                 // shadow below
@@ -488,7 +485,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button)
         dctx.strbuff.push(' ');
 
         let clbg = get_widget_bg_color(dctx.wgt);
-        let clparbg = get_widget_bg_color(wgt_get_parent(dctx.wgt));
+        let clparbg = get_widget_bg_color(wgt::get_parent(dctx.wgt));
         let bnt_len = 2 + txt.displayed_width() as i16;
         let scl_shadow = crate::bg_color!(233);
         let scl_bg2fg = transcode_cl_bg_2_fg(encode_cl_bg(clbg));
@@ -652,10 +649,10 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl)
 fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/)
 {
     if erase_bg {
-        let pgctrl = wgt_get_parent(dctx.wgt);
+        let pgctrl = wgt::get_parent(dctx.wgt);
 
         if let Property::PageCtrl(ref pgctrl_prp) = pgctrl.prop {
-            let page_coord = wgt_get_screen_coord(dctx.wgt);
+            let page_coord = wgt::get_screen_coord(dctx.wgt);
             let page_size = pgctrl.size - Size::new(pgctrl_prp.tab_width, 0);
 
             draw_area(&mut dctx.ctx.borrow_mut(),
@@ -905,7 +902,7 @@ fn draw_layer(dctx: &mut DrawCtx, _: &prop::Layer)
     dctx.wgt = layer;
 }
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
 const FRAME_NONE: [char; 9] =
 [
@@ -1112,7 +1109,7 @@ fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
     };
 
     if cl == ColorBG::Inherit {
-        let parent = wgt_get_parent(wgt);
+        let parent = wgt::get_parent(wgt);
         if parent.id != wgt.id {
             cl = get_widget_bg_color(parent);
         }
@@ -1140,7 +1137,7 @@ fn get_widget_fg_color(wgt: &Widget) -> ColorFG {
     };
 
     if cl == ColorFG::Inherit {
-        let parent = wgt_get_parent(wgt);
+        let parent = wgt::get_parent(wgt);
         if parent.id != wgt.id {
             cl = get_widget_fg_color(parent);
         }

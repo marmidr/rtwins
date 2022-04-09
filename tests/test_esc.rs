@@ -392,7 +392,7 @@ fn screen_scroll() {
 
 #[test]
 fn link_url() {
-    let s = String::new() + rtwins::link!("https://github.com/marmidr/rtwins", "RTWins");
+    let s = String::new() + rtwins::url_link!("https://github.com/marmidr/rtwins", "RTWins");
 
     assert!(s.len() > 0);
 }
