@@ -160,7 +160,7 @@ fn tui_demo() {
                     },
                     InputType::Mouse(ref m) => {
                         let mut r = rtwins::Rect::cdeflt();
-                        let wgt_opt = wgt::at(&mut dws, m.col, m.row, &mut r);
+                        let wgt_opt = wgt::find_at(&mut dws, m.col, m.row, &mut r);
                         if let Some(w) = wgt_opt {
                             tw.lock().log_d(format!("mouse={:?} at {}:{} ({})", m.evt, m.col, m.row, w.prop).as_str());
                         }

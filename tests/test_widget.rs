@@ -338,12 +338,12 @@ fn widget_at() {
     let mut wgt_r = Rect::cdeflt();
 
     // point beyound main window
-    assert!(wgt::at(&mut ws, 1, 1, &mut wgt_r).is_none());
+    assert!(wgt::find_at(&mut ws, 1, 1, &mut wgt_r).is_none());
 
     // origin of main window
     {
         let wnd_coord = ws.get_window_coord();
-        let opt_w = wgt::at(&mut ws, wnd_coord.col, wnd_coord.row, &mut wgt_r);
+        let opt_w = wgt::find_at(&mut ws, wnd_coord.col, wnd_coord.row, &mut wgt_r);
         assert!(opt_w.is_some());
         if let Some(wgt) = opt_w {
             assert!(wgt.id == Id::WndTest.into());
@@ -359,11 +359,71 @@ fn widget_at() {
         assert_eq!(60, btn_coord.col);
         assert_eq!(10, btn_coord.row);
 
-        let opt_b = wgt::at(&mut ws, btn_coord.col+2, btn_coord.row, &mut wgt_r);
+        let opt_b = wgt::find_at(&mut ws, btn_coord.col+2, btn_coord.row, &mut wgt_r);
         assert!(opt_b.is_some());
         if let Some(wgt) = opt_b {
             assert!(wgt.id == Id::BtnYes.into());
             assert!(!wgt::is_parent(wgt));
         }
+    }
+}
+
+#[test]
+fn page_idx() {
+    // correct Page 0
+    {
+        let page = wgt::find_by_id(Id::PageVer.into(), &WND_TEST_ARRAY);
+        assert!(page.is_some());
+        let idx = wgt::page_page_idx(&page.unwrap());
+        assert!(idx.is_some());
+        assert_eq!(0, idx.unwrap());
+    }
+
+    // correct Page 1
+    {
+        let page = wgt::find_by_id(Id::PageServ.into(), &WND_TEST_ARRAY);
+        assert!(page.is_some());
+        let idx = wgt::page_page_idx(&page.unwrap());
+        assert!(idx.is_some());
+        assert_eq!(1, idx.unwrap());
+    }
+
+
+    // wrong widget type
+    {
+        let btn = wgt::find_by_id(Id::BtnYes.into(), &WND_TEST_ARRAY);
+        assert!(btn.is_some());
+        let idx = wgt::page_page_idx(&btn.unwrap());
+        assert!(idx.is_none());
+    }
+}
+
+#[test]
+fn page_wid() {
+    // correct Page 1
+    {
+        let pgctrl = wgt::find_by_id(Id::PgControl.into(), &WND_TEST_ARRAY);
+        assert!(pgctrl.is_some());
+        let pgctrl = pgctrl.unwrap();
+        let wid = wgt::pagectrl_page_wid(&pgctrl, 1);
+        assert_eq!(Id::PageServ.into(), wid);
+    }
+
+    // incorrect Page 7
+    {
+        let pgctrl = wgt::find_by_id(Id::PgControl.into(), &WND_TEST_ARRAY);
+        assert!(pgctrl.is_some());
+        let pgctrl = pgctrl.unwrap();
+        let wid = wgt::pagectrl_page_wid(&pgctrl,7);
+        assert_eq!(WIDGET_ID_NONE, wid);
+    }
+
+    // wrong widget type
+    {
+        let btn = wgt::find_by_id(Id::BtnYes.into(), &WND_TEST_ARRAY);
+        assert!(btn.is_some());
+        let btn = btn.unwrap();
+        let wid = wgt::pagectrl_page_wid(&btn, 0);
+        assert_eq!(WIDGET_ID_NONE, wid);
     }
 }

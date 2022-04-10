@@ -78,6 +78,12 @@ pub enum Key {
     //
 }
 
+impl Default for Key {
+    fn default() -> Self {
+        Key::None
+    }
+}
+
 /// Mouse button click events
 #[derive(PartialEq, Debug)]
 pub enum MouseEvent {
@@ -90,6 +96,12 @@ pub enum MouseEvent {
     ButtonReleased,
     WheelUp,
     WheelDown,
+}
+
+impl Default for MouseEvent {
+    fn default() -> Self {
+        MouseEvent::None
+    }
 }
 
 /// Mouse event representation

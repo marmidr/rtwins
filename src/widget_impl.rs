@@ -3,22 +3,34 @@
 use crate::string_ext::StrExt;
 use crate::widget_def::*;
 use crate::common::*;
+use crate::input;
 
 // ---------------------------------------------------------------------------------------------- //
 
-/// Widget drawing state object
+/// State object for current top window.
+// using WId instead of references will solve lifetime problems
 #[allow(dead_code)]
+#[derive(Default)]
 struct WidgetState {
-    // p_focused_wgt: Option<&Widget>,
-    // p_mouse_down_wgt: Option<&Widget>,
-    // p_drop_down_combo: Option<&Widget>,
-    // mouse_down_key_code: input::KeyCode,
-    // struct                              // state of Edit being modified
-    // {
-    //     const Widget *pWgt = nullptr;
-    //     int16_t cursorPos = 0;
-    //     String  str;
-    // } textEditState;
+    focused_wgt:     WId,
+    mouse_down_wgt:  WId,
+    drop_down_combo: WId,
+    text_edit_state: TextEditState,
+    mouse_down_key_code: input::Key,
+}
+
+impl WidgetState {
+    pub fn reset(&mut self) {
+        *self = Self::default();
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Default)]
+struct TextEditState {
+    wgt: WId,
+    cursor_pos: i16,
+    txt: String,
 }
 
 #[allow(dead_code)]
@@ -35,8 +47,16 @@ impl WidgetSearchStruct {
     }
 }
 
+// https://www.sitepoint.com/rust-global-variables/
+thread_local!(
+    static WGT_STATE: std::cell::RefCell<WidgetState> = std::cell::RefCell::new(WidgetState::default());
+);
+
+// ---------------------------------------------------------------------------------------------- //
+// ---- UI TRANSFORMATION ----------------------------------------------------------------------- //
 // ---------------------------------------------------------------------------------------------- //
 
+/// Transforming user UI definition into flat working copy
 pub mod transform {
 
 use super::*;
@@ -52,7 +72,7 @@ pub const fn tree_wgt_count(wgt: &Widget) -> usize {
     n
 }
 
-/// Flattens tree-like TUI definition into array of widgets
+/// Transforms user tree-like UI definition into flat array of widgets with Link structure filled-in
 pub const fn tree_to_array<const N: usize>(wgt: &Widget) -> [Widget; N] {
     let out: [Widget; N] = [Widget::cdeflt(); N];
     let (_, out) = do_transform(out, wgt, 0, 1);
@@ -87,6 +107,10 @@ const fn do_transform<const N: usize>(mut out: [Widget; N], wgt: &Widget, out_id
 }
 
 } // mod
+
+// ---------------------------------------------------------------------------------------------- //
+// ---- WIDGETS GENERAL FUNCTIONS --------------------------------------------------------------- //
+// ---------------------------------------------------------------------------------------------- //
 
 /// Checks if given widget is parent-type
 pub const fn is_parent(wgt: &Widget) -> bool {
@@ -157,41 +181,14 @@ pub fn get_parent<'a>(wgt: &'a Widget) -> &'a Widget {
     }
 }
 
-/// Search for Widget with given `id` in window array
+/// Search for Widget with given `id` in transformed widgets array
 pub fn find_by_id<'a>(id: WId, wndarray: &'a [Widget]) -> Option<&'a Widget> {
     wndarray.iter().find(|&&item| item.id == id)
 }
 
-pub fn get_screen_coord(wgt: &Widget) -> Coord {
-    wgt.iter_parents().skip(1).fold(wgt.coord,
-        |c, parent| {
-            let mut c = c;
-            if let Property::Window(_) = parent.prop {
-                // TODO: for popups must be centered on parent window
-                c = c + parent.coord;
-            }
-            else {
-                c = c + parent.coord;
-            }
-
-            if let Property::PageCtrl(ref p) = parent.prop {
-                c.col += p.tab_width;
-            }
-
-            c
-        }
-    )
-}
-
-pub fn is_visible(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
-    wgt.iter_parents().all(|wgt| ws.is_visible(wgt))
-}
-
-pub fn is_enabled(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
-    wgt.iter_parents().all(|wgt| ws.is_enabled(wgt))
-}
-
-pub fn at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) -> Option<&'a Widget> {
+/// Finds visible Widget at cursor position `col:row`;
+/// Sets `wgt_rect` to found widget screen-based coordinates
+pub fn find_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) -> Option<&'a Widget> {
     let mut found_wgt: Option<&'a Widget> = None;
     let mut best_rect = Rect::cdeflt();
     best_rect.set_max();
@@ -279,12 +276,53 @@ pub fn at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect
     found_wgt
 }
 
-pub fn page_pageno(wgt: &Widget) -> Option<u8> {
-    if let Property::Page(_) = wgt.prop {
-        let pgctrl = get_parent(wgt);
+pub fn get_screen_coord(wgt: &Widget) -> Coord {
+    wgt.iter_parents().skip(1).fold(wgt.coord,
+        |c, parent| {
+            let mut c = c;
+            if let Property::Window(_) = parent.prop {
+                // TODO: for popups must be centered on parent window
+                c = c + parent.coord;
+            }
+            else {
+                c = c + parent.coord;
+            }
 
-        for (idx, page) in pgctrl.iter_children().enumerate() {
-            if page.id == wgt.id {
+            if let Property::PageCtrl(ref p) = parent.prop {
+                c.col += p.tab_width;
+            }
+
+            c
+        }
+    )
+}
+
+pub fn is_visible(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
+    wgt.iter_parents().all(|wgt| ws.is_visible(wgt))
+}
+
+pub fn is_enabled(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
+    wgt.iter_parents().all(|wgt| ws.is_enabled(wgt))
+}
+
+/// Shall be called eg. on top window change
+pub fn reset_internal_state() {
+    WGT_STATE.with(|wgstate|
+        wgstate.borrow_mut().reset()
+    );
+}
+
+// ---------------------------------------------------------------------------------------------- //
+// ---- WIDGETS HELPER FUNCTIONS ---------------------------------------------------------------- //
+// ---------------------------------------------------------------------------------------------- //
+
+/// Returns given page index on parent PageCtrl
+pub fn page_page_idx(page: &Widget) -> Option<u8> {
+    if let Property::Page(_) = page.prop {
+        let pgctrl = get_parent(page);
+
+        for (idx, pg) in pgctrl.iter_children().enumerate() {
+            if page.id == pg.id {
                 return Some(idx as u8);
             }
         }
@@ -293,7 +331,51 @@ pub fn page_pageno(wgt: &Widget) -> Option<u8> {
     None
 }
 
-// -----------------------------------------------------------------------------------------------
+/// Returns WId of page at PageCtrl pages index
+pub fn pagectrl_page_wid(pgctrl: &Widget, page_idx: u8) -> WId {
+    if let Property::PageCtrl(_) = pgctrl.prop {
+        if let Some(pg) = pgctrl.iter_children().skip(page_idx as usize).next() {
+            return pg.id;
+        }
+    }
+
+    WIDGET_ID_NONE
+}
+
+// void selectPage(const Widget *pWindowWidgets, WID pageControlID, WID pageID)
+// {
+//     const auto *p_pgctrl = getWidget(pWindowWidgets, pageControlID);
+//     int8_t pg_idx = getPageIdx(p_pgctrl, pageID);
+
+//     if (pg_idx >= 0)
+//     {
+//         CallCtx ctx(pWindowWidgets);
+//         ctx.pState->onPageControlPageChange(p_pgctrl, pg_idx);
+//         ctx.pState->invalidate(pageControlID);
+//     }
+//     else
+//     {
+//         TWINS_LOG_W("Widget Id=%d is not PageControl Id=%d page", pageID, pageControlID);
+//     }
+// }
+
+// void selectNextPage(const Widget *pWindowWidgets, WID pageControlID, bool next)
+// {
+//     CallCtx ctx(pWindowWidgets);
+//     const auto *p_pgctrl = getWidget(pWindowWidgets, pageControlID);
+//     pgControlChangePage(ctx, p_pgctrl, next);
+// }
+
+/// Mark internal clicked widget id
+pub fn mark_button_down(btn: &Widget, is_down: bool) {
+    WGT_STATE.with(|wgstate|
+        wgstate.borrow_mut().mouse_down_wgt = if is_down { btn.id } else { WIDGET_ID_NONE }
+    );
+}
+
+// ---------------------------------------------------------------------------------------------- //
+// ---- WIDGET ITERATORS ------------------------------------------------------------------------ //
+// ---------------------------------------------------------------------------------------------- //
 
 /// Iterator over parent-type Widget children
 pub struct ChildrenIter <'a> {
@@ -337,7 +419,7 @@ impl <'a> Iterator for ChildrenIter<'a> {
     }
 }
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
 /// Iterator that traverses over parents hierarchy, starting at `wgt`, up to the root Window
 pub struct ParentsIter <'a> {
@@ -367,6 +449,6 @@ impl <'a> Iterator for ParentsIter<'a> {
     }
 }
 
-// -----------------------------------------------------------------------------------------------
-// ---- TWINS PRIVATE FUNCTIONS ------------------------------------------------------------------
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
+// ---- PRIVATE FUNCTIONS ----------------------------------------------------------------------- //
+// ---------------------------------------------------------------------------------------------- //

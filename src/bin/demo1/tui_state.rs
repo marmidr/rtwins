@@ -199,7 +199,7 @@ impl rtwins::WindowState for DemoWndState {
             let pgctrl = get_parent(wgt);
             let active_page_no = self.rs.as_pgctrl(pgctrl.id).page;
 
-            if let Some(pn) = page_pageno(wgt) {
+            if let Some(pn) = page_page_idx(wgt) {
                 return pn == active_page_no;
             }
         }

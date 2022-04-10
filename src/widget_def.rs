@@ -11,37 +11,6 @@ use crate::utils::StringListRc;
 
 // ---------------------------------------------------------------------------------------------- //
 
-/// Visual style of button
-#[derive(Copy, Clone, PartialEq, PartialOrd)]
-pub enum ButtonStyle {
-    Simple,
-    Solid,
-    Solid1p5,
-}
-
-/// Visual style of Progress Bar
-#[derive(Copy, Clone, PartialEq, PartialOrd)]
-pub enum PgBarStyle {
-    /// #
-    Hash,
-    ///  ▒
-    Shade,
-    /// □
-    Rectangle,
-}
-
-/// Window, panel and page control frame styles
-#[derive(Copy, Clone, PartialEq, PartialOrd)]
-pub enum FrameStyle {
-    None,
-    Single,
-    Double,
-    PgControl,
-    ListBox
-}
-
-// ---------------------------------------------------------------------------------------------- //
-
 /// Widget unique identifier
 pub type WId = u16;
 
@@ -334,7 +303,39 @@ impl Property {
 
 // ---------------------------------------------------------------------------------------------- //
 
-/// Widget itself
+/// Visual style of button
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
+pub enum ButtonStyle {
+    Simple,
+    Solid,
+    Solid1p5,
+}
+
+/// Visual style of Progress Bar
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
+pub enum PgBarStyle {
+    /// #
+    Hash,
+    ///  ▒
+    Shade,
+    /// □
+    Rectangle,
+}
+
+/// Window, panel and page control frame styles
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
+pub enum FrameStyle {
+    None,
+    Single,
+    Double,
+    PgControl,
+    ListBox
+}
+
+// ---------------------------------------------------------------------------------------------- //
+
+/// Widget itself, used for static UI definition;
+/// contains only static, readonly properties
 #[derive(Copy, Clone)]
 pub struct Widget {
     /// Unique widget ID
@@ -397,6 +398,8 @@ impl Link {
     }
 }
 
+// ---------------------------------------------------------------------------------------------- //
+// ---- RUNTIME PROPERTIES ---------------------------------------------------------------------- //
 // ---------------------------------------------------------------------------------------------- //
 
 /// Widget RunTime properties
@@ -532,6 +535,8 @@ impl RuntimeState {
     impl_as!(as_pgctrl, Pgctrl);
 }
 
+// ---------------------------------------------------------------------------------------------- //
+// ---- WINDOW STATE TRAIT ---------------------------------------------------------------------- //
 // ---------------------------------------------------------------------------------------------- //
 
 /// Window state and event handler
