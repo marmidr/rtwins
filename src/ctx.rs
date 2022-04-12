@@ -73,7 +73,7 @@ impl Ctx {
     }
 
     // Logs
-
+    // TODO: logging always accessible, without Ctx object. if global Ctx locked, store text in the buffer, flush when unlocking the Ctx
     fn log(&mut self, fg: &str, prefix: &str, msg: &str) {
         let time_str = self.pal.get_logs_timestr();
 

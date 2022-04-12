@@ -115,9 +115,12 @@ const fn do_transform<const N: usize>(mut out: [Widget; N], wgt: &Widget, out_id
 /// Checks if given widget is parent-type
 pub const fn is_parent(wgt: &Widget) -> bool {
     matches!(wgt.prop,
-        Property::Window(_) |
-        Property::Panel(_)  |
-        Property::Page(_))
+        Property::Window(_)   |
+        Property::Panel(_)    |
+        Property::PageCtrl(_) |
+        Property::Page(_)     |
+        Property::Layer(_)
+    )
 }
 
 ///
@@ -182,7 +185,7 @@ pub fn get_parent<'a>(wgt: &'a Widget) -> &'a Widget {
 }
 
 /// Search for Widget with given `id` in transformed widgets array
-pub fn find_by_id<'a>(id: WId, wndarray: &'a [Widget]) -> Option<&'a Widget> {
+pub fn find_by_id<'a>(wndarray: &'a [Widget], id: WId) -> Option<&'a Widget> {
     wndarray.iter().find(|&&item| item.id == id)
 }
 
@@ -342,29 +345,34 @@ pub fn pagectrl_page_wid(pgctrl: &Widget, page_idx: u8) -> WId {
     WIDGET_ID_NONE
 }
 
-// void selectPage(const Widget *pWindowWidgets, WID pageControlID, WID pageID)
-// {
-//     const auto *p_pgctrl = getWidget(pWindowWidgets, pageControlID);
-//     int8_t pg_idx = getPageIdx(p_pgctrl, pageID);
+/// checks both `pgctrl` widget type and if `page_id` is one of its pages
+pub fn pagectrl_find_page<'a>(pgctrl: &'a Widget, page_id: WId) -> Option<&'a Widget> {
+    if let Property::PageCtrl(_) = pgctrl.prop {
+        return pgctrl.iter_children().find(|pg| pg.id == page_id);
+    }
 
-//     if (pg_idx >= 0)
-//     {
-//         CallCtx ctx(pWindowWidgets);
-//         ctx.pState->onPageControlPageChange(p_pgctrl, pg_idx);
-//         ctx.pState->invalidate(pageControlID);
-//     }
-//     else
-//     {
-//         TWINS_LOG_W("Widget Id=%d is not PageControl Id=%d page", pageID, pageControlID);
-//     }
-// }
+    None
+}
 
-// void selectNextPage(const Widget *pWindowWidgets, WID pageControlID, bool next)
-// {
-//     CallCtx ctx(pWindowWidgets);
-//     const auto *p_pgctrl = getWidget(pWindowWidgets, pageControlID);
-//     pgControlChangePage(ctx, p_pgctrl, next);
-// }
+pub fn pagectrl_select_page(ws: &mut dyn WindowState, pgctrl_id: WId, page_id: WId) {
+    if let Some(pgctrl) = find_by_id(ws.get_widgets(), pgctrl_id) {
+        if let Some(page) = pagectrl_find_page(pgctrl, page_id) {
+            if let Some(pg_idx) = page_page_idx(&page) {
+                ws.on_page_control_page_change(pgctrl, pg_idx);
+                ws.invalidate(&[pgctrl_id]);
+                return;
+            }
+        }
+    }
+
+    // TWINS_LOG_W("Widget Id=%d is not PageControl Id=%d page", pageID, pageControlID);
+}
+
+pub fn pagectrl_select_next_page(ws: &mut dyn WindowState, pgctrl_id: WId, next: bool) {
+    if let Some(pgctrl) = find_by_id(ws.get_widgets(), pgctrl_id) {
+        pagectrl_change_page(ws, pgctrl, next);
+    }
+}
 
 /// Mark internal clicked widget id
 pub fn mark_button_down(btn: &Widget, is_down: bool) {
@@ -452,3 +460,41 @@ impl <'a> Iterator for ParentsIter<'a> {
 // ---------------------------------------------------------------------------------------------- //
 // ---- PRIVATE FUNCTIONS ----------------------------------------------------------------------- //
 // ---------------------------------------------------------------------------------------------- //
+
+fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
+    // assert(pWgt->type == Widget::PageCtrl);
+
+    let pgidx = {
+        let mut idx = ws.get_page_ctrl_page_index(pgctrl) as i16;
+        idx += if next { 1 } else { -1 };
+        if idx < 0 {
+            idx = pgctrl.link.children_cnt as i16 -1;
+        }
+        if idx >= pgctrl.link.children_cnt as i16 {
+            idx = 0;
+        }
+        idx as u8
+    };
+
+    ws.on_page_control_page_change(pgctrl, pgidx);
+    ws.invalidate(&[pgctrl.id]);
+
+    // cancel EDIT mode
+    WGT_STATE.with(|wgstate|
+        wgstate.borrow_mut().text_edit_state.wgt = WIDGET_ID_NONE
+    );
+
+    if let Some(focused) = find_by_id(ws.get_widgets(), ws.get_focused_id()) {
+        // TWINS_LOG_D("focused id=%d (%s)", p_wgt->id, toString(p_wgt->type));
+        WGT_STATE.with(|wgstate|
+            wgstate.borrow_mut().focused_wgt = focused.id
+        );
+        // setCursorAt(ctx, p_wgt); TODO:
+    }
+    else {
+        WGT_STATE.with(|wgstate|
+            wgstate.borrow_mut().focused_wgt = WIDGET_ID_NONE
+        );
+        // moveToHome(); TODO
+    }
+}

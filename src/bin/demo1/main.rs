@@ -136,6 +136,12 @@ fn tui_demo() {
                 ique.push_back(*b);
             }
 
+            // TODO: zamiast lock na mutex, własna funkcja która
+            // - blokuje mutexa
+            // - ustawia wewnętrzną zmienną statyczną na Ctx, pozwalającą na dostęp do Ctx z dowolnego miejsca w czasie 'sesji'
+            // - zwraca guard który w Drop kasuje tą zmienną statyczną
+            let mut twl = tw.lock();
+
             // print raw sequence
             if false {
                 let mut s = String::with_capacity(10);
@@ -143,7 +149,7 @@ fn tui_demo() {
                     if *b == 0 { break; }
                     if *b < b' ' { s.push('�') } else { s.push(*b as char) };
                 }
-                tw.lock().log_d(format!("seq={}", s).as_str());
+                twl.log_d(format!("seq={}", s).as_str());
             }
 
             while dec.decode_input_seq(&mut ique, &mut inp) > 0 {
@@ -153,19 +159,19 @@ fn tui_demo() {
                 // input debug info
                 match inp.typ {
                     InputType::Char(ref cb) => {
-                        tw.lock().log_d(format!("char={}", cb.utf8str()).as_str());
+                        twl.log_d(format!("char={}", cb.utf8str()).as_str());
                     },
                     InputType::Key(ref k) => {
-                        tw.lock().log_d(format!("key={}", inp.name).as_str());
+                        twl.log_d(format!("key={}", inp.name).as_str());
                     },
                     InputType::Mouse(ref m) => {
                         let mut r = rtwins::Rect::cdeflt();
                         let wgt_opt = wgt::find_at(&mut dws, m.col, m.row, &mut r);
                         if let Some(w) = wgt_opt {
-                            tw.lock().log_d(format!("mouse={:?} at {}:{} ({})", m.evt, m.col, m.row, w.prop).as_str());
+                            twl.log_d(format!("mouse={:?} at {}:{} ({})", m.evt, m.col, m.row, w.prop).as_str());
                         }
                         else {
-                            tw.lock().log_d(format!("mouse={:?} at {}:{}", m.evt, m.col, m.row).as_str());
+                            twl.log_d(format!("mouse={:?} at {}:{}", m.evt, m.col, m.row).as_str());
                         }
                     },
                     InputType::None => {
@@ -174,8 +180,6 @@ fn tui_demo() {
 
                 // input processing
                 if let InputType::Key(ref k) = inp.typ {
-                    let mut twl = tw.lock();
-
                     if *k == Key::F2 {
                         // wndMain.wndEnabled = !wndMain.wndEnabled;
                         // wndMain.invalidate(ID_WND);
@@ -209,7 +213,7 @@ fn tui_demo() {
                     }
                 }
 
-                tw.lock().flush_buff();
+                twl.flush_buff();
             } // decode_input_seq
         }
         else {
