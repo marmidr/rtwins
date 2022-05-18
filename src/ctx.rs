@@ -78,19 +78,23 @@ impl Ctx {
         let time_str = self.pal.get_logs_timestr();
 
         self.pal.flush_buff();
-        self.pal.mark_logging(true);
         self.cursor_save_pos();
         self.move_to(0, self.logs_row);
-        self.insert_lines(1);
+        self.push_cl_bg(ColorBG::Default);
         self.pal.write_str(fg);
+        self.insert_lines(1);
+
+        self.pal.mark_logging(true);
         self.pal.write_str(&time_str);
         self.pal.write_str(prefix);
         self.pal.write_str(msg);
+        self.pal.mark_logging(false);
+
         self.pal.write_str(esc::FG_DEFAULT);
+        self.pop_cl_bg();
         self.pal.write_char('\n');
         self.cursor_restore_pos();
         self.pal.flush_buff();
-        self.pal.mark_logging(false);
     }
 
     /// Print Debug message

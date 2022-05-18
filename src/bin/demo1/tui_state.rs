@@ -17,7 +17,7 @@ pub struct DemoWndState {
     /// all window widgets, starting with the window widget itself
     widgets: &'static [Widget],
     /// widgets runtime state
-    rs: RuntimeState,
+    pub rs: RuntimeState,
     /// currently focused widget
     focused_id: WId,
     /// text of focused text edit widget
@@ -336,8 +336,7 @@ impl rtwins::WindowState for DemoWndState {
         *item_idx = rs.item_idx;
         *sel_idx = rs.sel_idx;
         *items_count = self.lbx_items.len() as i16;
-        // *drop_down = rs.drop_down;
-        *drop_down = true;
+        *drop_down = rs.drop_down;
     }
 
     fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {

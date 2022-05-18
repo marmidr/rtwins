@@ -135,7 +135,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 2, row: 1 },
                 prop: prop::Label {
                     title: "FwVer: 1.1",
-                    fg_color: ColorFG::YellowIntense,
+                    fg_color: ColorFG::Blue,
                     bg_color: ColorBG::Inherit,
                 }.into(),
                 ..Widget::cdeflt()

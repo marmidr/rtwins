@@ -16,15 +16,15 @@ mod tui_state;
 
 struct DemoPal {
     line_buff: String,
-    logging: bool,
+    writing_logs: bool,
     started_at: std::time::Instant,
 }
 
 impl DemoPal {
     fn new() -> Self {
         DemoPal {
-            line_buff: String::with_capacity(1000),
-            logging: true,
+            line_buff: String::with_capacity(500),
+            writing_logs: false,
             started_at: std::time::Instant::now(),
         }
     }
@@ -46,20 +46,26 @@ impl rtwins::pal::Pal for DemoPal {
     }
 
     fn flush_buff(&mut self) {
-        if self.logging {
-            // write to logs.txt
-        }
-
         std::io::stdout()
             .lock()
             .write(self.line_buff.as_bytes())
             .expect("Error writing to stdout");
 
+        std::io::stdout()
+            .lock()
+            .flush()
+            .expect("Error flushing stdout");
+
         self.line_buff.clear();
+        // self.sleep(100);
     }
 
     fn mark_logging(&mut self, active: bool) {
-        self.logging = active;
+        if self.writing_logs {
+            // write to logs.txt
+        }
+
+        self.writing_logs = active;
     }
 
     fn sleep(&mut self, ms: u16) {
@@ -180,9 +186,12 @@ fn tui_demo() {
 
                 // input processing
                 if let InputType::Key(ref k) = inp.typ {
+                    use tui_def::Id;
+
                     if *k == Key::F2 {
-                        // wndMain.wndEnabled = !wndMain.wndEnabled;
-                        // wndMain.invalidate(ID_WND);
+                        dws.rs.set_enabled(tui_def::Id::WndMain.into(),
+                            !dws.rs.get_enabled_or_default(tui_def::Id::WndMain.into()));
+                        dws.invalidate(&[rtwins::WIDGET_ID_ALL]);
                     }
                     else if *k == Key::F4 {
                         mouse_on = !mouse_on;
@@ -192,28 +201,31 @@ fn tui_demo() {
                     }
                     else if *k == Key::F5 {
                         twl.screen_clr_all();
-
                         // draw windows from bottom to top
-                        // twl.draw_invalidated(&mut dws);
+                        // TODO: wm.redraw_all();
+                        twl.draw_wnd(&mut dws);
                         twl.flush_buff();
-                        // wm.redraw_all();
                     }
                     else if *k == Key::F6 {
                         twl.log_clear();
                     }
                     else if inp.kmod.has_ctrl() && (*k == Key::PgUp || *k == Key::PgDown) {
                         // if wm.is_top_wnd(&dws) {
-                        //     twins::wgt::selectNextPage(wndMain.getWidgets(), ID_PGCONTROL, kc.key == twins::Key::PgDown);
+                            rtwins::wgt::pagectrl_select_next_page(&mut dws, Id::PgControl.into(), *k == Key::PgDown);
+                            twl.draw_wnd(&mut dws);
+                            // TODO: dws.invalidate(&[Id::PgControl.into()]);
                         // }
                     }
                     else if *k == Key::F9 || *k == Key::F10 {
                         // if wm.is_top_wnd(&dws) {
-                        //     twins::wgt::selectNextPage(wndMain.getWidgets(), ID_PGCONTROL, kc.key == twins::Key::F10);
+                            rtwins::wgt::pagectrl_select_next_page(&mut dws, Id::PgControl.into(), *k == Key::F10);
+                            twl.draw_wnd(&mut dws);
+                            // TODO: dws.invalidate(&[Id::PgControl.into()]);
                         // }
                     }
                 }
 
-                twl.flush_buff();
+                twl.draw_invalidated(&mut dws);
             } // decode_input_seq
         }
         else {
