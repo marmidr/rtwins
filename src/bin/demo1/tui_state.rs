@@ -373,8 +373,6 @@ impl rtwins::WindowState for DemoWndState {
 
     fn invalidate(&mut self, wids: &[WId]) {
         self.invalidated.extend(wids.iter());
-        // self.invalidated.sort();
-        // self.invalidated.dedup();
     }
 
     fn invalidate_clear(&mut self) {

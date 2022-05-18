@@ -4,6 +4,7 @@ use crate::string_ext::StrExt;
 use crate::widget_def::*;
 use crate::common::*;
 use crate::input;
+use crate::*;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -28,23 +29,9 @@ impl WidgetState {
 #[allow(dead_code)]
 #[derive(Default)]
 struct TextEditState {
-    wgt: WId,
+    wgt_id: WId,
     cursor_pos: i16,
     txt: String,
-}
-
-#[allow(dead_code)]
-pub struct WidgetSearchStruct {
-    searched_id: WId,       // given
-    parent_coord: Coord,    // expected
-    is_visible: bool,       // expected
-    // p_widget: &Widget    // expected
-}
-
-impl WidgetSearchStruct {
-    pub fn new(searched_id: WId) -> Self {
-        WidgetSearchStruct{searched_id, parent_coord: Coord::cdeflt(), is_visible: true}
-    }
 }
 
 // https://www.sitepoint.com/rust-global-variables/
@@ -121,54 +108,6 @@ pub const fn is_parent(wgt: &Widget) -> bool {
         Property::Page(_)     |
         Property::Layer(_)
     )
-}
-
-///
-pub fn wgt_get_wss(/* CallCtx &ctx,*/ wss: &mut WidgetSearchStruct) -> bool {
-    if wss.searched_id == WIDGET_ID_NONE {
-        return false;
-    }
-
-/*
-    const Widget *p_wgt = ctx.pWidgets;
-
-    for (;; p_wgt++)
-    {
-        if (p_wgt->id == wss.searchedID)
-            break;
-
-        // pWndArray is terminated by empty entry
-        if (p_wgt->id == WIDGET_ID_NONE)
-            return false;
-    }
-
-    wss.pWidget = p_wgt;
-    wss.isVisible = ctx.pState->isVisible(p_wgt);
-
-    // go up the widgets hierarchy
-    int parent_idx = p_wgt->link.parentIdx;
-
-    for (;;)
-    {
-        const auto *p_parent = ctx.pWidgets + parent_idx;
-        wss.isVisible &= ctx.pState->isVisible(p_parent);
-
-        Coord coord = p_parent->coord;
-        if (p_parent->type == Widget::Type::Window)
-            ctx.pState->getWindowCoord(p_parent, coord);
-        wss.parentCoord += coord;
-
-        if (p_parent->type == Widget::Type::PageCtrl)
-            wss.parentCoord.col += p_parent->pagectrl.tabWidth;
-
-        if (parent_idx == 0)
-            break;
-
-        parent_idx = p_parent->link.parentIdx;
-    }
-     true;
- */
-    false
 }
 
 /// Get `wgt`'s parent, using flat widgets layout produced by `tree_to_array()`
@@ -298,6 +237,74 @@ pub fn get_screen_coord(wgt: &Widget) -> Coord {
             c
         }
     )
+}
+
+/// Move cursor to the best position for given type of the widget
+pub fn set_cursor_at(ctx: &mut Ctx, ws: &mut dyn WindowState, wgt: &Widget) {
+    let mut coord = get_screen_coord(wgt);
+
+    match wgt.prop {
+        Property::TextEdit(ref _p) => {
+            WGT_STATE.with(|wgtstate|{
+                let text_edit_state = &wgtstate.borrow().text_edit_state;
+
+                if wgt.id == text_edit_state.wgt_id {
+                    let max_w = wgt.size.width -3;
+                    coord.col += text_edit_state.cursor_pos as u8;
+                    let mut cursor_pos = text_edit_state.cursor_pos;
+                    let delta = max_w/2;
+
+                    while cursor_pos >= max_w as i16 - 1 {
+                        coord.col -= delta;
+                        cursor_pos -= delta as i16;
+                    }
+                }
+                else {
+                    coord.col += wgt.size.width - 2;
+                }
+            });
+        },
+        Property::CheckBox(ref _p) => {
+            coord.col += 1;
+        },
+        Property::Radio(ref _p) => {
+            coord.col += 1;
+        },
+        Property::Button(ref p) => {
+            match p.style {
+                ButtonStyle::Simple => {
+                    coord.col += 2;
+                },
+                ButtonStyle::Solid => {
+                    coord.col += 1;
+                },
+                ButtonStyle::Solid1p5 => {
+                    coord.col += 1;
+                    coord.row += 1;
+                },
+            }
+        },
+        Property::PageCtrl(ref p) => {
+            coord.row += 1 + p.vert_offs;
+            coord.row += ws.get_page_ctrl_page_index(wgt)
+        },
+        Property::ListBox(ref p) => {
+            let mut idx = 0i16;
+            let mut selidx = 0i16;
+            let mut cnt = 0i16;
+            let frame_size = p.no_frame as u8;
+            ws.get_list_box_state(wgt, &mut idx, &mut selidx, &mut cnt);
+
+            let page_size = wgt.size.height - (frame_size * 2);
+            let row = selidx % page_size as i16;
+
+            coord.col += frame_size;
+            coord.row += frame_size + row as u8;
+        },
+        _ => {}
+    }
+
+    ctx.move_to(coord.col as u16, coord.row as u16);
 }
 
 pub fn is_visible(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
@@ -481,7 +488,7 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
 
     // cancel EDIT mode
     WGT_STATE.with(|wgstate|
-        wgstate.borrow_mut().text_edit_state.wgt = WIDGET_ID_NONE
+        wgstate.borrow_mut().text_edit_state.wgt_id = WIDGET_ID_NONE
     );
 
     if let Some(focused) = find_by_id(ws.get_widgets(), ws.get_focused_id()) {

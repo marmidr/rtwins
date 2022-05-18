@@ -15,6 +15,8 @@ pub type PalBox = Box<dyn crate::pal::Pal>;
 
 /// TUI drawing API and context
 ///
+
+// TODO: Ctx->Term
 pub struct Ctx {
     pub pal: PalBox,
     pub logs_row: u16,

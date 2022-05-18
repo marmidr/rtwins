@@ -117,13 +117,6 @@ fn tui_demo() {
         twl.flush_buff();
     }
 
-    {
-        let mut twl = tw.lock();
-        use tui_def::Id::*;
-        dws.invalidate(&[LabelDate.into(), BtnYes.into(), Prgbar3.into()]);
-        twl.draw_invalidated(&mut dws);
-    }
-
     println!("Press Ctrl-D to quit");
     let mut itty = rtwins::input_tty::InputTty::new(2000);
     let mut ique = rtwins::input_decoder::InputQue::new();
@@ -189,8 +182,8 @@ fn tui_demo() {
                     use tui_def::Id;
 
                     if *k == Key::F2 {
-                        dws.rs.set_enabled(tui_def::Id::WndMain.into(),
-                            !dws.rs.get_enabled_or_default(tui_def::Id::WndMain.into()));
+                        dws.rs.set_enabled(Id::WndMain.into(),
+                            !dws.rs.get_enabled_or_default(Id::WndMain.into()));
                         dws.invalidate(&[rtwins::WIDGET_ID_ALL]);
                     }
                     else if *k == Key::F4 {
@@ -212,15 +205,13 @@ fn tui_demo() {
                     else if inp.kmod.has_ctrl() && (*k == Key::PgUp || *k == Key::PgDown) {
                         // if wm.is_top_wnd(&dws) {
                             rtwins::wgt::pagectrl_select_next_page(&mut dws, Id::PgControl.into(), *k == Key::PgDown);
-                            twl.draw_wnd(&mut dws);
-                            // TODO: dws.invalidate(&[Id::PgControl.into()]);
+                            dws.invalidate(&[Id::PgControl.into()]);
                         // }
                     }
                     else if *k == Key::F9 || *k == Key::F10 {
                         // if wm.is_top_wnd(&dws) {
                             rtwins::wgt::pagectrl_select_next_page(&mut dws, Id::PgControl.into(), *k == Key::F10);
-                            twl.draw_wnd(&mut dws);
-                            // TODO: dws.invalidate(&[Id::PgControl.into()]);
+                            dws.invalidate(&[Id::PgControl.into()]);
                         // }
                     }
                 }
@@ -233,10 +224,13 @@ fn tui_demo() {
         }
     }
 
+    // epilogue
     {
         let mut twl = tw.lock();
         twl.mouse_mode(rtwins::MouseMode::Off);
         twl.log_clear();
+        let logs_row = twl.logs_row;
+        twl.move_to(0, logs_row);
         twl.flush_buff();
     }
 }

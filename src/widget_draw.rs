@@ -35,39 +35,45 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId]) {
     }
 
     let mut fm = FontMementoManual::from_ctx(ctx);
-    // TODO: g_ws.pFocusedWgt = getWidgetByWID(dctx, ctx.stat.getFocusedID());
-
+    let focused_id = ws.get_focused_id();
     ctx.cursor_hide();
     ctx.flush_buff();
 
     if wids.len() == 1 && wids[0] == WIDGET_ID_ALL {
-        let wgts = ws.get_widgets();
-        let wgt = wgts.get(0).unwrap(); // window is at index 0
+        let wnd_widgets = ws.get_widgets();
+        // window is at index 0
+        let wgt = wnd_widgets.get(0).unwrap();
         let mut dctx = DrawCtx{ ctx: RefCell::new(ctx),
-            wgt, wnd_state: ws, parent_coord: Coord::cdeflt(), wnd_widgets: wgts,
+            wgt, wnd_state: ws,
+            parent_coord: Coord::cdeflt(),
+            wnd_widgets,
             strbuff: String::with_capacity(200) };
         draw_widget_internal(&mut dctx);
     }
     else {
-        for w in wids {
-            let _wss = wgt::WidgetSearchStruct::new(*w);
-        /*
-            if (getWidgetWSS(dctx, wss) && wss.isVisible)
-            {
-                dctx.parentCoord = wss.parentCoord;
-                // set parent's background color
-                pushClBg(getWidgetBgColor(wss.pWidget));
-                drawWidgetInternal(dctx, wss.pWidget);
-                popClBg();
+        let wnd_widgets = ws.get_widgets();
+
+        for id in wids {
+            if let Some(wgt) = wgt::find_by_id(&wnd_widgets, *id) {
+                let mut dctx = DrawCtx{ ctx: RefCell::new(ctx),
+                    wgt,
+                    wnd_state: ws,
+                    parent_coord: wgt::get_screen_coord(wgt::get_parent(wgt)),
+                    wnd_widgets,
+                    strbuff: String::with_capacity(200) };
+
+                draw_widget_internal(&mut dctx);
             }
-        */
         }
     }
 
     ctx.reset_attr();
     ctx.reset_cl_bg();
     ctx.reset_cl_fg();
-    // TODO: setCursorAt(dctx, g_ws.pFocusedWgt);
+
+    if let Some(wgt) = wgt::find_by_id(&ws.get_widgets(), focused_id) {
+        wgt::set_cursor_at(ctx, ws, wgt)
+    }
     ctx.cursor_show();
     fm.restore(ctx);
     ctx.flush_buff();
