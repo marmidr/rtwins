@@ -240,7 +240,7 @@ pub fn get_screen_coord(wgt: &Widget) -> Coord {
 }
 
 /// Move cursor to the best position for given type of the widget
-pub fn set_cursor_at(ctx: &mut Ctx, ws: &mut dyn WindowState, wgt: &Widget) {
+pub fn set_cursor_at(term: &mut Term, ws: &mut dyn WindowState, wgt: &Widget) {
     let mut coord = get_screen_coord(wgt);
 
     match wgt.prop {
@@ -304,7 +304,7 @@ pub fn set_cursor_at(ctx: &mut Ctx, ws: &mut dyn WindowState, wgt: &Widget) {
         _ => {}
     }
 
-    ctx.move_to(coord.col as u16, coord.row as u16);
+    term.move_to(coord.col as u16, coord.row as u16);
 }
 
 pub fn is_visible(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
@@ -496,7 +496,7 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
         WGT_STATE.with(|wgstate|
             wgstate.borrow_mut().focused_wgt = focused.id
         );
-        // setCursorAt(ctx, p_wgt); TODO:
+        // setCursorAt(term, p_wgt); TODO:
     }
     else {
         WGT_STATE.with(|wgstate|

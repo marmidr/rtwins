@@ -137,7 +137,7 @@ fn tui_demo() {
 
             // TODO: zamiast lock na mutex, własna funkcja która
             // - blokuje mutexa
-            // - ustawia wewnętrzną zmienną statyczną na Ctx, pozwalającą na dostęp do Ctx z dowolnego miejsca w czasie 'sesji'
+            // - ustawia wewnętrzną zmienną statyczną na Term, pozwalającą na dostęp do Term z dowolnego miejsca w czasie 'sesji'
             // - zwraca guard który w Drop kasuje tą zmienną statyczną
             let mut twl = tw.lock();
 

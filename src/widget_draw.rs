@@ -14,7 +14,7 @@ use crate::widget_def::*;
 
 struct DrawCtx<'a> {
     /// Reference to a drawer instance
-    ctx: RefCell<&'a mut Ctx>,
+    term: RefCell<&'a mut Term>,
     /// Reference to a widget to be drawn
     wgt: &'a Widget,
     /// Reference to window state that relates to the widget
@@ -29,21 +29,21 @@ struct DrawCtx<'a> {
 
 /// Draw `wids` widgets of the given window.
 /// If `wids` contains only `WIDGET_ID_ALL`, draw entire window
-pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId]) {
+pub fn draw_widgets(term: &mut Term, ws: &mut dyn WindowState, wids: &[WId]) {
     if wids.is_empty() {
         return;
     }
 
-    let mut fm = FontMementoManual::from_ctx(ctx);
+    let mut fm = FontMementoManual::from_term(term);
     let focused_id = ws.get_focused_id();
-    ctx.cursor_hide();
-    ctx.flush_buff();
+    term.cursor_hide();
+    term.flush_buff();
 
     if wids.len() == 1 && wids[0] == WIDGET_ID_ALL {
         let wnd_widgets = ws.get_widgets();
         // window is at index 0
         let wgt = wnd_widgets.get(0).unwrap();
-        let mut dctx = DrawCtx{ ctx: RefCell::new(ctx),
+        let mut dctx = DrawCtx{ term: RefCell::new(term),
             wgt, wnd_state: ws,
             parent_coord: Coord::cdeflt(),
             wnd_widgets,
@@ -55,7 +55,7 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId]) {
 
         for id in wids {
             if let Some(wgt) = wgt::find_by_id(&wnd_widgets, *id) {
-                let mut dctx = DrawCtx{ ctx: RefCell::new(ctx),
+                let mut dctx = DrawCtx{ term: RefCell::new(term),
                     wgt,
                     wnd_state: ws,
                     parent_coord: wgt::get_screen_coord(wgt::get_parent(wgt)),
@@ -67,16 +67,16 @@ pub fn draw_widgets(ctx: &mut Ctx, ws: &mut dyn WindowState, wids: &[WId]) {
         }
     }
 
-    ctx.reset_attr();
-    ctx.reset_cl_bg();
-    ctx.reset_cl_fg();
+    term.reset_attr();
+    term.reset_cl_bg();
+    term.reset_cl_fg();
 
     if let Some(wgt) = wgt::find_by_id(&ws.get_widgets(), focused_id) {
-        wgt::set_cursor_at(ctx, ws, wgt)
+        wgt::set_cursor_at(term, ws, wgt)
     }
-    ctx.cursor_show();
-    fm.restore(ctx);
-    ctx.flush_buff();
+    term.cursor_show();
+    fm.restore(term);
+    term.flush_buff();
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -87,9 +87,9 @@ fn draw_widget_internal(dctx: &mut DrawCtx) {
     }
 
     let en = dctx.wnd_state.is_enabled(dctx.wgt);
-    if !en { dctx.ctx.borrow_mut().push_attr(FontAttrib::Faint); }
+    if !en { dctx.term.borrow_mut().push_attr(FontAttrib::Faint); }
 
-    dctx.ctx.borrow_mut().log_d(format!("drawing {} id:{}", dctx.wgt.prop, dctx.wgt.id).as_str());
+    dctx.term.borrow_mut().log_d(format!("drawing {} id:{}", dctx.wgt.prop, dctx.wgt.id).as_str());
     dctx.strbuff.clear();
 
     match dctx.wgt.prop {
@@ -112,15 +112,15 @@ fn draw_widget_internal(dctx: &mut DrawCtx) {
         _ => {}
     }
 
-    if !en { dctx.ctx.borrow_mut().pop_attr(); }
-    dctx.ctx.borrow_mut().flush_buff();
+    if !en { dctx.term.borrow_mut().pop_attr(); }
+    dctx.term.borrow_mut().flush_buff();
 }
 
 // ---------------------------------------------------------------------------------------------- //
 
 fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window) {
     let wnd_coord = dctx.wnd_state.get_window_coord();
-    draw_area(&mut dctx.ctx.borrow_mut(), wnd_coord, dctx.wgt.size,
+    draw_area(&mut dctx.term.borrow_mut(), wnd_coord, dctx.wgt.size,
             prp.bg_color, prp.fg_color, FrameStyle::Double, true, prp.is_popup);
 
     // title
@@ -135,16 +135,16 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window) {
 
     if !wnd_title.is_empty() {
         let title_width = wnd_title.as_str().displayed_width() as u16 + 4;
-        let mut ctx = dctx.ctx.borrow_mut();
-        ctx.move_to(
+        let mut term = dctx.term.borrow_mut();
+        term.move_to(
             wnd_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width) / 2,
             wnd_coord.row as u16);
-        ctx.push_attr(FontAttrib::Bold);
-        ctx.write_str(format!("╡ {} ╞", wnd_title.as_str()).as_str());
-        ctx.pop_attr();
+        term.push_attr(FontAttrib::Bold);
+        term.write_str(format!("╡ {} ╞", wnd_title.as_str()).as_str());
+        term.pop_attr();
     }
 
-    dctx.ctx.borrow_mut().flush_buff();
+    dctx.term.borrow_mut().flush_buff();
     dctx.parent_coord = wnd_coord;
 
     {
@@ -160,18 +160,18 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window) {
 
     // reset colors set by frame drawer
     {
-        let mut ctx = dctx.ctx.borrow_mut();
-        ctx.pop_cl_bg();
-        ctx.pop_cl_fg();
-        ctx.move_to(0, wnd_coord.row as u16 + dctx.wgt.size.height as u16);
+        let mut term = dctx.term.borrow_mut();
+        term.pop_cl_bg();
+        term.pop_cl_fg();
+        term.move_to(0, wnd_coord.row as u16 + dctx.wgt.size.height as u16);
     }
 }
 
 fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel) {
-    let mut fm = FontMementoManual::from_ctx(&dctx.ctx.borrow());
+    let mut fm = FontMementoManual::from_term(&dctx.term.borrow());
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
-    draw_area(&mut dctx.ctx.borrow_mut(),
+    draw_area(&mut dctx.term.borrow_mut(),
         my_coord,
         dctx.wgt.size,
         prp.bg_color,
@@ -182,16 +182,16 @@ fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel) {
     // title
     if !prp.title.is_empty() {
         let title_width = prp.title.displayed_width() as u16;
-        let mut ctx = dctx.ctx.borrow_mut();
-        ctx.move_to(
+        let mut term = dctx.term.borrow_mut();
+        term.move_to(
             my_coord.col as u16 + (dctx.wgt.size.width as u16 - title_width - 2)/2,
             my_coord.row as u16);
-        ctx.push_attr(FontAttrib::Bold);
-        ctx.write_char(' ').write_str(prp.title).write_char(' ');
-        ctx.pop_attr();
+        term.push_attr(FontAttrib::Bold);
+        term.write_char(' ').write_str(prp.title).write_char(' ');
+        term.pop_attr();
     }
 
-    dctx.ctx.borrow_mut().flush_buff();
+    dctx.term.borrow_mut().flush_buff();
 
     // draw childrens
     {
@@ -208,8 +208,8 @@ fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel) {
         dctx.parent_coord = coord_bkp;
     }
 
-    // dctx.ctx.borrow_mut().pop_cl_bg();
-    fm.restore(&mut dctx.ctx.borrow_mut());
+    // dctx.term.borrow_mut().pop_cl_bg();
+    fm.restore(&mut dctx.term.borrow_mut());
 }
 
 fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label) {
@@ -222,17 +222,17 @@ fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label) {
         dctx.wnd_state.get_label_text(dctx.wgt, &mut title);
     }
 
-    let _fm = FontMemento::new(&dctx.ctx);
-    let mut ctx = dctx.ctx.borrow_mut();
+    let _fm = FontMemento::new(&dctx.term);
+    let mut term = dctx.term.borrow_mut();
 
     // setup colors
-    ctx.push_cl_fg(get_widget_fg_color(dctx.wgt));
-    ctx.push_cl_bg(get_widget_bg_color(dctx.wgt));
+    term.push_cl_fg(get_widget_fg_color(dctx.wgt));
+    term.push_cl_bg(get_widget_bg_color(dctx.wgt));
 
     // print all lines
     let col = dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16;
     let row = dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16;
-    ctx.move_to(col, row);
+    term.move_to(col, row);
 
     let max_lines = if dctx.wgt.size.height > 0 { dctx.wgt.size.height } else { 50 };
     let line_width = dctx.wgt.size.width;
@@ -245,9 +245,9 @@ fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label) {
             dctx.strbuff.set_displayed_width(line_width as i16);
         }
 
-        ctx.write_str(dctx.strbuff.as_str());
-        ctx.move_to(col, row + 1 + line as u16);
-        ctx.flush_buff();
+        term.write_str(dctx.strbuff.as_str());
+        term.move_to(col, row + 1 + line as u16);
+        term.flush_buff();
         if line as u8 == max_lines {
             break;
         }
@@ -303,11 +303,11 @@ fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit) {
     auto clbg = getWidgetBgColor(dctx.wgt);
     intensifyClIf(focused, clbg);
 
-    let _fm = FontMemento::new(&dctx.ctx);
+    let _fm = FontMemento::new(&dctx.term);
     moveTo(dctx.parentCoord.col + dctx.wgt->coord.col, dctx.parentCoord.row + dctx.wgt->coord.row);
     pushClBg(clbg);
     pushClFg(getWidgetFgColor(dctx.wgt));
-    ctx.write_str(dctx.strbuff.as_str());
+    term.write_str(dctx.strbuff.as_str());
     */
 }
 
@@ -322,14 +322,14 @@ fn draw_led(dctx: &mut DrawCtx, prp: &prop::Led) {
     }
 
     // led text
-    let _fm = FontMemento::new(&dctx.ctx);
+    let _fm = FontMemento::new(&dctx.term);
 
-    let mut ctx = dctx.ctx.borrow_mut();
-    ctx.move_to(dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
+    let mut term = dctx.term.borrow_mut();
+    term.move_to(dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
         dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
-    ctx.push_cl_bg(clbg);
-    ctx.push_cl_fg(get_widget_fg_color(dctx.wgt));
-    ctx.write_str(dctx.strbuff.as_str());
+    term.push_cl_bg(clbg);
+    term.push_cl_fg(get_widget_fg_color(dctx.wgt));
+    term.write_str(dctx.strbuff.as_str());
 }
 
 fn draw_checkbox(dctx: &mut DrawCtx, prp: &prop::CheckBox) {
@@ -340,17 +340,17 @@ fn draw_checkbox(dctx: &mut DrawCtx, prp: &prop::CheckBox) {
         if focused { intensify_cl_fg(cl) } else { cl }
     };
 
-    let _fm = FontMemento::new(&dctx.ctx);
-    let mut ctx = dctx.ctx.borrow_mut();
-    ctx.move_to(
+    let _fm = FontMemento::new(&dctx.term);
+    let mut term = dctx.term.borrow_mut();
+    term.move_to(
         dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
         dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
     if focused {
-        ctx.push_attr(FontAttrib::Bold);
+        term.push_attr(FontAttrib::Bold);
     }
-    ctx.push_cl_fg(clfg);
-    ctx.write_str(chk_state);
-    ctx.write_str(prp.text);
+    term.push_cl_fg(clfg);
+    term.write_str(chk_state);
+    term.write_str(prp.text);
 }
 
 fn draw_radio(dctx: &mut DrawCtx, prp: &prop::Radio) {
@@ -365,17 +365,17 @@ fn draw_radio(dctx: &mut DrawCtx, prp: &prop::Radio) {
         if focused { colors::intensify_cl_fg(cl) } else { cl }
     };
 
-    let _fm = FontMemento::new(&dctx.ctx);
-    let mut ctx = dctx.ctx.borrow_mut();
-    ctx.move_to(
+    let _fm = FontMemento::new(&dctx.term);
+    let mut term = dctx.term.borrow_mut();
+    term.move_to(
         dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
         dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
     if focused {
-        ctx.push_attr(FontAttrib::Bold);
+        term.push_attr(FontAttrib::Bold);
     }
-    ctx.push_cl_fg(clfg);
-    ctx.write_str(radio_state);
-    ctx.write_str(prp.text);
+    term.push_cl_fg(clfg);
+    term.write_str(radio_state);
+    term.write_str(prp.text);
 }
 
 fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button) {
@@ -395,47 +395,47 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button) {
     }
 
     if prp.style == ButtonStyle::Simple {
-        let _fm = FontMemento::new(&dctx.ctx);
+        let _fm = FontMemento::new(&dctx.term);
 
         {
-            let mut ctx = dctx.ctx.borrow_mut();
+            let mut term = dctx.term.borrow_mut();
 
             dctx.strbuff.push_str("[ ");
             dctx.strbuff.push_str(txt.as_str());
             dctx.strbuff.push_str(" ]");
 
-            ctx.move_to(
+            term.move_to(
                 dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
                 dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
 
-            if focused { ctx.push_attr(FontAttrib::Bold); }
-            if pressed { ctx.push_attr(FontAttrib::Inverse); }
+            if focused { term.push_attr(FontAttrib::Bold); }
+            if pressed { term.push_attr(FontAttrib::Inverse); }
             let clbg = if pressed { get_widget_bg_color(dctx.wgt) } else { get_widget_bg_color(wgt::get_parent(dctx.wgt)) };
-            ctx.push_cl_bg(clbg);
-            ctx.push_cl_fg(clfg);
-            ctx.write_str(dctx.strbuff.as_str());
+            term.push_cl_bg(clbg);
+            term.push_cl_fg(clfg);
+            term.write_str(dctx.strbuff.as_str());
         }
     }
     else if prp.style == ButtonStyle::Solid {
         {
-            let _fm = FontMemento::new(&dctx.ctx);
+            let _fm = FontMemento::new(&dctx.term);
 
             {
-                let mut ctx = dctx.ctx.borrow_mut();
+                let mut term = dctx.term.borrow_mut();
                 dctx.strbuff.push(' ');
                 dctx.strbuff.push_str(txt.as_str());
                 dctx.strbuff.push(' ');
 
-                ctx.move_to(
+                term.move_to(
                     dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
                     dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
 
-                if focused { ctx.push_attr(FontAttrib::Bold); }
-                if pressed { ctx.push_attr(FontAttrib::Inverse); }
+                if focused { term.push_attr(FontAttrib::Bold); }
+                if pressed { term.push_attr(FontAttrib::Inverse); }
                 let clbg = get_widget_bg_color(dctx.wgt);
-                ctx.push_cl_bg(clbg);
-                ctx.push_cl_fg(clfg);
-                ctx.write_str(dctx.strbuff.as_str());
+                term.push_cl_bg(clbg);
+                term.push_cl_fg(clfg);
+                term.write_str(dctx.strbuff.as_str());
             }
         }
 
@@ -443,38 +443,38 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button) {
 
         if pressed {
             // erase trailing shadow
-            let mut ctx = dctx.ctx.borrow_mut();
+            let mut term = dctx.term.borrow_mut();
 
-            ctx.push_cl_bg(get_widget_bg_color(wgt::get_parent(dctx.wgt)));
-            ctx.write_char(' ');
+            term.push_cl_bg(get_widget_bg_color(wgt::get_parent(dctx.wgt)));
+            term.write_char(' ');
 
             // erase shadow below
-            ctx.move_to(
+            term.move_to(
                 dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16 + 1,
                 dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16 + 1);
 
-            ctx.write_char_n(' ', shadow_len);
-            ctx.pop_cl_bg();
+            term.write_char_n(' ', shadow_len);
+            term.pop_cl_bg();
         }
         else {
-            let _fm = FontMemento::new(&dctx.ctx);
+            let _fm = FontMemento::new(&dctx.term);
             // trailing shadow
             {
-                let mut ctx = dctx.ctx.borrow_mut();
+                let mut term = dctx.term.borrow_mut();
 
-                ctx.push_cl_bg(get_widget_bg_color(wgt::get_parent(dctx.wgt)));
-                ctx.write_str(crate::fg_color!(233));
-                ctx.write_char('▄');
+                term.push_cl_bg(get_widget_bg_color(wgt::get_parent(dctx.wgt)));
+                term.write_str(crate::fg_color!(233));
+                term.write_char('▄');
                 // shadow below
-                ctx.move_to(
+                term.move_to(
                     dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16 + 1,
                     dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16 + 1);
-                ctx.write_char_n('▀', shadow_len);
+                term.write_char_n('▀', shadow_len);
             }
         }
     }
     else if prp.style == ButtonStyle::Solid1p5 {
-        let _fm = FontMemento::new(&dctx.ctx);
+        let _fm = FontMemento::new(&dctx.term);
         dctx.strbuff.push(' ');
         dctx.strbuff.push_str(txt.as_str());
         dctx.strbuff.push(' ');
@@ -486,73 +486,73 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button) {
         let scl_bg2fg = transcode_cl_bg_2_fg(encode_cl_bg(clbg));
 
         {
-            let mut ctx = dctx.ctx.borrow_mut();
+            let mut term = dctx.term.borrow_mut();
 
             // upper half line
-            ctx.move_to(
+            term.move_to(
                 dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
                 dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
 
-            ctx.push_cl_bg(clparbg);
+            term.push_cl_bg(clparbg);
             if pressed {
-                ctx.push_cl_fg(clfg);
+                term.push_cl_fg(clfg);
             }
             else {
-                ctx.write_str(scl_bg2fg.as_str());
+                term.write_str(scl_bg2fg.as_str());
             }
 
-            ctx.write_char_n('▄', bnt_len);
+            term.write_char_n('▄', bnt_len);
 
             // middle line - text
-            ctx.move_by(-bnt_len, 1);
-            ctx.push_cl_bg(clbg);
-            ctx.push_cl_fg(clfg);
-            if pressed { ctx.push_attr(FontAttrib::Inverse); }
-            if focused { ctx.push_attr(FontAttrib::Bold); }
-            ctx.write_str(dctx.strbuff.as_str());
-            if focused { ctx.pop_attr(); }
-            if pressed { ctx.pop_attr(); }
+            term.move_by(-bnt_len, 1);
+            term.push_cl_bg(clbg);
+            term.push_cl_fg(clfg);
+            if pressed { term.push_attr(FontAttrib::Inverse); }
+            if focused { term.push_attr(FontAttrib::Bold); }
+            term.write_str(dctx.strbuff.as_str());
+            if focused { term.pop_attr(); }
+            if pressed { term.pop_attr(); }
 
             // middle-shadow
             if pressed {
-                ctx.push_cl_bg(clparbg);
+                term.push_cl_bg(clparbg);
             }
             else {
-                ctx.write_str(scl_shadow);
+                term.write_str(scl_shadow);
             }
-            ctx.write_char(' ');
+            term.write_char(' ');
 
             // lower half-line
-            ctx.move_by(-bnt_len-1, 1);
+            term.move_by(-bnt_len-1, 1);
 
             if pressed {
-                ctx.push_cl_fg(clfg);
-                ctx.push_cl_bg(clparbg);
-                ctx.write_char('▀');
-                ctx.push_cl_bg(clparbg);
+                term.push_cl_fg(clfg);
+                term.push_cl_bg(clparbg);
+                term.write_char('▀');
+                term.push_cl_bg(clparbg);
             }
             else {
-                ctx.write_str(scl_bg2fg.as_str());
-                ctx.push_cl_bg(clparbg);
-                ctx.write_char('▀');
-                ctx.write_str(scl_shadow);
+                term.write_str(scl_bg2fg.as_str());
+                term.push_cl_bg(clparbg);
+                term.write_char('▀');
+                term.write_str(scl_shadow);
             }
-            ctx.write_char_n('▀', bnt_len-1);
+            term.write_char_n('▀', bnt_len-1);
 
             // trailing shadow
-            ctx.write_char(' ');
+            term.write_char(' ');
         }
     }
 }
 
 fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl) {
-    let mut fm = FontMementoManual::from_ctx(&dctx.ctx.borrow());
+    let mut fm = FontMementoManual::from_term(&dctx.term.borrow());
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
-    dctx.ctx.borrow_mut().push_cl_bg(get_widget_bg_color(dctx.wgt));
-    dctx.ctx.borrow_mut().push_cl_fg(get_widget_fg_color(dctx.wgt));
+    dctx.term.borrow_mut().push_cl_bg(get_widget_bg_color(dctx.wgt));
+    dctx.term.borrow_mut().push_cl_fg(get_widget_fg_color(dctx.wgt));
 
-    draw_area(&mut dctx.ctx.borrow_mut(),
+    draw_area(&mut dctx.term.borrow_mut(),
         my_coord + Coord::new(prp.tab_width, 0),
         dctx.wgt.size - Size::new(prp.tab_width, 0),
         ColorBG::Inherit,
@@ -560,7 +560,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl) {
         FrameStyle::PgControl,
         true, false);
 
-    dctx.ctx.borrow_mut().flush_buff();
+    dctx.term.borrow_mut().flush_buff();
 
     let coord_bkp = dctx.parent_coord;
     dctx.parent_coord = my_coord;
@@ -571,14 +571,14 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl) {
         dctx.strbuff.push_str("≡ MENU ≡");
         dctx.strbuff.set_displayed_width(prp.tab_width as i16);
 
-        let mut ctx = dctx.ctx.borrow_mut();
-        ctx.move_to(my_coord.col as u16, my_coord.row as u16 + prp.vert_offs as u16);
-        ctx.push_attr(FontAttrib::Inverse);
-        ctx.write_str(dctx.strbuff.as_str());
-        ctx.pop_attr();
+        let mut term = dctx.term.borrow_mut();
+        term.move_to(my_coord.col as u16, my_coord.row as u16 + prp.vert_offs as u16);
+        term.push_attr(FontAttrib::Inverse);
+        term.write_str(dctx.strbuff.as_str());
+        term.pop_attr();
     }
 
-    dctx.ctx.borrow_mut().flush_buff();
+    dctx.term.borrow_mut().flush_buff();
 
     // draw tabs and pages
     {
@@ -615,19 +615,19 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl) {
             {
                 let mut clfg = page_prp.fg_color;
                 if clfg == ColorFG::Inherit { clfg = get_widget_fg_color(page); }
-                let mut ctx = dctx.ctx.borrow_mut();
-                ctx.move_to(
+                let mut term = dctx.term.borrow_mut();
+                term.move_to(
                     my_coord.col as u16,
                     my_coord.row as u16 + prp.vert_offs as u16 + idx as u16 + 1);
-                ctx.push_cl_fg(clfg);
-                if idx == cur_pg_idx { ctx.push_attr(FontAttrib::Inverse); }
-                ctx.write_str(dctx.strbuff.as_str());
-                if idx == cur_pg_idx { ctx.pop_attr(); }
-                ctx.pop_cl_fg();
+                term.push_cl_fg(clfg);
+                if idx == cur_pg_idx { term.push_attr(FontAttrib::Inverse); }
+                term.write_str(dctx.strbuff.as_str());
+                if idx == cur_pg_idx { term.pop_attr(); }
+                term.pop_cl_fg();
             }
 
             if idx == cur_pg_idx && dctx.wnd_state.is_visible(page) {
-                dctx.ctx.borrow_mut().flush_buff();
+                dctx.term.borrow_mut().flush_buff();
                 dctx.wgt = page;
                 draw_page(dctx, page_prp, false);
             }
@@ -637,7 +637,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl) {
         dctx.parent_coord = coord_bkp;
     }
 
-    fm.restore(&mut dctx.ctx.borrow_mut());
+    fm.restore(&mut dctx.term.borrow_mut());
 }
 
 fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/) {
@@ -648,7 +648,7 @@ fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/) {
             let page_coord = wgt::get_screen_coord(dctx.wgt);
             let page_size = pgctrl.size - Size::new(pgctrl_prp.tab_width, 0);
 
-            draw_area(&mut dctx.ctx.borrow_mut(),
+            draw_area(&mut dctx.term.borrow_mut(),
                 page_coord,
                 page_size,
                 ColorBG::Inherit,
@@ -686,8 +686,8 @@ fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar) {
     if max <= 0 { max = 1; }
     if pos > max { pos = max; }
 
-    let mut ctx = dctx.ctx.borrow_mut();
-    ctx.move_to(
+    let mut term = dctx.term.borrow_mut();
+    term.move_to(
         dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
         dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
 
@@ -695,9 +695,9 @@ fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar) {
     dctx.strbuff.push_n(STYLE_DATA[style][0], fill_len);
     dctx.strbuff.push_n(STYLE_DATA[style][1], dctx.wgt.size.width as i16 - fill_len);
 
-    ctx.push_cl_fg(get_widget_fg_color(dctx.wgt));
-    ctx.write_str(dctx.strbuff.as_str());
-    ctx.pop_cl_fg();
+    term.push_cl_fg(get_widget_fg_color(dctx.wgt));
+    term.write_str(dctx.strbuff.as_str());
+    term.pop_cl_fg();
 
     // ████░░░░░░░░░░░
     // [####.........]
@@ -706,10 +706,10 @@ fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar) {
 }
 
 fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox) {
-    let mut fm = FontMementoManual::from_ctx(&dctx.ctx.borrow());
+    let mut fm = FontMementoManual::from_term(&dctx.term.borrow());
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
-    draw_area(&mut dctx.ctx.borrow_mut(),
+    draw_area(&mut dctx.term.borrow_mut(),
         my_coord,
         dctx.wgt.size,
         prp.bg_color, prp.fg_color,
@@ -733,18 +733,18 @@ fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox) {
     // destructure dctx so the closure will capture local variables, not entire struct
     let wgt = dctx.wgt;
     let ws = &mut dctx.wnd_state;
-    let mut ctx = dctx.ctx.borrow_mut();
+    let mut term = dctx.term.borrow_mut();
 
     let getitem_cb = |idx, out: &mut String| {
         ws.get_list_box_item(wgt, idx, out);
     };
 
-    draw_list(&mut ctx, &dlp, getitem_cb);
-    fm.restore(&mut ctx);
+    draw_list(&mut term, &dlp, getitem_cb);
+    fm.restore(&mut term);
 }
 
 fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox) {
-    let _fm = FontMemento::new(&dctx.ctx);
+    let _fm = FontMemento::new(&dctx.term);
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
     let focused = dctx.wnd_state.is_focused(dctx.wgt);
 
@@ -761,16 +761,16 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox) {
         dctx.strbuff.set_displayed_width(dctx.wgt.size.width as i16 - 4);//, true);
         dctx.strbuff.push_str(" [▼]");
 
-        let mut ctx = dctx.ctx.borrow_mut();
-        ctx.move_to(my_coord.col as u16, my_coord.row as u16);
-        ctx.push_cl_fg(get_widget_fg_color(dctx.wgt));
-        ctx.push_cl_bg(get_widget_bg_color(dctx.wgt));
-        if focused && !drop_down { ctx.push_attr(FontAttrib::Inverse); }
-        if drop_down { ctx.push_attr(FontAttrib::Underline); }
-        if focused { ctx.push_attr(FontAttrib::Bold); }
-        ctx.write_str(dctx.strbuff.as_str());
-        if focused { ctx.pop_attr(); }
-        if drop_down { ctx.pop_attr(); }
+        let mut term = dctx.term.borrow_mut();
+        term.move_to(my_coord.col as u16, my_coord.row as u16);
+        term.push_cl_fg(get_widget_fg_color(dctx.wgt));
+        term.push_cl_bg(get_widget_bg_color(dctx.wgt));
+        if focused && !drop_down { term.push_attr(FontAttrib::Inverse); }
+        if drop_down { term.push_attr(FontAttrib::Underline); }
+        if focused { term.push_attr(FontAttrib::Bold); }
+        term.write_str(dctx.strbuff.as_str());
+        if focused { term.pop_attr(); }
+        if drop_down { term.pop_attr(); }
     }
 
     if drop_down {
@@ -793,8 +793,8 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox) {
             dctx.wnd_state.get_combo_box_item(dctx.wgt, idx, out);
         };
 
-        let mut ctx = dctx.ctx.borrow_mut();
-        draw_list(&mut ctx, &dlp, getitem_cb);
+        let mut term = dctx.term.borrow_mut();
+        draw_list(&mut term, &dlp, getitem_cb);
     }
 }
 
@@ -803,10 +803,10 @@ fn draw_custom_wgt(dctx: &mut DrawCtx, _: &prop::CustomWgt) {
 }
 
 fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
-    let _fm = FontMemento::new(&dctx.ctx);
+    let _fm = FontMemento::new(&dctx.term);
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
 
-    draw_area(&mut dctx.ctx.borrow_mut(), my_coord, dctx.wgt.size,
+    draw_area(&mut dctx.term.borrow_mut(), my_coord, dctx.wgt.size,
         prp.bg_color, prp.fg_color,
         FrameStyle::ListBox, false, false);
 
@@ -831,13 +831,13 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
             top_line = 0;
         }
 
-        let mut ctx = dctx.ctx.borrow_mut();
+        let mut term = dctx.term.borrow_mut();
 
-        draw_list_scroll_bar_v(&mut ctx,
+        draw_list_scroll_bar_v(&mut term,
             my_coord + Coord::new(dctx.wgt.size.width-1, 1),
             lines_visible, lines.len() as i16 - lines_visible, top_line);
 
-        ctx.flush_buff();
+        term.flush_buff();
         dctx.strbuff.clear();
 
         // scan invisible lines (because scrooled down) for ESC sequences: colors, font attributes
@@ -857,7 +857,7 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
             }
         }
 
-        ctx.write_str(dctx.strbuff.as_str());
+        term.write_str(dctx.strbuff.as_str());
 
         // draw lines
         for i in 0..lines_visible as usize {
@@ -869,11 +869,11 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
                 }
             }
             dctx.strbuff.set_displayed_width(dctx.wgt.size.width as i16 - 2);//, true);
-            ctx.move_to(my_coord.col as u16 + 1, my_coord.row as u16 + i as u16 + 1);
-            ctx.write_str(dctx.strbuff.as_str());
+            term.move_to(my_coord.col as u16 + 1, my_coord.row as u16 + i as u16 + 1);
+            term.write_str(dctx.strbuff.as_str());
         }
 
-        ctx.flush_buff();
+        term.flush_buff();
     }
 }
 
@@ -921,8 +921,8 @@ const FRAME_DOUBLE: [char; 9] = [
     '╚', '═', '╝',
 ];
 
-fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: ColorFG, style: FrameStyle, filled: bool, shadow: bool) {
-    ctx.move_to(coord.col.into(), coord.row.into());
+fn draw_area(term: &mut Term, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: ColorFG, style: FrameStyle, filled: bool, shadow: bool) {
+    term.move_to(coord.col.into(), coord.row.into());
 
     let frame = match style {
         FrameStyle::Single => &FRAME_SINGLE,
@@ -933,8 +933,8 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
     };
 
     // background and frame color
-    if cl_bg != ColorBG::Inherit { ctx.push_cl_bg(cl_bg); }
-    if cl_fg != ColorFG::Inherit { ctx.push_cl_fg(cl_fg); }
+    if cl_bg != ColorBG::Inherit { term.push_cl_bg(cl_bg); }
+    if cl_fg != ColorFG::Inherit { term.push_cl_fg(cl_fg); }
 
     let mut strbuff = String::with_capacity(500);
 
@@ -943,9 +943,9 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
     draw_line(&mut strbuff, frame[1], size.width);
     strbuff.push(frame[2]);
 
-    ctx.write_str(strbuff.as_str());
-    ctx.move_by(-(size.width as i16), 1);
-    ctx.flush_buff();
+    term.write_str(strbuff.as_str());
+    term.move_by(-(size.width as i16), 1);
+    term.flush_buff();
 
     // lines in the middle
     strbuff.clear();
@@ -967,9 +967,9 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
     }
 
     for r in coord.row + 1 .. coord.row + size.height - 1 {
-        ctx.write_str(strbuff.as_str());
-        ctx.move_by(-(size.width as i16 + shadow as i16), 1);
-        ctx.flush_buff();
+        term.write_str(strbuff.as_str());
+        term.move_by(-(size.width as i16 + shadow as i16), 1);
+        term.flush_buff();
     }
 
     // bottom line
@@ -984,17 +984,17 @@ fn draw_area(ctx: &mut Ctx, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: Col
         strbuff.push('█');
     }
 
-    ctx.write_str(strbuff.as_str());
-    ctx.flush_buff();
+    term.write_str(strbuff.as_str());
+    term.flush_buff();
 
     if shadow {
-        ctx.move_by(-(size.width as i16), 1);
+        term.move_by(-(size.width as i16), 1);
         strbuff.clear();
         // trailing shadow
         draw_line(&mut strbuff, '█', size.width + 2);
-        ctx.write_str(strbuff.as_str());
-        ctx.write_str(colors::encode_cl_fg(cl_fg));
-        ctx.flush_buff();
+        term.write_str(strbuff.as_str());
+        term.write_str(colors::encode_cl_fg(cl_fg));
+        term.flush_buff();
     }
 
     // here the Fg and Bg colors are not restored
@@ -1011,9 +1011,9 @@ fn draw_line(strbuff: &mut String, c: char, len: u8) {
     }
 }
 
-fn draw_list_scroll_bar_v(ctx: &mut Ctx, coord: Coord, height: i16, pos_max: i16, pos: i16) {
+fn draw_list_scroll_bar_v(term: &mut Term, coord: Coord, height: i16, pos_max: i16, pos: i16) {
     if pos > pos_max {
-        // ctx.log_d(format!("pos ({}) > max ({})", pos, pos_max).as_str());
+        // term.log_d(format!("pos ({}) > max ({})", pos, pos_max).as_str());
         return;
     }
 
@@ -1021,8 +1021,8 @@ fn draw_list_scroll_bar_v(ctx: &mut Ctx, coord: Coord, height: i16, pos_max: i16
     // "▲▴ ▼▾ ◄◂ ►▸ ◘ █";
 
     for i in 0..height {
-        ctx.move_to(coord.col.into(), (coord.row as u16) + i as u16);
-        ctx.write_char(if i == slider_at {'◘'} else {'▒'});
+        term.move_to(coord.col.into(), (coord.row as u16) + i as u16);
+        term.write_char(if i == slider_at {'◘'} else {'▒'});
     }
 }
 
@@ -1039,20 +1039,20 @@ struct DrawListParams {
     frame_size: u8,
 }
 
-fn draw_list<Cb: FnMut(i16, &mut String)>(ctx: &mut Ctx, dlp: &DrawListParams, mut get_item: Cb) {
+fn draw_list<Cb: FnMut(i16, &mut String)>(term: &mut Term, dlp: &DrawListParams, mut get_item: Cb) {
     if dlp.items_cnt > dlp.items_visible {
-        draw_list_scroll_bar_v(ctx,
+        draw_list_scroll_bar_v(term,
             dlp.coord + Coord::new(dlp.wgt_width-1, dlp.frame_size),
             dlp.items_visible, dlp.items_cnt -1, dlp.sel_idx);
     }
 
-    ctx.flush_buff();
+    term.flush_buff();
     let mut strbuff = String::with_capacity(50);
 
     for i in 0..dlp.items_visible {
         let is_current_item = if dlp.items_cnt > 0 { dlp.top_item + i == dlp.item_idx } else { false };
         let is_sel_item = dlp.top_item + i == dlp.sel_idx;
-        ctx.move_to(
+        term.move_to(
             dlp.coord.col as u16 + dlp.frame_size as u16,
             dlp.coord.row as u16 + i as u16 + dlp.frame_size as u16);
 
@@ -1067,11 +1067,11 @@ fn draw_list<Cb: FnMut(i16, &mut String)>(ctx: &mut Ctx, dlp: &DrawListParams, m
             strbuff.set_displayed_width(dlp.wgt_width as i16 - 1 - dlp.frame_size as i16);
         }
 
-        if dlp.focused && is_sel_item { ctx.push_attr(FontAttrib::Inverse); }
-        if is_current_item { ctx.push_attr(FontAttrib::Underline); }
-        ctx.write_str(strbuff.as_str());
-        if is_current_item { ctx.pop_attr(); }
-        if dlp.focused && is_sel_item { ctx.pop_attr(); }
+        if dlp.focused && is_sel_item { term.push_attr(FontAttrib::Inverse); }
+        if is_current_item { term.push_attr(FontAttrib::Underline); }
+        term.write_str(strbuff.as_str());
+        if is_current_item { term.pop_attr(); }
+        if dlp.focused && is_sel_item { term.pop_attr(); }
     }
 }
 

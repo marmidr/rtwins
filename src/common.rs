@@ -1,6 +1,6 @@
 //! # RTWins common definitions
 
-use crate::Ctx;
+use crate::Term;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -147,24 +147,24 @@ impl FontMementoManual {
         }
     }
 
-    pub fn from_ctx(ctx: &Ctx) -> Self {
+    pub fn from_term(term: &Term) -> Self {
         let mut fm = FontMementoManual {
             fg_stack_len: 0, bg_stack_len: 0, at_stack_len: 0
         };
-        fm.store(ctx);
+        fm.store(term);
         fm
     }
 
-    pub fn store(&mut self, ctx: &Ctx) {
-        self.fg_stack_len = ctx.stack_cl_fg.len() as i8;
-        self.bg_stack_len = ctx.stack_cl_bg.len() as i8;
-        self.at_stack_len = ctx.stack_attr.len()  as i8;
+    pub fn store(&mut self, term: &Term) {
+        self.fg_stack_len = term.stack_cl_fg.len() as i8;
+        self.bg_stack_len = term.stack_cl_bg.len() as i8;
+        self.at_stack_len = term.stack_attr.len()  as i8;
     }
 
-    pub fn restore(&mut self, ctx: &mut Ctx) {
-        ctx.pop_cl_fg_n(ctx.stack_cl_fg.len() as i8 - self.fg_stack_len);
-        ctx.pop_cl_bg_n(ctx.stack_cl_bg.len() as i8 - self.bg_stack_len);
-        ctx.pop_attr_n(ctx.stack_attr.len()   as i8 - self.at_stack_len);
+    pub fn restore(&mut self, term: &mut Term) {
+        term.pop_cl_fg_n(term.stack_cl_fg.len() as i8 - self.fg_stack_len);
+        term.pop_cl_bg_n(term.stack_cl_bg.len() as i8 - self.bg_stack_len);
+        term.pop_attr_n(term.stack_attr.len()   as i8 - self.at_stack_len);
     }
 }
 
@@ -175,40 +175,40 @@ pub(crate) struct FontMemento<'b, 'a: 'b> {
     fg_stack_len : i8,
     bg_stack_len : i8,
     at_stack_len : i8,
-    ctx: &'b std::cell::RefCell<&'a mut Ctx>,
+    term: &'b std::cell::RefCell<&'a mut Term>,
 }
 
 impl <'b, 'a> FontMemento<'b, 'a> {
-    pub fn new(ctx: &'b std::cell::RefCell<&'a mut Ctx>) -> Self {
+    pub fn new(term: &'b std::cell::RefCell<&'a mut Term>) -> Self {
         let fg;
         let bg;
         let at;
 
         {
-            let ref_ctx = ctx.borrow();
-            fg = ref_ctx.stack_cl_fg.len() as i8;
-            bg = ref_ctx.stack_cl_bg.len() as i8;
-            at = ref_ctx.stack_attr.len()  as i8;
+            let ref_term = term.borrow();
+            fg = ref_term.stack_cl_fg.len() as i8;
+            bg = ref_term.stack_cl_bg.len() as i8;
+            at = ref_term.stack_attr.len()  as i8;
         }
 
         FontMemento {
             fg_stack_len: fg,
             bg_stack_len: bg,
             at_stack_len: at,
-            ctx
+            term
         }
     }
 }
 
 impl <'b, 'a> Drop for FontMemento<'b, 'a> {
     fn drop(&mut self) {
-        let mut ctx = self.ctx.borrow_mut();
-        let new_fg = ctx.stack_cl_fg.len() as i8 - self.fg_stack_len;
-        let new_bg = ctx.stack_cl_bg.len() as i8 - self.bg_stack_len;
-        let new_at = ctx.stack_attr.len()  as i8 - self.at_stack_len;
-        ctx.pop_cl_fg_n(new_fg);
-        ctx.pop_cl_bg_n(new_bg);
-        ctx.pop_attr_n(new_at);
+        let mut term = self.term.borrow_mut();
+        let new_fg = term.stack_cl_fg.len() as i8 - self.fg_stack_len;
+        let new_bg = term.stack_cl_bg.len() as i8 - self.bg_stack_len;
+        let new_at = term.stack_attr.len()  as i8 - self.at_stack_len;
+        term.pop_cl_fg_n(new_fg);
+        term.pop_cl_bg_n(new_bg);
+        term.pop_attr_n(new_at);
     }
 }
 

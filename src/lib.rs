@@ -24,11 +24,11 @@ pub mod common;
 mod widget_def;
 mod widget_impl;
 mod widget_draw;
-mod ctx;
+mod terminal;
 
 // import common definition into library's namespace
 pub use crate::common::*;
-pub use crate::ctx::*;
+pub use crate::terminal::*;
 pub use crate::widget_def::*;
 
 // group widget public code under single namespace
@@ -43,25 +43,25 @@ use std::sync::{Mutex, MutexGuard, TryLockResult};
 
 // rename Tui
 pub struct TWins {
-    ctx: Mutex<Ctx>,
+    term: Mutex<Term>,
 }
 
 impl TWins {
     /// Create new instance
     pub fn new(p: PalBox) -> TWins {
         TWins {
-            ctx: Mutex::new(Ctx::new(p)),
+            term: Mutex::new(Term::new(p)),
         }
     }
 
     /// Get access to mutex-protexted internal instance
-    pub fn lock(&mut self) -> MutexGuard<Ctx> {
-        self.ctx.lock().unwrap()
+    pub fn lock(&mut self) -> MutexGuard<Term> {
+        self.term.lock().unwrap()
     }
 
     /// Try to get access to mutex-protexted internal instance
-    pub fn try_lock(&mut self) -> TryLockResult<MutexGuard<Ctx>> {
-        self.ctx.try_lock()
+    pub fn try_lock(&mut self) -> TryLockResult<MutexGuard<Term>> {
+        self.term.try_lock()
     }
 }
 

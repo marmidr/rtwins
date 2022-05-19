@@ -398,7 +398,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
         prop: prop::Panel {
             title : "",
             fg_color : ColorFG::White,
-            bg_color : ColorBG::White,
+            bg_color : ColorBG::BlackIntense,
             no_frame : true,
         }.into(),
         children: &[

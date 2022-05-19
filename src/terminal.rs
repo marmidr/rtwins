@@ -11,13 +11,11 @@ use crate::widget_def::*;
 pub type PalBox = Box<dyn crate::pal::Pal>;
 
 // TODO: static Pal instead of PalBox
-// pub struct Ctx<P: crate::pal::Pal>
+// pub struct Term<P: crate::pal::Pal>
 
-/// TUI drawing API and context
+/// Terminal low level API and context
 ///
-
-// TODO: Ctx->Term
-pub struct Ctx {
+pub struct Term {
     pub pal: PalBox,
     pub logs_row: u16,
     current_cl_fg: ColorFG,
@@ -29,10 +27,10 @@ pub struct Ctx {
     pub(crate) stack_attr: Vec<FontAttrib>,
 }
 
-impl Ctx {
+impl Term {
     /// Creates default instance using provided Pal
     pub fn new(p: PalBox) -> Self {
-        Ctx{
+        Term{
             pal: p,
             logs_row: 0,
             current_cl_fg: ColorFG::Default,
@@ -75,7 +73,7 @@ impl Ctx {
     }
 
     // Logs
-    // TODO: logging always accessible, without Ctx object. if global Ctx locked, store text in the buffer, flush when unlocking the Ctx
+    // TODO: logging always accessible, without Term object. if global Term locked, store text in the buffer, flush when unlocking the Term
     fn log(&mut self, fg: &str, prefix: &str, msg: &str) {
         let time_str = self.pal.get_logs_timestr();
 
