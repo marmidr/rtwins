@@ -12,6 +12,7 @@ unicode-width = "0.1"
 # enum-iterator = "0.7.0"
 libc = "0.2"
 chrono = "0.4"
+# lazy_static = "1"
 
 [profile.release]
 # https://jamesmunns.com/blog/tinyrocket/
@@ -26,4 +27,5 @@ lto = false
 codegen-units = 2
 
 [features]
+# enable fast line drawing on terminals supporting code ESC-b
 fast_line = []

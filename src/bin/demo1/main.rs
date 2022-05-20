@@ -82,7 +82,7 @@ impl rtwins::pal::Pal for DemoPal {
         dif.as_millis() as u32 - prev_timestamp
     }
 
-    fn get_logs_timestr(&mut self) -> String {
+    fn get_logs_timestr(&self) -> String {
         let local_time = chrono::Local::now();
         local_time.format("%H:%M:%S%.3f ").to_string()
     }
@@ -117,8 +117,11 @@ fn tui_demo() {
         twl.flush_buff();
     }
 
-    println!("Press Ctrl-D to quit");
-    let mut itty = rtwins::input_tty::InputTty::new(2000);
+    rtwins::tr_info!("Press Ctrl-D to quit");
+    rtwins::tr_debug!("DEBUG MACRO 1");
+    rtwins::tr_debug!("DEBUG MACRO 2: X={} N={}", 42, "Warduna");
+
+    let mut itty = rtwins::input_tty::InputTty::new(1000);
     let mut ique = rtwins::input_decoder::InputQue::new();
     let mut dec =  rtwins::input_decoder::Decoder::new();
     let mut inp = rtwins::input::InputInfo::new();
@@ -219,8 +222,13 @@ fn tui_demo() {
                 twl.draw_invalidated(&mut dws);
             } // decode_input_seq
         }
-        else {
-            tw.lock().log_d(" -");
+
+        // flush the trace logs on every loop
+        {
+            let mut twl = tw.lock();
+            rtwins::TR_BUFFER.with(|mtx| {
+                mtx.lock().unwrap().flush(&mut twl);
+            });
         }
     }
 

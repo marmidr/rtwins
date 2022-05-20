@@ -89,7 +89,7 @@ fn draw_widget_internal(dctx: &mut DrawCtx) {
     let en = dctx.wnd_state.is_enabled(dctx.wgt);
     if !en { dctx.term.borrow_mut().push_attr(FontAttrib::Faint); }
 
-    dctx.term.borrow_mut().log_d(format!("drawing {} id:{}", dctx.wgt.prop, dctx.wgt.id).as_str());
+    // dctx.term.borrow_mut().log_d(format!("drawing {} id:{}", dctx.wgt.prop, dctx.wgt.id).as_str());
     dctx.strbuff.clear();
 
     match dctx.wgt.prop {

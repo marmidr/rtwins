@@ -8,6 +8,9 @@
 /// Library version from Cargo.toml
 pub const VER: &str = env!("CARGO_PKG_VERSION");
 
+// #[macro_use]
+// extern crate lazy_static;
+
 // public modules
 pub mod colors;
 pub mod esc;
@@ -19,6 +22,7 @@ pub mod input_decoder;
 pub mod string_ext;
 pub mod utils;
 pub mod common;
+pub mod debug_trace;
 
 // private modules
 mod widget_def;
@@ -30,6 +34,7 @@ mod terminal;
 pub use crate::common::*;
 pub use crate::terminal::*;
 pub use crate::widget_def::*;
+pub use crate::debug_trace::*;
 
 // group widget public code under single namespace
 pub mod wgt {
