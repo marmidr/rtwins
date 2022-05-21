@@ -31,7 +31,7 @@ pub trait Pal {
     fn get_timespan_ms(&mut self, prev_timestamp: u32) -> u32 { 0 }
 
     /// Returns formated time, used for logs timestamp
-    fn get_logs_timestr(&self) -> String { String::new() }
+    fn get_logs_timestr(&self) -> String { String::from(" 0:00:00.000 ") }
 }
 
 /// Empty PAL

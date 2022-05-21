@@ -97,21 +97,22 @@ impl Term {
         self.pal.flush_buff();
     }
 
-    pub fn log2(&mut self, fg: &str, time_str: &str, prefix: &str, msg: &str) {
+    pub fn log2(&mut self, fg_color: &str, time_str: &str, prefix: &str, msg: &str) {
         self.pal.flush_buff();
         self.cursor_save_pos();
         self.move_to(0, self.logs_row);
         self.push_cl_bg(ColorBG::Default);
-        self.pal.write_str(fg);
+        self.pal.write_str(esc::FG_DEFAULT);
         self.insert_lines(1);
 
         self.pal.mark_logging(true);
         self.pal.write_str(&time_str);
+        self.pal.write_str(fg_color);
         self.pal.write_str(prefix);
         self.pal.write_str(msg);
+        self.pal.write_str(esc::FG_DEFAULT);
         self.pal.mark_logging(false);
 
-        self.pal.write_str(esc::FG_DEFAULT);
         self.pop_cl_bg();
         self.pal.write_char('\n');
         self.cursor_restore_pos();

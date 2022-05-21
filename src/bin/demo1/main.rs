@@ -131,6 +131,7 @@ fn tui_demo() {
         // TODO: detect that application was sent to background and restore terminal config
 
         if q {
+            rtwins::tr_warn!("Exit requested");
             break;
         }
         else if inp_seq.len() > 0 {
@@ -235,6 +236,9 @@ fn tui_demo() {
     // epilogue
     {
         let mut twl = tw.lock();
+        rtwins::TR_BUFFER.with(|mtx| {
+            mtx.lock().unwrap().flush(&mut twl);
+        });
         twl.mouse_mode(rtwins::MouseMode::Off);
         twl.log_clear();
         let logs_row = twl.logs_row;

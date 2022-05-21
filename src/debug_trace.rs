@@ -16,9 +16,9 @@ pub struct TraceBuffer {
 
 #[derive(Default)]
 struct TraceItem {
-    pub fg: String,
+    pub fg_color: &'static str,
     pub time_str: String,
-    pub prefix: String,
+    pub prefix: &'static str,
     pub msg: String,
 }
 
@@ -31,87 +31,57 @@ thread_local! {
 #[macro_export]
 macro_rules! tr_debug {
     ($MSG:expr) => {
-        rtwins::TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.trace_d(file!(), line!(), $MSG);
-            }
-        });
+        rtwins::TraceBuffer::trace_d(file!(), line!(), $MSG.into());
     };
 
     ($FMT:literal, $($ARGS:tt)+) => {
-        rtwins::TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.trace_d(file!(), line!(), format!($FMT, $($ARGS)+).as_str());
-            }
-        });
+        rtwins::TraceBuffer::trace_d(file!(), line!(), format!($FMT, $($ARGS)+).into());
     };
 }
 
 #[macro_export]
 macro_rules! tr_info {
     ($MSG:expr) => {
-        rtwins::TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.trace_i(file!(), line!(), $MSG);
-            }
-        });
+        rtwins::TraceBuffer::trace_i(file!(), line!(), $MSG.into());
     };
 
     ($FMT:literal, $($ARGS:tt)+) => {
-        rtwins::TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.trace_i(file!(), line!(), format!($FMT, $($ARGS)+).as_str());
-            }
-        });
+        rtwins::TraceBuffer::trace_i(file!(), line!(), format!($FMT, $($ARGS)+).into());
     };
 }
 
 #[macro_export]
 macro_rules! tr_warn {
     ($MSG:expr) => {
-        rtwins::TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.trace_w(file!(), line!(), $MSG);
-            }
-        });
+        rtwins::TraceBuffer::trace_w(file!(), line!(), $MSG.into());
     };
 
     ($FMT:literal, $($ARGS:tt)+) => {
-        rtwins::TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.trace_w(file!(), line!(), format!($FMT, $($ARGS)+).as_str());
-            }
-        });
+        rtwins::TraceBuffer::trace_w(file!(), line!(), format!($FMT, $($ARGS)+).into());
     };
 }
 
 #[macro_export]
 macro_rules! tr_err {
     ($MSG:expr) => {
-        rtwins::TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.trace_e(file!(), line!(), $MSG);
-            }
-        });
+        rtwins::TraceBuffer::trace_e(file!(), line!(), $MSG.into());
     };
 
     ($FMT:literal, $($ARGS:tt)+) => {
-        rtwins::TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.trace_e(file!(), line!(), format!($FMT, $($ARGS)+).as_str());
-            }
-        });
+        rtwins::TraceBuffer::trace_e(file!(), line!(), format!($FMT, $($ARGS)+).into());
     };
 }
 
 // ---------------------------------------------------------------------------------------------- //
+
+type Msg = std::borrow::Cow<'static, str>;
 
 impl TraceBuffer {
     pub fn new() -> TraceBuffer {
         TraceBuffer{
             queue: Default::default(),
             pal: Arc::new(crate::pal::PalStub::default()),
-            print_location: false
+            print_location: true
         }
     }
 
@@ -119,52 +89,69 @@ impl TraceBuffer {
         self.pal = p;
     }
 
-    // TODO: msg should be a Cow<>
-    fn push_log(&mut self, fg: &str, prfx: &str, msg: &str) {
+    fn push_log(&mut self, filepath: &str, line: u32, fg_color: &'static str, prefix: &'static str, msg: Msg) {
         let time_str = self.pal.get_logs_timestr();
+        let mut msg = msg.to_string();
+
+        if self.print_location {
+            let filename = filepath.split('/').last().unwrap_or_default();
+            let longmsg = format!("{}:{}: {}", filename, line, msg);
+            msg = longmsg;
+        }
 
         // deferred log, as the Term is locked OR already contains some items on queue,
         // in order to preserve the messages ordering
         self.queue.push_back(TraceItem{
-            fg: String::from(fg),
+            fg_color,
             time_str,
-            prefix: String::from(prfx),
-            msg: String::from(msg)
+            prefix,
+            msg,
         });
     }
 
     pub fn flush(&mut self, term: &mut crate::Term) {
         self.queue.iter().for_each(|item| {
-            term.log2(&item.fg, &item.time_str, &item.prefix, &item.msg);
+            term.log2(&item.fg_color, &item.time_str, &item.prefix, &item.msg);
         });
 
         self.queue.clear();
     }
 
     /// Print Debug message
-    pub fn trace_d(&mut self, file: &str, line: u32, msg: &str) {
-        if self.print_location {
-            self.push_log(esc::FG_BLACK_INTENSE, "-D- ",
-                format!("{}:{}: {}", file, line, msg).as_str()
-            );
-        }
-        else {
-            self.push_log(esc::FG_BLACK_INTENSE, "-D- ", msg);
-        }
+    pub fn trace_d(filepath: &str, line: u32, msg: Msg) {
+        TR_BUFFER.with(|mtx|{
+            if let Ok(ref mut guard) = mtx.lock() {
+                guard.push_log(filepath, line, esc::FG_BLACK_INTENSE, "-D- ", msg);
+            }
+        });
     }
 
     /// Print Info message
-    pub fn trace_i(&mut self, file: &str, line: u32, msg: &str) {
-        self.push_log(esc::FG_WHITE, "-I- ", msg);
+    pub fn trace_i(filepath: &str, line: u32, msg: Msg) {
+        TR_BUFFER.with(|mtx|{
+            if let Ok(ref mut guard) = mtx.lock() {
+                guard.push_log(filepath, line, esc::FG_WHITE, "-I- ", msg);
+            }
+        });
     }
 
     /// Print Warning message
-    pub fn trace_w(&mut self, msg: &str) {
-        self.push_log(esc::FG_YELLOW, "-W- ", msg);
+    pub fn trace_w(filepath: &str, line: u32, msg: Msg) {
+        TR_BUFFER.with(|mtx|{
+            if let Ok(ref mut guard) = mtx.lock() {
+                guard.push_log(filepath, line, esc::FG_YELLOW, "-W- ", msg);
+            }
+        });
     }
 
     /// Print Error message
-    pub fn trace_e(&mut self, file: &str, line: u32, msg: &str) {
-        self.push_log(esc::FG_RED, "-E- ", msg);
+    pub fn trace_e(filepath: &str, line: u32, msg: Msg) {
+        TR_BUFFER.with(|mtx|{
+            if let Ok(ref mut guard) = mtx.lock() {
+                guard.push_log(filepath, line, esc::FG_RED, "-E- ", msg);
+            }
+        });
     }
 }
+
+// ---------------------------------------------------------------------------------------------- //
