@@ -372,7 +372,7 @@ pub fn pagectrl_select_page(ws: &mut dyn WindowState, pgctrl_id: WId, page_id: W
         }
     }
 
-    // TWINS_LOG_W("Widget Id=%d is not PageControl Id=%d page", pageID, pageControlID);
+    tr_warn!("Widget Id={} is not PageControl Id={} page", page_id, pgctrl_id);
 }
 
 pub fn pagectrl_select_next_page(ws: &mut dyn WindowState, pgctrl_id: WId, next: bool) {
@@ -492,11 +492,11 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
     );
 
     if let Some(focused) = find_by_id(ws.get_widgets(), ws.get_focused_id()) {
-        // TWINS_LOG_D("focused id=%d (%s)", p_wgt->id, toString(p_wgt->type));
+        // tr_debug!("focused id={} ({})", focused.id, focused.prop);
         WGT_STATE.with(|wgstate|
             wgstate.borrow_mut().focused_wgt = focused.id
         );
-        // setCursorAt(term, p_wgt); TODO:
+        //TODO: wgt::set_cursor_at(term, ws, focused);
     }
     else {
         WGT_STATE.with(|wgstate|

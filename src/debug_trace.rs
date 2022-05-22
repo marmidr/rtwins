@@ -4,13 +4,11 @@
 use crate::esc;
 use std::collections::vec_deque::VecDeque;
 use std::sync::Mutex;
-use std::sync::Arc;
 
 // ---------------------------------------------------------------------------------------------- //
 
 pub struct TraceBuffer {
     queue: VecDeque<TraceItem>,
-    pal: Arc<dyn crate::pal::Pal>,
     pub print_location: bool,
 }
 
@@ -23,7 +21,7 @@ struct TraceItem {
 }
 
 thread_local! {
-    pub static TR_BUFFER: Mutex<TraceBuffer> = Mutex::new(TraceBuffer::new());
+    static TR_BUFFER: Mutex<TraceBuffer> = Mutex::new(TraceBuffer::new());
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -31,44 +29,51 @@ thread_local! {
 #[macro_export]
 macro_rules! tr_debug {
     ($MSG:expr) => {
-        rtwins::TraceBuffer::trace_d(file!(), line!(), $MSG.into());
+        TraceBuffer::trace_d(file!(), line!(), $MSG.into());
     };
 
     ($FMT:literal, $($ARGS:tt)+) => {
-        rtwins::TraceBuffer::trace_d(file!(), line!(), format!($FMT, $($ARGS)+).into());
+        TraceBuffer::trace_d(file!(), line!(), format!($FMT, $($ARGS)+).into());
     };
 }
 
 #[macro_export]
 macro_rules! tr_info {
     ($MSG:expr) => {
-        rtwins::TraceBuffer::trace_i(file!(), line!(), $MSG.into());
+        TraceBuffer::trace_i(file!(), line!(), $MSG.into());
     };
 
     ($FMT:literal, $($ARGS:tt)+) => {
-        rtwins::TraceBuffer::trace_i(file!(), line!(), format!($FMT, $($ARGS)+).into());
+        TraceBuffer::trace_i(file!(), line!(), format!($FMT, $($ARGS)+).into());
     };
 }
 
 #[macro_export]
 macro_rules! tr_warn {
     ($MSG:expr) => {
-        rtwins::TraceBuffer::trace_w(file!(), line!(), $MSG.into());
+        TraceBuffer::trace_w(file!(), line!(), $MSG.into());
     };
 
     ($FMT:literal, $($ARGS:tt)+) => {
-        rtwins::TraceBuffer::trace_w(file!(), line!(), format!($FMT, $($ARGS)+).into());
+        TraceBuffer::trace_w(file!(), line!(), format!($FMT, $($ARGS)+).into());
     };
 }
 
 #[macro_export]
 macro_rules! tr_err {
     ($MSG:expr) => {
-        rtwins::TraceBuffer::trace_e(file!(), line!(), $MSG.into());
+        TraceBuffer::trace_e(file!(), line!(), $MSG.into());
     };
 
     ($FMT:literal, $($ARGS:tt)+) => {
-        rtwins::TraceBuffer::trace_e(file!(), line!(), format!($FMT, $($ARGS)+).into());
+        TraceBuffer::trace_e(file!(), line!(), format!($FMT, $($ARGS)+).into());
+    };
+}
+
+#[macro_export]
+macro_rules! tr_flush {
+    ($TRM:expr) => {
+        TraceBuffer::trace_flush($TRM);
     };
 }
 
@@ -80,17 +85,12 @@ impl TraceBuffer {
     pub fn new() -> TraceBuffer {
         TraceBuffer{
             queue: Default::default(),
-            pal: Arc::new(crate::pal::PalStub::default()),
             print_location: true
         }
     }
 
-    pub fn set_pal(&mut self, p: Arc<dyn crate::pal::Pal>) {
-        self.pal = p;
-    }
-
     fn push_log(&mut self, filepath: &str, line: u32, fg_color: &'static str, prefix: &'static str, msg: Msg) {
-        let time_str = self.pal.get_logs_timestr();
+        let time_str = "".to_owned(); // TODO:
         let mut msg = msg.to_string();
 
         if self.print_location {
@@ -109,7 +109,7 @@ impl TraceBuffer {
         });
     }
 
-    pub fn flush(&mut self, term: &mut crate::Term) {
+    fn flush(&mut self, term: &mut crate::Term) {
         self.queue.iter().for_each(|item| {
             term.log2(&item.fg_color, &item.time_str, &item.prefix, &item.msg);
         });
@@ -149,6 +149,15 @@ impl TraceBuffer {
         TR_BUFFER.with(|mtx|{
             if let Ok(ref mut guard) = mtx.lock() {
                 guard.push_log(filepath, line, esc::FG_RED, "-E- ", msg);
+            }
+        });
+    }
+
+    /// Flush buffered messages
+    pub fn trace_flush(term: &mut crate::Term) {
+        TR_BUFFER.with(|mtx|{
+            if let Ok(ref mut guard) = mtx.lock() {
+                guard.flush(term);
             }
         });
     }

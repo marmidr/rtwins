@@ -3,7 +3,7 @@
 #![allow(unused_variables)]
 
 extern crate rtwins;
-use rtwins::wgt;
+use rtwins::*;
 use rtwins::WindowState; // to use trait implementation
 
 use std::io::Write;
@@ -57,11 +57,11 @@ impl rtwins::pal::Pal for DemoPal {
             .expect("Error flushing stdout");
 
         self.line_buff.clear();
-        // self.sleep(100);
+        // self.sleep(100); // helpful when debugging drawing process
     }
 
     fn mark_logging(&mut self, active: bool) {
-        if self.writing_logs {
+        if self.writing_logs && !active {
             // write to logs.txt
         }
 
@@ -105,21 +105,23 @@ fn tui_demo() {
     // let mut wm = WndManager::new();
 
     {
-        let mut twl = tw.lock();
-        twl.logs_row = {
+        let mut term = tw.lock();
+        term.logs_row = {
             let coord = dws.get_window_coord();
             let sz = dws.get_window_size();
             coord.row as u16 + sz.height as u16 + 1
         };
-        twl.write_str(rtwins::esc::TERM_RESET);
-        twl.draw_wnd(&mut dws);
-        twl.mouse_mode(rtwins::MouseMode::M2);
-        twl.flush_buff();
+        term.write_str(rtwins::esc::TERM_RESET);
+        term.draw_wnd(&mut dws);
+        term.mouse_mode(rtwins::MouseMode::M2);
+        term.flush_buff();
     }
 
     rtwins::tr_info!("Press Ctrl-D to quit");
-    rtwins::tr_debug!("DEBUG MACRO 1");
-    rtwins::tr_debug!("DEBUG MACRO 2: X={} N={}", 42, "Warduna");
+    rtwins::tr_warn!("WARN MACRO 1");
+    rtwins::tr_err!("ERR MACRO 1");
+    rtwins::tr_debug!("DEBUG MACRO: X={} N={}", 42, "Warduna");
+    rtwins::tr_flush!(&mut tw.lock());
 
     let mut itty = rtwins::input_tty::InputTty::new(1000);
     let mut ique = rtwins::input_decoder::InputQue::new();
@@ -143,7 +145,7 @@ fn tui_demo() {
             // - blokuje mutexa
             // - ustawia wewnętrzną zmienną statyczną na Term, pozwalającą na dostęp do Term z dowolnego miejsca w czasie 'sesji'
             // - zwraca guard który w Drop kasuje tą zmienną statyczną
-            let mut twl = tw.lock();
+            let mut term = tw.lock();
 
             // print raw sequence
             if false {
@@ -152,7 +154,7 @@ fn tui_demo() {
                     if *b == 0 { break; }
                     if *b < b' ' { s.push('�') } else { s.push(*b as char) };
                 }
-                twl.log_d(format!("seq={}", s).as_str());
+                term.log_d(format!("seq={}", s).as_str());
             }
 
             while dec.decode_input_seq(&mut ique, &mut inp) > 0 {
@@ -162,19 +164,19 @@ fn tui_demo() {
                 // input debug info
                 match inp.typ {
                     InputType::Char(ref cb) => {
-                        twl.log_d(format!("char={}", cb.utf8str()).as_str());
+                        term.log_d(format!("char={}", cb.utf8str()).as_str());
                     },
                     InputType::Key(ref k) => {
-                        twl.log_d(format!("key={}", inp.name).as_str());
+                        term.log_d(format!("key={}", inp.name).as_str());
                     },
                     InputType::Mouse(ref m) => {
                         let mut r = rtwins::Rect::cdeflt();
                         let wgt_opt = wgt::find_at(&mut dws, m.col, m.row, &mut r);
                         if let Some(w) = wgt_opt {
-                            twl.log_d(format!("mouse={:?} at {}:{} ({})", m.evt, m.col, m.row, w.prop).as_str());
+                            term.log_d(format!("mouse={:?} at {}:{} ({})", m.evt, m.col, m.row, w.prop).as_str());
                         }
                         else {
-                            twl.log_d(format!("mouse={:?} at {}:{}", m.evt, m.col, m.row).as_str());
+                            term.log_d(format!("mouse={:?} at {}:{}", m.evt, m.col, m.row).as_str());
                         }
                     },
                     InputType::None => {
@@ -192,19 +194,19 @@ fn tui_demo() {
                     }
                     else if *k == Key::F4 {
                         mouse_on = !mouse_on;
-                        twl.log_i(format!("Mouse {}", if mouse_on {"ON"} else {"OFF"}).as_str());
-                        twl.mouse_mode(if mouse_on {rtwins::MouseMode::M2} else {rtwins::MouseMode::Off});
-                        twl.flush_buff();
+                        term.log_i(format!("Mouse {}", if mouse_on {"ON"} else {"OFF"}).as_str());
+                        term.mouse_mode(if mouse_on {rtwins::MouseMode::M2} else {rtwins::MouseMode::Off});
+                        term.flush_buff();
                     }
                     else if *k == Key::F5 {
-                        twl.screen_clr_all();
+                        term.screen_clr_all();
                         // draw windows from bottom to top
                         // TODO: wm.redraw_all();
-                        twl.draw_wnd(&mut dws);
-                        twl.flush_buff();
+                        term.draw_wnd(&mut dws);
+                        term.flush_buff();
                     }
                     else if *k == Key::F6 {
-                        twl.log_clear();
+                        term.log_clear();
                     }
                     else if inp.kmod.has_ctrl() && (*k == Key::PgUp || *k == Key::PgDown) {
                         // if wm.is_top_wnd(&dws) {
@@ -220,30 +222,23 @@ fn tui_demo() {
                     }
                 }
 
-                twl.draw_invalidated(&mut dws);
+                term.draw_invalidated(&mut dws);
             } // decode_input_seq
         }
 
         // flush the trace logs on every loop
-        {
-            let mut twl = tw.lock();
-            rtwins::TR_BUFFER.with(|mtx| {
-                mtx.lock().unwrap().flush(&mut twl);
-            });
-        }
+        rtwins::tr_flush!(&mut tw.lock());
     }
 
     // epilogue
     {
-        let mut twl = tw.lock();
-        rtwins::TR_BUFFER.with(|mtx| {
-            mtx.lock().unwrap().flush(&mut twl);
-        });
-        twl.mouse_mode(rtwins::MouseMode::Off);
-        twl.log_clear();
-        let logs_row = twl.logs_row;
-        twl.move_to(0, logs_row);
-        twl.flush_buff();
+        let mut term = tw.lock();
+        rtwins::tr_flush!(&mut term);
+        term.mouse_mode(rtwins::MouseMode::Off);
+        term.log_clear();
+        let logs_row = term.logs_row;
+        term.move_to(0, logs_row);
+        term.flush_buff();
     }
 }
 
@@ -251,8 +246,6 @@ fn tui_demo() {
 
 #[allow(dead_code)]
 fn test_esc_codes() {
-    use rtwins::esc;
-
     println!(
         "** {}{}{} ** demo; lib v{}{}{}",
         esc::BOLD,

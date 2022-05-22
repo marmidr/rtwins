@@ -73,7 +73,6 @@ impl Term {
     }
 
     // Logs
-    // TODO: logging always accessible, without Term object. if global Term locked, store text in the buffer, flush when unlocking the Term
     fn log(&mut self, fg: &str, prefix: &str, msg: &str) {
         let time_str = self.pal.get_logs_timestr();
 
@@ -81,6 +80,7 @@ impl Term {
         self.cursor_save_pos();
         self.move_to(0, self.logs_row);
         self.push_cl_bg(ColorBG::Default);
+        self.pal.write_str(esc::FG_DEFAULT);
         self.pal.write_str(fg);
         self.insert_lines(1);
 
@@ -97,6 +97,7 @@ impl Term {
         self.pal.flush_buff();
     }
 
+    // Used by tr_ macros
     pub fn log2(&mut self, fg_color: &str, time_str: &str, prefix: &str, msg: &str) {
         self.pal.flush_buff();
         self.cursor_save_pos();

@@ -89,7 +89,7 @@ fn draw_widget_internal(dctx: &mut DrawCtx) {
     let en = dctx.wnd_state.is_enabled(dctx.wgt);
     if !en { dctx.term.borrow_mut().push_attr(FontAttrib::Faint); }
 
-    // dctx.term.borrow_mut().log_d(format!("drawing {} id:{}", dctx.wgt.prop, dctx.wgt.id).as_str());
+    // tr_debug!("drawing {} id:{}", dctx.wgt.prop, dctx.wgt.id);
     dctx.strbuff.clear();
 
     match dctx.wgt.prop {
@@ -1013,7 +1013,7 @@ fn draw_line(strbuff: &mut String, c: char, len: u8) {
 
 fn draw_list_scroll_bar_v(term: &mut Term, coord: Coord, height: i16, pos_max: i16, pos: i16) {
     if pos > pos_max {
-        // term.log_d(format!("pos ({}) > max ({})", pos, pos_max).as_str());
+        tr_debug!("W: pos ({}) > max ({})", pos, pos_max);
         return;
     }
 
