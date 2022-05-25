@@ -22,16 +22,13 @@ pub trait Pal {
     fn mark_logging(&mut self, active: bool) {}
 
     /// Sleep for `ms` milliseconds
-    fn sleep(&mut self, ms: u16) {}
+    fn sleep(&self, ms: u16) {}
 
     /// Get current timestamp (since program start) in milliseconds
-    fn get_timestamp(&mut self) -> u32 { 0 }
+    fn get_timestamp(&self) -> u32 { 0 }
 
     /// Get difference between current and previous timestamp, in milliseconds
-    fn get_timespan_ms(&mut self, prev_timestamp: u32) -> u32 { 0 }
-
-    /// Returns formated time, used for logs timestamp
-    fn get_logs_timestr(&self) -> String { String::from(" 0:00:00.000 ") }
+    fn get_timespan_ms(&self, prev_timestamp: u32) -> u32 { 0 }
 }
 
 /// Empty PAL

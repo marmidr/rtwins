@@ -11,6 +11,7 @@ use std::sync::Mutex;
 pub struct TraceBuffer {
     queue: VecDeque<TraceItem>,
     pub print_location: bool,
+    pub trace_timestr: Box<fn() -> String>,
 }
 
 #[derive(Default)]
@@ -78,6 +79,13 @@ macro_rules! tr_flush {
     };
 }
 
+#[macro_export]
+macro_rules! tr_set_timestr_function {
+    ($F:expr) => {
+        TraceBuffer::set_timestr_fn(Box::new($F));
+    };
+}
+
 // ---------------------------------------------------------------------------------------------- //
 
 type Msg = std::borrow::Cow<'static, str>;
@@ -86,13 +94,15 @@ impl TraceBuffer {
     pub fn new() -> TraceBuffer {
         TraceBuffer{
             queue: Default::default(),
-            print_location: true
+            print_location: true,
+            trace_timestr: Box::new(|| {TraceBuffer::timestr_default().to_owned()})
         }
     }
 
-    fn push_log(&mut self, filepath: &str, line: u32, fg_color: &'static str, prefix: &'static str, msg: Msg) {
-        let time_str = crate::Term::lock_read().pal.get_logs_timestr();
+    /// Creates a new trace entry on the internal queue
+    fn push(&mut self, filepath: &str, line: u32, fg_color: &'static str, prefix: &'static str, msg: Msg) {
         let mut msg = msg.to_string();
+        let time_str = self.trace_timestr.as_ref()();
 
         if self.print_location {
             let filename = filepath.split('/').last().unwrap_or_default();
@@ -110,9 +120,10 @@ impl TraceBuffer {
         });
     }
 
+    /// Writes trace queue to the terminal
     fn flush(&mut self, term: &mut crate::Term) {
         self.queue.iter().for_each(|item| {
-            term.log2(&item.fg_color, &item.time_str, &item.prefix, &item.msg);
+            term.trace_message(&item.fg_color, &item.time_str, &item.prefix, &item.msg);
         });
 
         self.queue.clear();
@@ -122,7 +133,7 @@ impl TraceBuffer {
     pub fn trace_d(filepath: &str, line: u32, msg: Msg) {
         TR_BUFFER.with(|mtx|{
             if let Ok(ref mut guard) = mtx.lock() {
-                guard.push_log(filepath, line, esc::FG_BLACK_INTENSE, "-D- ", msg);
+                guard.push(filepath, line, esc::FG_BLACK_INTENSE, "-D- ", msg);
             }
         });
     }
@@ -131,7 +142,7 @@ impl TraceBuffer {
     pub fn trace_i(filepath: &str, line: u32, msg: Msg) {
         TR_BUFFER.with(|mtx|{
             if let Ok(ref mut guard) = mtx.lock() {
-                guard.push_log(filepath, line, esc::FG_WHITE, "-I- ", msg);
+                guard.push(filepath, line, esc::FG_WHITE, "-I- ", msg);
             }
         });
     }
@@ -140,7 +151,7 @@ impl TraceBuffer {
     pub fn trace_w(filepath: &str, line: u32, msg: Msg) {
         TR_BUFFER.with(|mtx|{
             if let Ok(ref mut guard) = mtx.lock() {
-                guard.push_log(filepath, line, esc::FG_YELLOW, "-W- ", msg);
+                guard.push(filepath, line, esc::FG_YELLOW, "-W- ", msg);
             }
         });
     }
@@ -149,7 +160,7 @@ impl TraceBuffer {
     pub fn trace_e(filepath: &str, line: u32, msg: Msg) {
         TR_BUFFER.with(|mtx|{
             if let Ok(ref mut guard) = mtx.lock() {
-                guard.push_log(filepath, line, esc::FG_RED, "-E- ", msg);
+                guard.push(filepath, line, esc::FG_RED, "-E- ", msg);
             }
         });
     }
@@ -161,6 +172,20 @@ impl TraceBuffer {
                 guard.flush(term);
             }
         });
+    }
+
+    /// Set user provided pointer to function returning traces timestamp string
+    pub fn set_timestr_fn(f: Box<fn() -> String>) {
+        TR_BUFFER.with(|mtx|{
+            if let Ok(ref mut guard) = mtx.lock() {
+                guard.trace_timestr = f;
+            }
+        });
+    }
+
+    /// Returns default timestamp string if system time or Pal is unavailable
+    pub fn timestr_default() -> &'static str {
+        " 0:00:00.000 "
     }
 }
 

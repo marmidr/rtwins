@@ -6,7 +6,7 @@ use crate::esc;
 use crate::wgt;
 use crate::widget_def::*;
 
-use std::sync::{RwLock, RwLockWriteGuard, RwLockReadGuard};
+use std::sync::{RwLock, RwLockWriteGuard, RwLockReadGuard, TryLockResult};
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -26,7 +26,7 @@ lazy_static! {
 ///
 pub struct Term {
     pub pal: PalBox,
-    pub logs_row: u16,
+    pub trace_row: u16,
     current_cl_fg: ColorFG,
     current_cl_bg: ColorBG,
     attr_faint: i8,
@@ -36,16 +36,24 @@ pub struct Term {
     pub(crate) stack_attr: Vec<FontAttrib>,
 }
 
+// pub type TermGuard = RwLockWriteGuard<'static, Term>;
+
 impl Term {
-    /// Get read-only access to internal instance
-    pub fn lock_read() -> RwLockReadGuard<'static, Term> {
-        let lock = TERM.read().unwrap();
+    /// Get read-only access to global instance
+    pub fn try_lock_read() -> TryLockResult<RwLockReadGuard<'static, Term>> {
+        let lock = TERM.try_read();
         lock
     }
 
-    /// Get write access to internal instance
+    /// Get write access to global instance or panic
     pub fn lock_write() -> RwLockWriteGuard<'static, Term> {
         let lock = TERM.write().unwrap();
+        lock
+    }
+
+    /// Get write access to global instance
+    pub fn try_lock_write() -> TryLockResult<RwLockWriteGuard<'static, Term>> {
+        let lock = TERM.try_write();
         lock
     }
 
@@ -53,7 +61,7 @@ impl Term {
     pub fn new(p: PalBox) -> Self {
         Term{
             pal: p,
-            logs_row: 0,
+            trace_row: 0,
             current_cl_fg: ColorFG::Default,
             current_cl_bg: ColorBG::Default,
             attr_faint: 0,
@@ -93,36 +101,11 @@ impl Term {
         self.pal.flush_buff();
     }
 
-    // Logs
-    fn log(&mut self, fg: &str, prefix: &str, msg: &str) {
-        let time_str = self.pal.get_logs_timestr();
-
-        self.pal.flush_buff();
-        self.cursor_save_pos();
-        self.move_to(0, self.logs_row);
-        self.push_cl_bg(ColorBG::Default);
-        self.pal.write_str(esc::FG_DEFAULT);
-        self.pal.write_str(fg);
-        self.insert_lines(1);
-
-        self.pal.mark_logging(true);
-        self.pal.write_str(&time_str);
-        self.pal.write_str(prefix);
-        self.pal.write_str(msg);
-        self.pal.mark_logging(false);
-
-        self.pal.write_str(esc::FG_DEFAULT);
-        self.pop_cl_bg();
-        self.pal.write_char('\n');
-        self.cursor_restore_pos();
-        self.pal.flush_buff();
-    }
-
     // Used by tr_ macros
-    pub fn log2(&mut self, fg_color: &str, time_str: &str, prefix: &str, msg: &str) {
+    pub fn trace_message(&mut self, fg_color: &str, time_str: &str, prefix: &str, msg: &str) {
         self.pal.flush_buff();
         self.cursor_save_pos();
-        self.move_to(0, self.logs_row);
+        self.move_to(0, self.trace_row);
         self.push_cl_bg(ColorBG::Default);
         self.pal.write_str(esc::FG_DEFAULT);
         self.insert_lines(1);
@@ -141,30 +124,10 @@ impl Term {
         self.pal.flush_buff();
     }
 
-    /// Print Debug message
-    pub fn log_d(&mut self, msg: &str) {
-        self.log(esc::FG_BLACK_INTENSE, "-D- ", msg);
-    }
-
-    /// Print Info message
-    pub fn log_i(&mut self, msg: &str) {
-        self.log(esc::FG_WHITE, "-I- ", msg);
-    }
-
-    /// Print Warning message
-    pub fn log_w(&mut self, msg: &str) {
-        self.log(esc::FG_YELLOW, "-W- ", msg);
-    }
-
-    /// Print Error message
-    pub fn log_e(&mut self, msg: &str) {
-        self.log(esc::FG_RED, "-E- ", msg);
-    }
-
     /// Clear logs
-    pub fn log_clear(&mut self) {
+    pub fn trace_area_clear(&mut self) {
         self.cursor_save_pos();
-        self.move_to(0, self.logs_row);
+        self.move_to(0, self.trace_row);
         self.screen_clr_below();
         self.cursor_restore_pos();
     }

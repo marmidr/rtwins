@@ -68,23 +68,18 @@ impl rtwins::pal::Pal for DemoPal {
         self.writing_logs = active;
     }
 
-    fn sleep(&mut self, ms: u16) {
+    fn sleep(&self, ms: u16) {
         std::thread::sleep(std::time::Duration::from_millis(ms as u64));
     }
 
-    fn get_timestamp(&mut self) -> u32 {
+    fn get_timestamp(&self) -> u32 {
         let dif = std::time::Instant::now() - self.started_at;
         dif.as_millis() as u32
     }
 
-    fn get_timespan_ms(&mut self, prev_timestamp: u32) -> u32 {
+    fn get_timespan_ms(&self, prev_timestamp: u32) -> u32 {
         let dif = std::time::Instant::now() - self.started_at;
         dif.as_millis() as u32 - prev_timestamp
-    }
-
-    fn get_logs_timestr(&self) -> String {
-        let local_time = chrono::Local::now();
-        local_time.format("%H:%M:%S%.3f ").to_string()
     }
 }
 
@@ -106,9 +101,16 @@ fn tui_demo() {
     let mut mouse_on = true;
     // let mut wm = WndManager::new();
 
+    // register function providing traces timestamp
+    rtwins::tr_set_timestr_function!(||{
+        let local_time = chrono::Local::now();
+        local_time.format("%H:%M:%S%.3f ").to_string()
+    });
+
+    // configure terminal, draw window
     {
         let mut term = rtwins::Term::lock_write();
-        term.logs_row = {
+        term.trace_row = {
             let coord = dws.get_window_coord();
             let sz = dws.get_window_size();
             coord.row as u16 + sz.height as u16 + 1
@@ -143,8 +145,6 @@ fn tui_demo() {
                 ique.push_back(*b);
             }
 
-            let mut term = rtwins::Term::lock_write();
-
             // print raw sequence
             if false {
                 let mut s = String::with_capacity(10);
@@ -152,7 +152,7 @@ fn tui_demo() {
                     if *b == 0 { break; }
                     if *b < b' ' { s.push('�') } else { s.push(*b as char) };
                 }
-                term.log_d(format!("seq={}", s).as_str());
+                rtwins::tr_debug!("seq={}", s);
             }
 
             while dec.decode_input_seq(&mut ique, &mut inp) > 0 {
@@ -162,19 +162,19 @@ fn tui_demo() {
                 // input debug info
                 match inp.typ {
                     InputType::Char(ref cb) => {
-                        term.log_d(format!("char={}", cb.utf8str()).as_str());
+                        rtwins::tr_debug!("char={}", cb.utf8str());
                     },
                     InputType::Key(ref k) => {
-                        term.log_d(format!("key={}", inp.name).as_str());
+                        rtwins::tr_debug!("key={}", inp.name);
                     },
                     InputType::Mouse(ref m) => {
                         let mut r = rtwins::Rect::cdeflt();
                         let wgt_opt = wgt::find_at(&mut dws, m.col, m.row, &mut r);
                         if let Some(w) = wgt_opt {
-                            term.log_d(format!("mouse={:?} at {}:{} ({})", m.evt, m.col, m.row, w.prop).as_str());
+                            rtwins::tr_debug!("mouse={:?} at {}:{} ({})", m.evt, m.col, m.row, w.prop);
                         }
                         else {
-                            term.log_d(format!("mouse={:?} at {}:{}", m.evt, m.col, m.row).as_str());
+                            rtwins::tr_debug!("mouse={:?} at {}:{}", m.evt, m.col, m.row);
                         }
                     },
                     InputType::None => {
@@ -184,6 +184,7 @@ fn tui_demo() {
                 // input processing
                 if let InputType::Key(ref k) = inp.typ {
                     use tui_def::Id;
+                    let mut term = rtwins::Term::lock_write();
 
                     if *k == Key::F2 {
                         dws.rs.set_enabled(Id::WndMain.into(),
@@ -192,7 +193,7 @@ fn tui_demo() {
                     }
                     else if *k == Key::F4 {
                         mouse_on = !mouse_on;
-                        term.log_i(format!("Mouse {}", if mouse_on {"ON"} else {"OFF"}).as_str());
+                        rtwins::tr_info!("Mouse {}", if mouse_on {"ON"} else {"OFF"});
                         term.mouse_mode(if mouse_on {rtwins::MouseMode::M2} else {rtwins::MouseMode::Off});
                         term.flush_buff();
                     }
@@ -204,7 +205,7 @@ fn tui_demo() {
                         term.flush_buff();
                     }
                     else if *k == Key::F6 {
-                        term.log_clear();
+                        term.trace_area_clear();
                     }
                     else if inp.kmod.has_ctrl() && (*k == Key::PgUp || *k == Key::PgDown) {
                         // if wm.is_top_wnd(&dws) {
@@ -220,7 +221,7 @@ fn tui_demo() {
                     }
                 }
 
-                term.draw_invalidated(&mut dws);
+                rtwins::Term::lock_write().draw_invalidated(&mut dws);
             } // decode_input_seq
         }
 
@@ -233,8 +234,8 @@ fn tui_demo() {
         let mut term = rtwins::Term::lock_write();
         rtwins::tr_flush!(&mut term);
         term.mouse_mode(rtwins::MouseMode::Off);
-        term.log_clear();
-        let logs_row = term.logs_row;
+        term.trace_area_clear();
+        let logs_row = term.trace_row;
         term.move_to(0, logs_row);
         term.flush_buff();
     }
