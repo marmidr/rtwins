@@ -2,6 +2,7 @@
 //! This module exports `tr_` macros available anywhere, anytime
 
 use crate::esc;
+
 use std::collections::vec_deque::VecDeque;
 use std::sync::Mutex;
 
@@ -90,7 +91,7 @@ impl TraceBuffer {
     }
 
     fn push_log(&mut self, filepath: &str, line: u32, fg_color: &'static str, prefix: &'static str, msg: Msg) {
-        let time_str = "".to_owned(); // TODO:
+        let time_str = crate::Term::lock_read().pal.get_logs_timestr();
         let mut msg = msg.to_string();
 
         if self.print_location {

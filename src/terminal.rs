@@ -6,12 +6,21 @@ use crate::esc;
 use crate::wgt;
 use crate::widget_def::*;
 
+use std::sync::{RwLock, RwLockWriteGuard, RwLockReadGuard};
+
 // ---------------------------------------------------------------------------------------------- //
 
-pub type PalBox = Box<dyn crate::pal::Pal>;
+// https://github.com/rust-lang-nursery/lazy-static.rs/issues/169
+pub type PalBox = Box<dyn crate::pal::Pal + Send + Sync>;
 
-// TODO: static Pal instead of PalBox
-// pub struct Term<P: crate::pal::Pal>
+lazy_static! {
+    /// Global instance of Terminal
+    static ref TERM: RwLock<Term> = RwLock::new(
+        Term::new(
+            Box::new(
+                crate::pal::PalStub::default()))
+    );
+}
 
 /// Terminal low level API and context
 ///
@@ -28,6 +37,18 @@ pub struct Term {
 }
 
 impl Term {
+    /// Get read-only access to internal instance
+    pub fn lock_read() -> RwLockReadGuard<'static, Term> {
+        let lock = TERM.read().unwrap();
+        lock
+    }
+
+    /// Get write access to internal instance
+    pub fn lock_write() -> RwLockWriteGuard<'static, Term> {
+        let lock = TERM.write().unwrap();
+        lock
+    }
+
     /// Creates default instance using provided Pal
     pub fn new(p: PalBox) -> Self {
         Term{

@@ -8,8 +8,8 @@
 /// Library version from Cargo.toml
 pub const VER: &str = env!("CARGO_PKG_VERSION");
 
-// #[macro_use]
-// extern crate lazy_static;
+#[macro_use]
+extern crate lazy_static;
 
 // public modules
 pub mod colors;
@@ -43,35 +43,3 @@ pub mod wgt {
 }
 
 // ---------------------------------------------------------------------------------------------- //
-
-use std::sync::{Mutex, MutexGuard, TryLockResult};
-
-// rename Tui
-pub struct TWins {
-    term: Mutex<Term>,
-}
-
-impl TWins {
-    /// Create new instance
-    pub fn new(p: PalBox) -> TWins {
-        TWins {
-            term: Mutex::new(Term::new(p)),
-        }
-    }
-
-    /// Get access to mutex-protexted internal instance
-    pub fn lock(&mut self) -> MutexGuard<Term> {
-        self.term.lock().unwrap()
-    }
-
-    /// Try to get access to mutex-protexted internal instance
-    pub fn try_lock(&mut self) -> TryLockResult<MutexGuard<Term>> {
-        self.term.try_lock()
-    }
-}
-
-// ---------------------------------------------------------------------------------------------- //
-
-pub struct Ui {
-
-}

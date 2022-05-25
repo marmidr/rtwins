@@ -99,13 +99,15 @@ fn main() {
 }
 
 fn tui_demo() {
+    // create Demo window state
     let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN_ARRAY[..]);
-    let mut tw = rtwins::TWins::new(Box::new(DemoPal::new()));
+    // replace default PAL with our own:
+    rtwins::Term::lock_write().pal = Box::new(DemoPal::new());
     let mut mouse_on = true;
     // let mut wm = WndManager::new();
 
     {
-        let mut term = tw.lock();
+        let mut term = rtwins::Term::lock_write();
         term.logs_row = {
             let coord = dws.get_window_coord();
             let sz = dws.get_window_size();
@@ -121,7 +123,7 @@ fn tui_demo() {
     rtwins::tr_warn!("WARN MACRO 1");
     rtwins::tr_err!("ERR MACRO 1");
     rtwins::tr_debug!("DEBUG MACRO: X={} N={}", 42, "Warduna");
-    rtwins::tr_flush!(&mut tw.lock());
+    rtwins::tr_flush!(&mut rtwins::Term::lock_write());
 
     let mut itty = rtwins::input_tty::InputTty::new(1000);
     let mut ique = rtwins::input_decoder::InputQue::new();
@@ -141,11 +143,7 @@ fn tui_demo() {
                 ique.push_back(*b);
             }
 
-            // TODO: zamiast lock na mutex, własna funkcja która
-            // - blokuje mutexa
-            // - ustawia wewnętrzną zmienną statyczną na Term, pozwalającą na dostęp do Term z dowolnego miejsca w czasie 'sesji'
-            // - zwraca guard który w Drop kasuje tą zmienną statyczną
-            let mut term = tw.lock();
+            let mut term = rtwins::Term::lock_write();
 
             // print raw sequence
             if false {
@@ -227,12 +225,12 @@ fn tui_demo() {
         }
 
         // flush the trace logs on every loop
-        rtwins::tr_flush!(&mut tw.lock());
+        rtwins::tr_flush!(&mut rtwins::Term::lock_write());
     }
 
     // epilogue
     {
-        let mut term = tw.lock();
+        let mut term = rtwins::Term::lock_write();
         rtwins::tr_flush!(&mut term);
         term.mouse_mode(rtwins::MouseMode::Off);
         term.log_clear();
