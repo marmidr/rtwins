@@ -202,13 +202,13 @@ impl <'b, 'a> FontMemento<'b, 'a> {
 
 impl <'b, 'a> Drop for FontMemento<'b, 'a> {
     fn drop(&mut self) {
-        let mut term = self.term.borrow_mut();
-        let new_fg = term.stack_cl_fg.len() as i8 - self.fg_stack_len;
-        let new_bg = term.stack_cl_bg.len() as i8 - self.bg_stack_len;
-        let new_at = term.stack_attr.len()  as i8 - self.at_stack_len;
-        term.pop_cl_fg_n(new_fg);
-        term.pop_cl_bg_n(new_bg);
-        term.pop_attr_n(new_at);
+        let mut ref_term = self.term.borrow_mut();
+        let new_fg = ref_term.stack_cl_fg.len() as i8 - self.fg_stack_len;
+        let new_bg = ref_term.stack_cl_bg.len() as i8 - self.bg_stack_len;
+        let new_at = ref_term.stack_attr.len()  as i8 - self.at_stack_len;
+        ref_term.pop_cl_fg_n(new_fg);
+        ref_term.pop_cl_bg_n(new_bg);
+        ref_term.pop_attr_n(new_at);
     }
 }
 

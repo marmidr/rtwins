@@ -22,8 +22,8 @@ struct TraceItem {
     pub msg: String,
 }
 
-thread_local! {
-    static TR_BUFFER: Mutex<TraceBuffer> = Mutex::new(TraceBuffer::new());
+lazy_static! {
+    static ref TR_BUFFER: Mutex<TraceBuffer> = Mutex::new(TraceBuffer::new());
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -122,65 +122,55 @@ impl TraceBuffer {
 
     /// Writes trace queue to the terminal
     fn flush(&mut self, term: &mut crate::Term) {
-        self.queue.iter().for_each(|item| {
-            term.trace_message(&item.fg_color, &item.time_str, &item.prefix, &item.msg);
-        });
+        if !self.queue.is_empty() {
+            self.queue.iter().for_each(|item| {
+                term.trace_message(&item.fg_color, &item.time_str, &item.prefix, &item.msg);
+            });
 
-        self.queue.clear();
+            self.queue.clear();
+        }
     }
 
     /// Print Debug message
     pub fn trace_d(filepath: &str, line: u32, msg: Msg) {
-        TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.push(filepath, line, esc::FG_BLACK_INTENSE, "-D- ", msg);
-            }
-        });
+        if let Ok(ref mut guard) = TR_BUFFER.lock() {
+            guard.push(filepath, line, esc::FG_BLACK_INTENSE, "-D- ", msg);
+        }
     }
 
     /// Print Info message
     pub fn trace_i(filepath: &str, line: u32, msg: Msg) {
-        TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.push(filepath, line, esc::FG_WHITE, "-I- ", msg);
-            }
-        });
+        if let Ok(ref mut guard) = TR_BUFFER.lock() {
+            guard.push(filepath, line, esc::FG_WHITE, "-I- ", msg);
+        }
     }
 
     /// Print Warning message
     pub fn trace_w(filepath: &str, line: u32, msg: Msg) {
-        TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.push(filepath, line, esc::FG_YELLOW, "-W- ", msg);
-            }
-        });
+        if let Ok(ref mut guard) = TR_BUFFER.lock() {
+            guard.push(filepath, line, esc::FG_YELLOW, "-W- ", msg);
+        }
     }
 
     /// Print Error message
     pub fn trace_e(filepath: &str, line: u32, msg: Msg) {
-        TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.push(filepath, line, esc::FG_RED, "-E- ", msg);
-            }
-        });
+        if let Ok(ref mut guard) = TR_BUFFER.lock() {
+            guard.push(filepath, line, esc::FG_RED, "-E- ", msg);
+        }
     }
 
     /// Flush buffered messages
     pub fn trace_flush(term: &mut crate::Term) {
-        TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.flush(term);
-            }
-        });
+        if let Ok(ref mut guard) = TR_BUFFER.lock() {
+            guard.flush(term);
+        }
     }
 
     /// Set user provided pointer to function returning traces timestamp string
     pub fn set_timestr_fn(f: Box<fn() -> String>) {
-        TR_BUFFER.with(|mtx|{
-            if let Ok(ref mut guard) = mtx.lock() {
-                guard.trace_timestr = f;
-            }
-        });
+        if let Ok(ref mut guard) = TR_BUFFER.lock() {
+            guard.trace_timestr = f;
+        }
     }
 
     /// Returns default timestamp string if system time or Pal is unavailable

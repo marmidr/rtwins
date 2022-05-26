@@ -368,6 +368,11 @@ impl Term {
         self.write_str(esc::ATTRIBUTES_DEFAULT);
     }
 
+    /// Returns attributes stack size
+    pub fn attr_stack_len(&self) -> usize {
+        self.stack_attr.len()
+    }
+
     // -----------------
 
     /// Mouse reporting
