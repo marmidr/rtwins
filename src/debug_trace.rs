@@ -23,7 +23,7 @@ struct TraceItem {
 }
 
 lazy_static! {
-    static ref TR_BUFFER: Mutex<TraceBuffer> = Mutex::new(TraceBuffer::new());
+    static ref TR_BUFFER: Mutex<TraceBuffer> = Mutex::new(TraceBuffer::default());
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -91,14 +91,6 @@ macro_rules! tr_set_timestr_function {
 type Msg = std::borrow::Cow<'static, str>;
 
 impl TraceBuffer {
-    pub fn new() -> TraceBuffer {
-        TraceBuffer{
-            queue: Default::default(),
-            print_location: true,
-            trace_timestr: Box::new(|| {TraceBuffer::timestr_default().to_owned()})
-        }
-    }
-
     /// Creates a new trace entry on the internal queue
     fn push(&mut self, filepath: &str, line: u32, fg_color: &'static str, prefix: &'static str, msg: Msg) {
         let mut msg = msg.to_string();
@@ -124,7 +116,7 @@ impl TraceBuffer {
     fn flush(&mut self, term: &mut crate::Term) {
         if !self.queue.is_empty() {
             self.queue.iter().for_each(|item| {
-                term.trace_message(&item.fg_color, &item.time_str, &item.prefix, &item.msg);
+                term.trace_message(item.fg_color, &item.time_str, item.prefix, &item.msg);
             });
 
             self.queue.clear();
@@ -176,6 +168,16 @@ impl TraceBuffer {
     /// Returns default timestamp string if system time or Pal is unavailable
     pub fn timestr_default() -> &'static str {
         " 0:00:00.000 "
+    }
+}
+
+impl Default for TraceBuffer {
+    fn default() -> TraceBuffer {
+        TraceBuffer{
+            queue: Default::default(),
+            print_location: true,
+            trace_timestr: Box::new(|| {TraceBuffer::timestr_default().to_owned()})
+        }
     }
 }
 

@@ -111,7 +111,7 @@ pub const fn is_parent(wgt: &Widget) -> bool {
 }
 
 /// Get `wgt`'s parent, using flat widgets layout produced by `tree_to_array()`
-pub fn get_parent<'a>(wgt: &'a Widget) -> &'a Widget {
+pub fn get_parent(wgt: &Widget) -> &Widget {
     unsafe {
         // SAFETY:
         // it is guaranted thanks to how the `tree_to_array()` places widgets
@@ -124,7 +124,7 @@ pub fn get_parent<'a>(wgt: &'a Widget) -> &'a Widget {
 }
 
 /// Search for Widget with given `id` in transformed widgets array
-pub fn find_by_id<'a>(wndarray: &'a [Widget], id: WId) -> Option<&'a Widget> {
+pub fn find_by_id(wndarray: &[Widget], id: WId) -> Option<&Widget> {
     wndarray.iter().find(|&&item| item.id == id)
 }
 
@@ -353,7 +353,7 @@ pub fn pagectrl_page_wid(pgctrl: &Widget, page_idx: u8) -> WId {
 }
 
 /// checks both `pgctrl` widget type and if `page_id` is one of its pages
-pub fn pagectrl_find_page<'a>(pgctrl: &'a Widget, page_id: WId) -> Option<&'a Widget> {
+pub fn pagectrl_find_page(pgctrl: &Widget, page_id: WId) -> Option<&Widget> {
     if let Property::PageCtrl(_) = pgctrl.prop {
         return pgctrl.iter_children().find(|pg| pg.id == page_id);
     }
@@ -364,7 +364,7 @@ pub fn pagectrl_find_page<'a>(pgctrl: &'a Widget, page_id: WId) -> Option<&'a Wi
 pub fn pagectrl_select_page(ws: &mut dyn WindowState, pgctrl_id: WId, page_id: WId) {
     if let Some(pgctrl) = find_by_id(ws.get_widgets(), pgctrl_id) {
         if let Some(page) = pagectrl_find_page(pgctrl, page_id) {
-            if let Some(pg_idx) = page_page_idx(&page) {
+            if let Some(pg_idx) = page_page_idx(page) {
                 ws.on_page_control_page_change(pgctrl, pg_idx);
                 ws.invalidate(&[pgctrl_id]);
                 return;

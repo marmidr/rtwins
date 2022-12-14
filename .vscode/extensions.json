@@ -1,6 +1,6 @@
 {
     "recommendations": [
-        "matklad.rust-analyzer",
+        "rust-lang.rust-analyzer",
         "alefragnani.bookmarks",
         "wayou.vscode-todo-highlight",
         "adamwalzer.string-converter",
@@ -16,6 +16,7 @@
         "serayuzgur.crates",
         "tamasfe.even-better-toml",
         "eamodio.gitlens",
-        "panicbit.cargo"
+        "panicbit.cargo",
+        "davidanson.vscode-markdownlint",
     ]
 }

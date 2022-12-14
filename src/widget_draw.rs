@@ -54,7 +54,7 @@ pub fn draw_widgets(term: &mut Term, ws: &mut dyn WindowState, wids: &[WId]) {
         let wnd_widgets = ws.get_widgets();
 
         for id in wids {
-            if let Some(wgt) = wgt::find_by_id(&wnd_widgets, *id) {
+            if let Some(wgt) = wgt::find_by_id(wnd_widgets, *id) {
                 let mut dctx = DrawCtx{ term_cell: RefCell::new(term),
                     wgt,
                     wnd_state: ws,
@@ -71,7 +71,7 @@ pub fn draw_widgets(term: &mut Term, ws: &mut dyn WindowState, wids: &[WId]) {
     term.reset_cl_bg();
     term.reset_cl_fg();
 
-    if let Some(wgt) = wgt::find_by_id(&ws.get_widgets(), focused_id) {
+    if let Some(wgt) = wgt::find_by_id(ws.get_widgets(), focused_id) {
         wgt::set_cursor_at(term, ws, wgt)
     }
     term.cursor_show();
@@ -733,8 +733,7 @@ fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox) {
         return;
     }
 
-    let mut dlp = DrawListParams::default();
-    dlp.coord = my_coord;
+    let mut dlp = DrawListParams { coord: my_coord, ..Default::default() };
     dctx.wnd_state.get_list_box_state(dctx.wgt,
         &mut dlp.item_idx, &mut dlp.sel_idx, &mut dlp.items_cnt);
     dlp.frame_size = !prp.no_frame as u8;
@@ -786,6 +785,7 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox) {
         if drop_down { term.pop_attr(); }
     }
 
+    #[allow(clippy::field_reassign_with_default)]
     if drop_down {
         let mut dlp = DrawListParams::default();
         dlp.coord = my_coord;
@@ -934,6 +934,7 @@ const FRAME_DOUBLE: [char; 9] = [
     '╚', '═', '╝',
 ];
 
+#[allow(clippy::too_many_arguments)]
 fn draw_area(term: &mut Term, coord: Coord, size: Size, cl_bg: ColorBG, cl_fg: ColorFG, style: FrameStyle, filled: bool, shadow: bool) {
     term.move_to(coord.col.into(), coord.row.into());
 

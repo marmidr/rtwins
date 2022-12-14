@@ -129,8 +129,8 @@ fn tui_demo() {
 
     let mut itty = rtwins::input_tty::InputTty::new(1000);
     let mut ique = rtwins::input_decoder::InputQue::new();
-    let mut dec =  rtwins::input_decoder::Decoder::new();
-    let mut inp = rtwins::input::InputInfo::new();
+    let mut dec =  rtwins::input_decoder::Decoder::default();
+    let mut inp = rtwins::input::InputInfo::default();
 
     loop {
         let (inp_seq, q) = itty.read_input();
@@ -281,6 +281,8 @@ fn test_property_access() {
         "sizeof Type: {}",
         std::mem::size_of::<rtwins::Property>()
     );
-    println!("sizeof Id: {}", std::mem::size_of::<tui_def::Id>());
+    println!("sizeof Id: {}",
+        std::mem::size_of::<tui_def::Id>()
+    );
 }
 

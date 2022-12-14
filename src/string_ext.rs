@@ -129,6 +129,7 @@ impl StrExt for str {
         let mut disp_width = UnicodeWidthStr::width(self) as i32;
         let mut it = self.char_indices();
 
+        #[allow(clippy::while_let_on_iterator)]
         while let Some((idx, _)) = it.next() {
             let esc_len = self[idx..].esc_seq_len() as i32;
             if esc_len > 0 {

@@ -114,8 +114,8 @@ pub struct MouseInfo {
     pub row: u8
 }
 
-impl MouseInfo {
-    pub fn new() -> Self {
+impl Default for MouseInfo {
+    fn default() -> Self {
         Self{evt: MouseEvent::None, col: 0, row: 0}
     }
 }
@@ -128,13 +128,12 @@ pub const KEY_MOD_SHIFT:   u8 = 0b0100;
 pub const KEY_MOD_SPECIAL: u8 = 0b1000;
 
 /// Representation of key modifiers coded on bits
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct KeyMod {
     pub mask: u8
 }
 
 impl KeyMod {
-    pub fn new() -> Self { Self { mask: 0 } }
     pub fn has_none(&self) ->   bool { self.mask == 0 }
     pub fn has_ctrl(&self) ->   bool { self.mask & KEY_MOD_CTRL != 0 }
     pub fn has_alt(&self) ->    bool { self.mask & KEY_MOD_ALT != 0 }
@@ -147,17 +146,13 @@ impl KeyMod {
 }
 
 /// Buffer for UTF-8 sequence
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct CharBuff {
     pub utf8seq: [u8; 4],   // UTF-8 code: 'a', '4', 'Ł'
     pub utf8sl: u8,         // length of utf8seq seq
 }
 
 impl CharBuff {
-    pub fn new() -> Self {
-        Self{utf8seq: [0; 4], utf8sl: 0}
-    }
-
     /// Reset all fields to initial state
     pub fn reset(&mut self) {
         self.utf8seq = [0; 4];
@@ -201,14 +196,16 @@ pub struct InputInfo {
 }
 
 impl InputInfo {
-    pub fn new() -> Self {
-        Self{typ: InputType::None, kmod: KeyMod::new(), name: ""}
-    }
-
     /// Reset input to None
     pub fn reset(&mut self) {
         self.typ = InputType::None;
         self.kmod.mask = 0;
         self.name = "";
+    }
+}
+
+impl Default for InputInfo {
+    fn default() -> Self {
+        Self{typ: InputType::None, kmod: KeyMod::default(), name: ""}
     }
 }

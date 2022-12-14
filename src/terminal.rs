@@ -41,20 +41,17 @@ pub struct Term {
 impl Term {
     /// Get read-only access to global instance
     pub fn try_lock_read() -> TryLockResult<RwLockReadGuard<'static, Term>> {
-        let lock = TERM.try_read();
-        lock
+        TERM.try_read()
     }
 
     /// Get write access to global instance or panic
     pub fn lock_write() -> RwLockWriteGuard<'static, Term> {
-        let lock = TERM.write().unwrap();
-        lock
+        TERM.write().unwrap()
     }
 
     /// Get write access to global instance
     pub fn try_lock_write() -> TryLockResult<RwLockWriteGuard<'static, Term>> {
-        let lock = TERM.try_write();
-        lock
+        TERM.try_write()
     }
 
     /// Creates default instance using provided Pal
@@ -111,7 +108,7 @@ impl Term {
         self.insert_lines(1);
 
         self.pal.mark_logging(true);
-        self.pal.write_str(&time_str);
+        self.pal.write_str(time_str);
         self.pal.write_str(fg_color);
         self.pal.write_str(prefix);
         self.pal.write_str(msg);

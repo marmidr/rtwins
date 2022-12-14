@@ -319,9 +319,12 @@ const fn sort_seq<const N: usize>(input: &[SeqMap]) -> [SeqMap; N] {
 const fn sort<const N: usize>(mut array: [SeqMap; N]) -> [SeqMap; N] {
     if array.len() > 1 {
         let mut l = 0usize;
+
         while l < array.len() -1 {
             let mut r = l + 1;
+
             while r < array.len() {
+                #[allow(clippy::manual_swap)]
                 if seqmap_cmp(&array[l], &array[r]).is_gt() {
                     // manual swap; array.swap() not available in const function
                     let tmp = array[l];
@@ -422,11 +425,6 @@ pub struct Decoder {
 }
 
 impl Decoder {
-    /// Creates a new decoder instance
-    pub fn new() -> Self {
-        Self{decode_fail_ctr: 0, prev_cr: 0, prev_esc_ignored: false}
-    }
-
     /// Reset the state; for testing purposes
     #[cfg(test)]
     pub fn reset_state(&mut self) {
@@ -449,6 +447,7 @@ impl Decoder {
             // out.copy_from_slice() impossible as Deque is noncontiguous
             let count = (out.len()-1).min(inp.len());
             let mut it = inp.iter();
+            #[allow(clippy::needless_range_loop)]
             for i in 0..count {
                 out[i] = *it.next().unwrap_or(&0);
             }
@@ -482,7 +481,7 @@ impl Decoder {
                     && seq[2] == b'M'
                 {
                     let mouse_btn = seq[3] - b' ';
-                    let mut mi = MouseInfo::new();
+                    let mut mi = MouseInfo::default();
                     match mouse_btn & 0xE3 {
                         0x00 => mi.evt = MouseEvent::ButtonLeft,
                         0x01 => mi.evt = MouseEvent::ButtonMid,
@@ -520,6 +519,7 @@ impl Decoder {
                 if seq_sz > 3 { // 3 is mimimum ESC seq len
                     let mut esc_found = false;
                     // data is long enough to store ESC sequence
+                    #[allow(clippy::needless_range_loop)]
                     for i in 1..seq_sz {
                         if seq[i] == AnsiCodes::ESC as u8 {
                             esc_found = true;
@@ -590,7 +590,7 @@ impl Decoder {
 
                 // 3. check for one of Ctrl+[A..Z]
                 if let Some(km) = CTRL_KEYS_MAP_SORTED.iter().find(|&&x| x.code == seq[0]) {
-                    let mut cb = CharBuff::new();
+                    let mut cb = CharBuff::default();
                     cb.utf8seq[0] = km.key as u8;
                     cb.utf8sl = 1;
                     inp_info.typ = InputType::Char(cb);
@@ -606,7 +606,7 @@ impl Decoder {
 
                 if utf8seqlen > 0 && utf8seqlen <= seq_sz {
                     // copy valid UTF-8 seq
-                    let mut cb = CharBuff::new();
+                    let mut cb = CharBuff::default();
                     cb.utf8seq[0] = seq[0];
                     cb.utf8seq[1] = seq[1];
                     cb.utf8seq[2] = seq[2];
@@ -634,6 +634,13 @@ impl Decoder {
 
         0
     }
+}
+
+impl Default for Decoder {
+    /// Creates a new decoder instance
+    fn default() -> Self {
+        Self{decode_fail_ctr: 0, prev_cr: 0, prev_esc_ignored: false}
+   }
 }
 
 // -----------------------------------------------------------------------------
