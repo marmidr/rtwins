@@ -19,9 +19,9 @@ impl EasyInput for InputQue {
 
 #[test]
 fn inp_empty() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     assert_eq!(0, inp.len());
     dec.decode_input_seq(&mut inp, &mut ii);
@@ -38,9 +38,9 @@ fn inp_empty() {
 
 #[test]
 fn inp_unknown_esc() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     inp.push_back_str("\x1B[1234");
     dec.decode_input_seq(&mut inp, &mut ii);
@@ -59,9 +59,9 @@ fn inp_unknown_esc() {
 
 #[test]
 fn utf8_character_ok() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     let test_str = "Łó+dź😎";
     inp.push_back_str(test_str);
@@ -93,9 +93,9 @@ fn utf8_character_ok() {
 
 #[test]
 fn utf8_character_incomplete_ok() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     let smile = [240u8, 159, 152, 142]; // 😎
     assert_eq!(4, utils::utf8_char_width(smile[0]));
@@ -122,9 +122,9 @@ fn utf8_character_incomplete_ok() {
 
 #[test]
 fn utf8_character_incomplete_err() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     let smile = [240u8, 159, 152, 142]; // 😎
     assert_eq!(4, utils::utf8_char_width(smile[0]));
@@ -159,9 +159,9 @@ fn utf8_character_incomplete_err() {
 
 #[test]
 fn esc_followed_by_esc() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     // write and decode single ESC - first attempt shall be ignored, waiting for sequence data
     inp.push_back(AnsiCodes::ESC as u8);
@@ -178,9 +178,9 @@ fn esc_followed_by_esc() {
 
 #[test]
 fn esc_followed_by_nothing() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     // write and decode single ESC - first attempt shall be ignored, waiting for sequence data
     inp.push_back(AnsiCodes::ESC as u8);
@@ -194,9 +194,9 @@ fn esc_followed_by_nothing() {
 
 #[test]
 fn ctrl_s() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     inp.push_back(0x13);
     dec.decode_input_seq(&mut inp, &mut ii);
@@ -209,9 +209,9 @@ fn ctrl_s() {
 
 #[test]
 fn ctrl_home() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     inp.push_back_str("\x1B[1;5H");
     dec.decode_input_seq(&mut inp, &mut ii);
@@ -223,9 +223,9 @@ fn ctrl_home() {
 
 #[test]
 fn ctrl_f3() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     inp.push_back_str("\x1BOR");
     dec.decode_input_seq(&mut inp, &mut ii);
@@ -237,9 +237,9 @@ fn ctrl_f3() {
 
 #[test]
 fn unknown_seq_ctrl_home() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     inp.push_back_str("\x1B*42~");
     // valid ESC followed by '+'
@@ -259,9 +259,9 @@ fn unknown_seq_ctrl_home() {
 
 #[test]
 fn loong_unknown_seq_ctrl_home() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     // next ESC is more that 7 bytes further,
     // so entire buffer will be cleared
@@ -281,9 +281,9 @@ fn loong_unknown_seq_ctrl_home() {
 
 #[test]
 fn nul_in_input() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     inp.push_back(b'\0');
     inp.push_back(b'\t');
@@ -296,9 +296,9 @@ fn nul_in_input() {
 
 #[test]
 fn ctrl_f1_incomplete() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     inp.push_back_str("\x1B[");
     assert_eq!(2, inp.len());
@@ -329,9 +329,9 @@ fn ctrl_f1_incomplete() {
 
 #[test]
 fn mix_up() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     // write rest of previous sequence and additional one key
     inp.push_back_str("Ł\x1B[1;6AÓ*");
@@ -360,9 +360,9 @@ fn mix_up() {
 
 #[test]
 fn cr() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     inp.push_back_str("\r\r\t");
 
@@ -378,9 +378,9 @@ fn cr() {
 
 #[test]
 fn lf() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     inp.push_back_str("\n\n\t");
 
@@ -396,9 +396,9 @@ fn lf() {
 
 #[test]
 fn cr_lf_cr() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     inp.push_back_str("\n\r\n\t\n\r\t");
 
@@ -423,9 +423,9 @@ fn cr_lf_cr() {
 
 #[test]
 fn mouse_click_at_11() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     inp.push_back_str("\x1B[M !!");
     dec.decode_input_seq(&mut inp, &mut ii);
@@ -440,9 +440,9 @@ fn mouse_click_at_11() {
 
 #[test]
 fn mouse_wheel_down() {
-    let mut dec = Decoder::new();
+    let mut dec = Decoder::default();
     let mut inp = InputQue::new();
-    let mut ii = InputInfo::new();
+    let mut ii = InputInfo::default();
 
     inp.push_back_str("\x1B[Ma$\"");
 

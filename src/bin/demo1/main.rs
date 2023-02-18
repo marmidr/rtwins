@@ -184,7 +184,6 @@ fn tui_demo() {
                 // input processing
                 if let InputType::Key(ref k) = inp.typ {
                     use tui_def::Id;
-                    let mut term = rtwins::Term::lock_write();
 
                     if *k == Key::F2 {
                         dws.rs.set_enabled(Id::WndMain.into(),
@@ -194,10 +193,12 @@ fn tui_demo() {
                     else if *k == Key::F4 {
                         mouse_on = !mouse_on;
                         rtwins::tr_info!("Mouse {}", if mouse_on {"ON"} else {"OFF"});
+                        let mut term = rtwins::Term::lock_write();
                         term.mouse_mode(if mouse_on {rtwins::MouseMode::M2} else {rtwins::MouseMode::Off});
                         term.flush_buff();
                     }
                     else if *k == Key::F5 {
+                        let mut term = rtwins::Term::lock_write();
                         term.screen_clr_all();
                         // draw windows from bottom to top
                         // TODO: wm.redraw_all();
@@ -205,6 +206,7 @@ fn tui_demo() {
                         term.flush_buff();
                     }
                     else if *k == Key::F6 {
+                        let mut term = rtwins::Term::lock_write();
                         term.trace_area_clear();
                     }
                     else if inp.kmod.has_ctrl() && (*k == Key::PgUp || *k == Key::PgDown) {
@@ -243,7 +245,7 @@ fn tui_demo() {
 
 // -----------------------------------------------------------------------------------------------
 
-#[allow(dead_code)]
+#[test]
 fn test_esc_codes() {
     println!(
         "** {}{}{} ** demo; lib v{}{}{}",
@@ -254,6 +256,7 @@ fn test_esc_codes() {
         rtwins::VER,
         esc::FG_DEFAULT
     );
+
     println!(
         "{}Faint{} {}Bold{} {}Italic{}",
         esc::FAINT,
@@ -265,7 +268,7 @@ fn test_esc_codes() {
     );
 }
 
-#[allow(dead_code)]
+#[test]
 fn test_property_access() {
     for (idx, w) in tui_def::WND_MAIN_ARRAY.iter().enumerate() {
         let w_par = wgt::get_parent(w);

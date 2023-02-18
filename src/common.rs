@@ -25,11 +25,28 @@ impl Coord {
 
 impl std::ops::Add for Coord {
     type Output = Self;
-    fn add(self, other: Coord) -> Coord {
+    fn add(self, rhs: Coord) -> Coord {
         Coord {
-            col: self.col.saturating_add(other.col),
-            row: self.row.saturating_add(other.row),
+            col: self.col.saturating_add(rhs.col),
+            row: self.row.saturating_add(rhs.row),
         }
+    }
+}
+
+impl std::ops::Sub for Coord {
+    type Output = Self;
+    fn sub(self, rhs: Coord) -> Coord {
+        Coord {
+            col: self.col.saturating_sub(rhs.col),
+            row: self.row.saturating_sub(rhs.row),
+        }
+    }
+}
+
+impl std::ops::SubAssign for Coord {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.col = self.col.saturating_sub(rhs.col);
+        self.row = self.row.saturating_sub(rhs.row);
     }
 }
 

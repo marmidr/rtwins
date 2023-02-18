@@ -579,7 +579,7 @@ pub trait WindowState {
     fn get_led_lit(&mut self, wgt: &Widget) -> bool { false }
     fn get_led_text(&mut self, wgt: &Widget, txt: &mut String) {}
     fn get_progress_bar_state(&mut self, wgt: &Widget, pos: &mut i32, max: &mut i32) {}
-    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u8 { 0 }
+    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u16 { 0 }
     fn get_list_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16) {}
     fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
     fn get_combo_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16, drop_down: &mut bool) {}

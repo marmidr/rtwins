@@ -315,9 +315,9 @@ impl rtwins::WindowState for DemoWndState {
         *pos = rs.pos
     }
 
-    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u8 {
+    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u16 {
         let rs = self.rs.as_pgctrl(wgt.id);
-        rs.page
+        rs.page as u16
     }
 
     fn get_list_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16) {
