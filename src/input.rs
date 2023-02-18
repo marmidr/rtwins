@@ -174,7 +174,7 @@ impl CharBuff {
 
 /// Decoded input type
 #[derive(Debug)]
-pub enum InputType {
+pub enum InputEvent {
     /// No event decoded
     None,
     /// Single UTF-8 character
@@ -188,7 +188,7 @@ pub enum InputType {
 /// Describes decoded input
 pub struct InputInfo {
     /// Input type with details
-    pub typ:    InputType,
+    pub evnt:   InputEvent,
     /// Ctrl/Alt/Shift
     pub kmod:   KeyMod,
     /// Human readable event description
@@ -198,7 +198,7 @@ pub struct InputInfo {
 impl InputInfo {
     /// Reset input to None
     pub fn reset(&mut self) {
-        self.typ = InputType::None;
+        self.evnt = InputEvent::None;
         self.kmod.mask = 0;
         self.name = "";
     }
@@ -206,6 +206,6 @@ impl InputInfo {
 
 impl Default for InputInfo {
     fn default() -> Self {
-        Self{typ: InputType::None, kmod: KeyMod::default(), name: ""}
+        Self{evnt: InputEvent::None, kmod: KeyMod::default(), name: ""}
     }
 }

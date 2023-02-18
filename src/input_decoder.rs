@@ -500,7 +500,7 @@ impl Decoder {
 
                     mi.col = seq[4] - b' ';
                     mi.row = seq[5] - b' ';
-                    inp_info.typ = InputType::Mouse(mi);
+                    inp_info.evnt = InputEvent::Mouse(mi);
                     inp_info.name = "MouseEvent";
                     input.drain(..6);
                     return 6;
@@ -508,7 +508,7 @@ impl Decoder {
 
                 // binary search: find key map in max 7 steps
                 if let Some(km) = seq_binary_search(&seq[1..seq_sz], &ESC_KEYS_MAP_SORTED) {
-                    inp_info.typ = InputType::Key(km.key);
+                    inp_info.evnt = InputEvent::Key(km.key);
                     inp_info.kmod.mask = km.kmod;
                     inp_info.name = km.name;
                     input.drain(..1 + km.seq.len()); // +1 for ESC
@@ -576,7 +576,7 @@ impl Decoder {
                             break;
                         }
 
-                        inp_info.typ = InputType::Key(km.key);
+                        inp_info.evnt = InputEvent::Key(km.key);
                         inp_info.kmod.mask = km.kmod;
                         inp_info.name = km.name;
                         input.drain(..1);
@@ -593,7 +593,7 @@ impl Decoder {
                     let mut cb = CharBuff::default();
                     cb.utf8seq[0] = km.key as u8;
                     cb.utf8sl = 1;
-                    inp_info.typ = InputType::Char(cb);
+                    inp_info.evnt = InputEvent::Char(cb);
                     inp_info.kmod.mask = km.kmod;
                     inp_info.name = km.name;
                     input.drain(..1);
@@ -612,7 +612,7 @@ impl Decoder {
                     cb.utf8seq[2] = seq[2];
                     cb.utf8seq[3] = seq[3];
                     cb.utf8sl = utf8seqlen as u8;
-                    inp_info.typ = InputType::Char(cb);
+                    inp_info.evnt = InputEvent::Char(cb);
                     inp_info.name = "<.>";
 
                     input.drain(..utf8seqlen);

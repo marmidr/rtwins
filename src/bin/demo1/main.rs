@@ -156,18 +156,18 @@ fn tui_demo() {
             }
 
             while dec.decode_input_seq(&mut ique, &mut inp) > 0 {
-                use rtwins::input::InputType;
+                use rtwins::input::InputEvent;
                 use rtwins::input::Key;
 
                 // input debug info
-                match inp.typ {
-                    InputType::Char(ref cb) => {
+                match inp.evnt {
+                    InputEvent::Char(ref cb) => {
                         rtwins::tr_debug!("char={}", cb.utf8str());
                     },
-                    InputType::Key(ref k) => {
+                    InputEvent::Key(ref k) => {
                         rtwins::tr_debug!("key={}", inp.name);
                     },
-                    InputType::Mouse(ref m) => {
+                    InputEvent::Mouse(ref m) => {
                         let mut r = rtwins::Rect::cdeflt();
                         let wgt_opt = wgt::find_at(&mut dws, m.col, m.row, &mut r);
                         if let Some(w) = wgt_opt {
@@ -177,12 +177,12 @@ fn tui_demo() {
                             rtwins::tr_debug!("mouse={:?} at {}:{}", m.evt, m.col, m.row);
                         }
                     },
-                    InputType::None => {
+                    InputEvent::None => {
                     },
                 }
 
                 // input processing
-                if let InputType::Key(ref k) = inp.typ {
+                if let InputEvent::Key(ref k) = inp.evnt {
                     use tui_def::Id;
 
                     if *k == Key::F2 {

@@ -1,11 +1,13 @@
 //! # RTWins Widget
 
 #![allow(dead_code)]
+#![allow(unused_variables)]
 
 use crate::string_ext::StrExt;
 use crate::widget_def::*;
 use crate::common::*;
 use crate::input;
+use crate::input::*;
 use crate::*;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -224,23 +226,24 @@ pub fn get_screen_coord(wgt: &Widget) -> Coord {
     wgt.iter_parents()
         .skip(1)
         .fold(wgt.coord, |c, parent| {
-        let mut c = c;
-        if let Property::Window(ref wnd) = parent.prop {
-            if wnd.is_popup {
-                // TODO: for popups must be centered on parent window
-            }
-            c = c + parent.coord;
+            let mut c = c;
+
+            if let Property::Window(ref wnd) = parent.prop {
+                if wnd.is_popup {
+                    // TODO: for popups must be centered on parent window
+                }
+                c = c + parent.coord;
             }
             else {
-            c = c + parent.coord;
-        }
+                c = c + parent.coord;
+            }
 
-        if let Property::PageCtrl(ref p) = parent.prop {
-            c.col += p.tab_width;
-        }
+            if let Property::PageCtrl(ref p) = parent.prop {
+                c.col += p.tab_width;
+            }
 
-        c
-    })
+            c
+        })
 }
 
 /// Move cursor to the best position for given type of the widget
@@ -324,6 +327,61 @@ pub fn reset_internal_state() {
     WGT_STATE.with(|wgstate|
         wgstate.borrow_mut().reset()
     );
+}
+
+pub fn process_input(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
+    unimplemented!();
+/*
+    CallCtx ctx(pWindowWidgets);
+    bool key_processed = false;
+
+    if (kc.key == Key::None)
+        return true;
+
+    // TWINS_LOG_D("---");
+
+    if (kc.key == Key::MouseEvent)
+    {
+        key_processed = processMouse(ctx, kc);
+    }
+    else
+    {
+        key_processed = processKey(ctx, kc);
+
+        if (!key_processed && kc.m_spec)
+        {
+            if (g_ws.pDropDownCombo)
+            {
+                comboBoxHideList(ctx, g_ws.pDropDownCombo);
+            }
+
+            switch (kc.key)
+            {
+            case Key::Esc:
+            {
+                auto curr_id = ctx.pState->getFocusedID();
+                auto new_id = getParentToFocus(ctx, curr_id);
+                key_processed = changeFocusTo(ctx, new_id);
+                break;
+            }
+            case Key::Tab:
+            {
+                auto curr_id = ctx.pState->getFocusedID();
+                auto new_id = getNextToFocus(ctx, curr_id, !kc.m_shift);
+                key_processed = changeFocusTo(ctx, new_id);
+                break;
+            }
+            default:
+                break;
+            }
+        }
+
+        if (!key_processed)
+            key_processed = ctx.pState->onWindowUnhandledInputEvt(ctx.pWidgets, kc);
+    }
+
+    return key_processed;
+    */
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -471,56 +529,6 @@ impl <'a> Iterator for ParentsIter<'a> {
 // ---------------------------------------------------------------------------------------------- //
 // ---- PRIVATE FUNCTIONS ----------------------------------------------------------------------- //
 // ---------------------------------------------------------------------------------------------- //
-
-fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
-    // assert(pWgt->type == Widget::PageCtrl);
-
-    let pgidx = {
-        let mut idx = ws.get_page_ctrl_page_index(pgctrl) as i16;
-        idx += if next { 1 } else { -1 };
-        if idx < 0 {
-            idx = pgctrl.link.children_cnt as i16 -1;
-        }
-        if idx >= pgctrl.link.children_cnt as i16 {
-            idx = 0;
-        }
-        idx as u8
-    };
-
-    ws.on_page_control_page_change(pgctrl, pgidx);
-    ws.invalidate(&[pgctrl.id]);
-
-    // cancel EDIT mode
-    WGT_STATE.with(|wgstate|
-        wgstate.borrow_mut().text_edit_state.wgt_id = WIDGET_ID_NONE
-    );
-
-    if let Some(focused) = find_by_id(ws.get_widgets(), ws.get_focused_id()) {
-        // tr_debug!("focused id={} ({})", focused.id, focused.prop);
-        WGT_STATE.with(|wgstate|
-            wgstate.borrow_mut().focused_wgt = focused.id
-        );
-
-        if let Ok(mut term_lock) = crate::Term::try_lock_write() {
-            wgt::set_cursor_at(&mut term_lock, ws, focused);
-        }
-        else {
-            tr_debug!("Unable to lock the term");
-        }
-    }
-    else {
-        WGT_STATE.with(|wgstate|
-            wgstate.borrow_mut().focused_wgt = WIDGET_ID_NONE
-        );
-
-        if let Ok(mut term_lock) = crate::Term::try_lock_write() {
-            term_lock.move_to_home();
-        }
-        else {
-            tr_debug!("Unable to lock the term");
-        }
-    }
-}
 
 fn is_focusable(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
     if matches!(wgt.prop,
@@ -775,6 +783,58 @@ fn change_focus_to(ws: &mut dyn WindowState, new_id: WId) -> bool {
     return false;
 }
 
+// ---------------------------------------------------------------------------------------------- //
+
+fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
+    // assert(pWgt->type == Widget::PageCtrl);
+
+    let pgidx = {
+        let mut idx = ws.get_page_ctrl_page_index(pgctrl) as i16;
+        idx += if next { 1 } else { -1 };
+        if idx < 0 {
+            idx = pgctrl.link.children_cnt as i16 -1;
+        }
+        if idx >= pgctrl.link.children_cnt as i16 {
+            idx = 0;
+        }
+        idx as u8
+    };
+
+    ws.on_page_control_page_change(pgctrl, pgidx);
+    ws.invalidate(&[pgctrl.id]);
+
+    // cancel EDIT mode
+    WGT_STATE.with(|wgstate|
+        wgstate.borrow_mut().text_edit_state.wgt_id = WIDGET_ID_NONE
+    );
+
+    if let Some(focused) = find_by_id(ws.get_widgets(), ws.get_focused_id()) {
+        // tr_debug!("focused id={} ({})", focused.id, focused.prop);
+        WGT_STATE.with(|wgstate|
+            wgstate.borrow_mut().focused_wgt = focused.id
+        );
+
+        if let Ok(mut term_lock) = crate::Term::try_lock_write() {
+            wgt::set_cursor_at(&mut term_lock, ws, focused);
+        }
+        else {
+            tr_debug!("Unable to lock the term");
+        }
+    }
+    else {
+        WGT_STATE.with(|wgstate|
+            wgstate.borrow_mut().focused_wgt = WIDGET_ID_NONE
+        );
+
+        if let Ok(mut term_lock) = crate::Term::try_lock_write() {
+            term_lock.move_to_home();
+        }
+        else {
+            tr_debug!("Unable to lock the term");
+        }
+    }
+}
+
 fn find_main_pg_control(ws: &mut dyn WindowState) -> Option<&'static Widget> {
     let wnd = &ws.get_widgets()[0];
 
@@ -802,3 +862,862 @@ fn combo_box_hide_list(ws: &mut dyn WindowState, wgt: &Widget) {
         wgtstate.borrow_mut().drop_down_combo = WIDGET_ID_NONE;
     });
 }
+
+// ---------------------------------------------------------------------------------------------- //
+// ---- WIDGETS KEYBOARD PROCESSING FUNCTIONS --------------------------------------------------- //
+// ---------------------------------------------------------------------------------------------- //
+
+fn process_key(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
+    unimplemented!();
+/*
+    auto focused_id = ctx.pState->getFocusedID();
+    const Widget* p_wgt = getWidgetByWID(ctx, focused_id);
+    bool key_handled = false;
+
+    if (!p_wgt)
+        return false;
+
+    if (!isEnabled(ctx, p_wgt))
+        return true;
+
+    switch (p_wgt->type)
+    {
+    case Widget::TextEdit:
+        key_handled = processKey_TextEdit(ctx, p_wgt, kc);
+        break;
+    case Widget::CheckBox:
+        key_handled = processKey_CheckBox(ctx, p_wgt, kc);
+        break;
+    case Widget::Radio:
+        key_handled = processKey_Radio(ctx, p_wgt, kc);
+        break;
+    case Widget::Button:
+        key_handled = processKey_Button(ctx, p_wgt, kc);
+        break;
+    case Widget::PageCtrl:
+        key_handled = processKey_PageCtrl(ctx, p_wgt, kc);
+        break;
+    case Widget::ListBox:
+        key_handled = processKey_ListBox(ctx, p_wgt, kc);
+        break;
+    case Widget::ComboBox:
+        key_handled = processKey_ComboBox(ctx, p_wgt, kc);
+        break;
+    case Widget::TextBox:
+        key_handled = processKey_TextBox(ctx, p_wgt, kc);
+        break;
+    default:
+        break;
+    }
+
+    return key_handled;
+    */
+}
+
+
+fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
+    unimplemented!();
+/*
+    if (pWgt == g_ws.textEditState.pWgt)
+    {
+        // if in edit state, allow user to handle key
+        if (ctx.pState->onTextEditInputEvt(pWgt, kc, g_ws.textEditState.str, g_ws.textEditState.cursorPos))
+        {
+            ctx.pState->invalidate(pWgt->id);
+            return true;
+        }
+        // user let us continue checking the key
+    }
+
+    bool key_handled = false;
+
+    if (g_ws.textEditState.pWgt)
+    {
+        auto cursor_pos = g_ws.textEditState.cursorPos;
+
+        if (kc.m_spec)
+        {
+            switch (kc.key)
+            {
+            case Key::Esc:
+                // cancel editing
+                g_ws.textEditState.pWgt = nullptr;
+                ctx.pState->invalidate(pWgt->id);
+                key_handled = true;
+                break;
+            case Key::Tab:
+                // real TAB may have different widths and require extra processing
+                g_ws.textEditState.str.insert(cursor_pos, "    ");
+                cursor_pos += 4;
+                ctx.pState->invalidate(pWgt->id);
+                key_handled = true;
+                break;
+            case Key::Enter:
+                // finish editing
+                ctx.pState->onTextEditChange(pWgt, std::move(g_ws.textEditState.str));
+                g_ws.textEditState.pWgt = nullptr;
+                ctx.pState->invalidate(pWgt->id);
+                key_handled = true;
+                break;
+            case Key::Backspace:
+                if (cursor_pos > 0)
+                {
+                    if (kc.m_ctrl)
+                    {
+                        g_ws.textEditState.str.erase(0, cursor_pos);
+                        cursor_pos = 0;
+                    }
+                    else
+                    {
+                        g_ws.textEditState.str.erase(cursor_pos-1);
+                        cursor_pos--;
+                    }
+                    ctx.pState->invalidate(pWgt->id);
+                }
+                key_handled = true;
+                break;
+            case Key::Delete:
+                if (kc.m_ctrl)
+                    g_ws.textEditState.str.trim(cursor_pos);
+                else
+                    g_ws.textEditState.str.erase(cursor_pos);
+
+                key_handled = true;
+                ctx.pState->invalidate(pWgt->id);
+                break;
+            case Key::Up:
+            case Key::Down:
+                break;
+            case Key::Left:
+                if (cursor_pos > 0)
+                {
+                    cursor_pos --;
+                    ctx.pState->invalidate(pWgt->id);
+                }
+                key_handled = true;
+                break;
+            case Key::Right:
+                if (cursor_pos < (signed)g_ws.textEditState.str.u8len())
+                {
+                    cursor_pos++;
+                    ctx.pState->invalidate(pWgt->id);
+                }
+                key_handled = true;
+                break;
+            case Key::Home:
+                cursor_pos = 0;
+                ctx.pState->invalidate(pWgt->id);
+                key_handled = true;
+                break;
+            case Key::End:
+                cursor_pos = g_ws.textEditState.str.u8len();
+                ctx.pState->invalidate(pWgt->id);
+                key_handled = true;
+                break;
+            default:
+                break;
+            }
+        }
+        else
+        {
+            g_ws.textEditState.str.insert(cursor_pos, kc.utf8);
+            cursor_pos++;
+            ctx.pState->invalidate(pWgt->id);
+            key_handled = true;
+        }
+
+        g_ws.textEditState.cursorPos = cursor_pos;
+    }
+    else if (kc.key == Key::Enter)
+    {
+        // enter edit mode
+        g_ws.textEditState.pWgt = pWgt;
+        g_ws.textEditState.str.clear();
+        ctx.pState->getTextEditText(pWgt, g_ws.textEditState.str, true);
+        g_ws.textEditState.cursorPos = g_ws.textEditState.str.u8len();
+        ctx.pState->invalidate(pWgt->id);
+        key_handled = true;
+    }
+
+    return key_handled;
+ */
+}
+
+fn process_key_check_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
+    unimplemented!();
+/*
+    if (kc.mod_all == KEY_MOD_NONE && kc.utf8[0] == ' ')
+    {
+        ctx.pState->onCheckboxToggle(pWgt);
+        ctx.pState->invalidate(pWgt->id);
+        return true;
+    }
+
+    if (kc.key == Key::Enter)
+    {
+        ctx.pState->onCheckboxToggle(pWgt);
+        ctx.pState->invalidate(pWgt->id);
+        return true;
+    }
+    return false;
+*/
+}
+
+fn process_key_radio(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
+    unimplemented!();
+/*
+    if (kc.mod_all == KEY_MOD_NONE && kc.utf8[0] == ' ')
+    {
+        ctx.pState->onRadioSelect(pWgt);
+        invalidateRadioGroup(ctx, pWgt);
+        return true;
+    }
+
+    if (kc.key == Key::Enter)
+    {
+        ctx.pState->onRadioSelect(pWgt);
+        invalidateRadioGroup(ctx, pWgt);
+        return true;
+    }
+    return false;
+*/
+}
+
+fn process_key_button(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
+    unimplemented!();
+/*
+    auto *p_wstate = ctx.pState;
+
+    if (p_wstate->onButtonKey(pWgt, kc))
+    {
+        // user handled the keyboard event
+        return true;
+    }
+
+    if (kc.key == Key::Enter)
+    {
+        // pointer may change between onButtonUp and onButtonClick, so remember it
+        g_ws.pMouseDownWgt = pWgt;
+        p_wstate->onButtonDown(pWgt, kc);
+        p_wstate->invalidate(pWgt->id, true);
+        sleepMs(50);
+        g_ws.pMouseDownWgt = nullptr;
+        p_wstate->onButtonUp(pWgt, kc);
+        p_wstate->onButtonClick(pWgt, kc);
+        p_wstate->invalidate(pWgt->id);
+        return true;
+    }
+    return false;
+*/
+}
+
+fn process_key_page_ctrl(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
+    unimplemented!();
+/*
+    if (kc.key == Key::PgDown || kc.key == Key::PgUp ||
+        kc.key == Key::F11 || kc.key == Key::F12)
+    {
+        pgControlChangePage(ctx, pWgt, kc.key == Key::PgDown || kc.key == Key::F12);
+        return true;
+    }
+    return false;
+*/
+}
+
+fn process_key_list_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
+    unimplemented!();
+/*
+    int delta = 0;
+    const uint16_t items_visible = pWgt->size.height-2;
+
+    switch (kc.key)
+    {
+    case Key::Enter:
+    {
+        int16_t idx = 0, selidx = 0, cnt = 0;
+        ctx.pState->getListBoxState(pWgt, idx, selidx, cnt);
+        if (cnt > 0)
+        {
+            if (selidx >= 0 && selidx != idx)
+                ctx.pState->onListBoxChange(pWgt, selidx);
+            ctx.pState->invalidate(pWgt->id);
+        }
+        return true;
+    }
+    case Key::Up:
+        delta = kc.mod_all == KEY_MOD_SPECIAL ? -1 : 0;
+        break;
+    case Key::Down:
+        delta = kc.mod_all == KEY_MOD_SPECIAL ? 1 : 0;
+        break;
+    case Key::PgUp:
+        delta = kc.mod_all == KEY_MOD_SPECIAL ? -items_visible : 0;
+        break;
+    case Key::PgDown:
+        delta = kc.mod_all == KEY_MOD_SPECIAL ? items_visible : 0;
+        break;
+    default:
+        break;
+    }
+
+    if (delta != 0)
+    {
+        int16_t idx = 0, selidx = 0, cnt = 0;
+        ctx.pState->getListBoxState(pWgt, idx, selidx, cnt);
+
+        if (cnt > 0)
+        {
+            selidx += delta;
+
+            if (selidx < 0)
+                selidx = cnt - 1;
+
+            if (selidx >= cnt)
+                selidx = 0;
+
+            ctx.pState->onListBoxSelect(pWgt, selidx);
+            ctx.pState->invalidate(pWgt->id);
+        }
+        return true;
+    }
+    return false;
+*/
+}
+
+fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
+    unimplemented!();
+/*
+    int16_t idx = 0, selidx = 0, cnt = 0; bool drop_down = false;
+    ctx.pState->getComboBoxState(pWgt, idx, selidx, cnt, drop_down);
+
+    if (kc.utf8[0] == ' ')
+    {
+        if (cnt > 0)
+        {
+            drop_down = !drop_down;
+
+            if (drop_down)
+            {
+                ctx.pState->onComboBoxDrop(pWgt, true);
+                g_ws.pDropDownCombo = pWgt;
+            }
+            else
+            {
+                comboBoxHideList(ctx, pWgt);
+            }
+        }
+    }
+    else if (kc.key == Key::Esc)
+    {
+        comboBoxHideList(ctx, pWgt);
+    }
+    else if (drop_down)
+    {
+        if (kc.key == Key::Up)
+        {
+            if (--selidx < 0) selidx = cnt-1;
+            ctx.pState->onComboBoxSelect(pWgt, selidx);
+        }
+        else if (kc.key == Key::Down)
+        {
+            if (++selidx >= cnt) selidx = 0;
+            ctx.pState->onComboBoxSelect(pWgt, selidx);
+        }
+        else if (kc.key == Key::PgUp && kc.mod_all == KEY_MOD_SPECIAL)
+        {
+            selidx -= pWgt->combobox.dropDownSize;
+            if (selidx < 0) selidx = cnt-1;
+            ctx.pState->onComboBoxSelect(pWgt, selidx);
+        }
+        else if (kc.key == Key::PgDown && kc.mod_all == KEY_MOD_SPECIAL)
+        {
+            selidx += pWgt->combobox.dropDownSize;
+            if (selidx >= cnt) selidx = 0;
+            ctx.pState->onComboBoxSelect(pWgt, selidx);
+        }
+        else if (kc.key == Key::Enter)
+        {
+            ctx.pState->onComboBoxChange(pWgt, selidx);
+            comboBoxHideList(ctx, pWgt);
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+    ctx.pState->invalidate(pWgt->id);
+    return true;
+    */
+}
+
+fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
+    unimplemented!();
+/*
+    int delta = 0;
+    const uint16_t lines_visible = pWgt->size.height - 2;
+
+    switch (kc.key)
+    {
+    case Key::Up:
+        delta = kc.mod_all == KEY_MOD_SPECIAL ? -1 : 0;
+        break;
+    case Key::Down:
+        delta = kc.mod_all == KEY_MOD_SPECIAL ? 1 : 0;
+        break;
+    case Key::PgUp:
+        delta = kc.mod_all == KEY_MOD_SPECIAL ? -lines_visible : 0;
+        break;
+    case Key::PgDown:
+        delta = kc.mod_all == KEY_MOD_SPECIAL ? lines_visible : 0;
+        break;
+    default:
+        break;
+    }
+
+    if (delta != 0)
+    {
+        const twins::Vector<twins::CStrView> *p_lines = nullptr;
+        int16_t top_line = 0;
+
+        ctx.pState->getTextBoxState(pWgt, &p_lines, top_line);
+
+        if (p_lines)
+        {
+            top_line += delta;
+
+            if (top_line > (int)p_lines->size() - lines_visible)
+                top_line = p_lines->size() - lines_visible;
+
+            if (top_line < 0)
+                top_line = 0;
+
+            ctx.pState->onTextBoxScroll(pWgt, top_line);
+            ctx.pState->invalidate(pWgt->id);
+        }
+        return true;
+    }
+    return false;
+*/
+}
+
+// ---------------------------------------------------------------------------------------------- //
+// ---- WIDGETS MOUSE PROCESSING FUNCTIONS ------------------------------------------------------ //
+// ---------------------------------------------------------------------------------------------- //
+
+fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool
+{
+    unimplemented!();
+/*
+    if (kc.mouse.btn == MouseBtn::ButtonGoBack || kc.mouse.btn == MouseBtn::ButtonGoForward)
+    {
+        if (const auto *p_wgt = findMainPgControl(ctx))
+        {
+            if (isEnabled(ctx, p_wgt))
+                pgControlChangePage(ctx, p_wgt, kc.mouse.btn == MouseBtn::ButtonGoForward);
+            return true;
+        }
+    }
+
+    Rect rct;
+    const Widget *p_wgt = getWidgetAt(ctx, kc.mouse.col, kc.mouse.row, rct);
+
+    if (g_ws.pMouseDownWgt)
+    {
+        // apply only for Button widget
+        if (g_ws.pMouseDownWgt->type == Widget::Button)
+        {
+            // mouse button released over another widget - generate Up event for previously clicked button
+            if (kc.mouse.btn == MouseBtn::ButtonReleased && g_ws.pMouseDownWgt != p_wgt)
+            {
+                processMouse_Button_Release(ctx, g_ws.pMouseDownWgt, kc);
+                return true;
+            }
+        }
+    }
+    else if (p_wgt)
+    {
+        // remember clicked widget
+        if (kc.mouse.btn >= MouseBtn::ButtonLeft && kc.mouse.btn < MouseBtn::ButtonReleased)
+        {
+            g_ws.pMouseDownWgt = p_wgt;
+            g_ws.mouseDownKeyCode = kc;
+        }
+    }
+
+    if (!p_wgt)
+        return false;
+
+    // TWINS_LOG_D("WidgetAt(%2d:%2d)=%s ID:%u", kc.mouse.col, kc.mouse.row, toString(p_wgt->type), p_wgt->id);
+
+    if (g_ws.pDropDownCombo)
+    {
+        // check if drop-down list clicked
+        Rect dropdownlist_rct;
+        dropdownlist_rct.coord = getScreenCoord(g_ws.pDropDownCombo);
+        dropdownlist_rct.coord.row++;
+        dropdownlist_rct.size.width = g_ws.pDropDownCombo->size.width;
+        dropdownlist_rct.size.height = g_ws.pDropDownCombo->combobox.dropDownSize;
+
+        if (isPointWithin(kc.mouse.col, kc.mouse.row, dropdownlist_rct))
+        {
+            // yes -> replace data for processing with g_ds.pDropDownCombo
+            p_wgt = g_ws.pDropDownCombo;
+            rct.coord = getScreenCoord(g_ws.pDropDownCombo);
+            rct.size = g_ws.pDropDownCombo->size;
+        }
+        else
+        {
+            if (kc.mouse.btn == MouseBtn::ButtonLeft)
+                comboBoxHideList(ctx, g_ws.pDropDownCombo);
+        }
+    }
+
+    if (isEnabled(ctx, p_wgt))
+    {
+        switch (p_wgt->type)
+        {
+        case Widget::TextEdit:
+            processMouse_TextEdit(ctx, p_wgt, rct, kc);
+            break;
+        case Widget::CheckBox:
+            processMouse_CheckBox(ctx, p_wgt, rct, kc);
+            break;
+        case Widget::Radio:
+            processMouse_Radio(ctx, p_wgt, rct, kc);
+            break;
+        case Widget::Button:
+            processMouse_Button(ctx, p_wgt, rct, kc);
+            break;
+        case Widget::PageCtrl:
+            processMouse_PageCtrl(ctx, p_wgt, rct, kc);
+            break;
+        case Widget::ListBox:
+            processMouse_ListBox(ctx, p_wgt, rct, kc);
+            break;
+        case Widget::ComboBox:
+            processMouse_ComboBox(ctx, p_wgt, rct, kc);
+            break;
+        case Widget::CustomWgt:
+            processMouse_CustomWgt(ctx, p_wgt, rct, kc);
+            break;
+        case Widget::TextBox:
+            processMouse_TextBox(ctx, p_wgt, rct, kc);
+            break;
+        default:
+            moveToHome();
+            g_ws.pMouseDownWgt = nullptr;
+            return false;
+        }
+    }
+
+    if (kc.mouse.btn == MouseBtn::ButtonReleased)
+        g_ws.pMouseDownWgt = nullptr;
+
+    return true;
+*/
+}
+
+fn process_mouse_text_edit(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
+{
+    unimplemented!();
+/*
+    if (kc.mouse.btn == MouseBtn::ButtonLeft)
+    {
+        changeFocusTo(ctx, pWgt->id);
+    }
+*/
+}
+
+fn process_mouse_check_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
+{
+    unimplemented!();
+/*
+    if (kc.mouse.btn == MouseBtn::ButtonLeft)
+    {
+        changeFocusTo(ctx, pWgt->id);
+        ctx.pState->onCheckboxToggle(pWgt);
+        ctx.pState->invalidate(pWgt->id);
+    }
+*/
+}
+
+fn process_mouse_radio(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
+{
+    unimplemented!();
+/*
+    if (kc.mouse.btn == MouseBtn::ButtonLeft)
+    {
+        changeFocusTo(ctx, pWgt->id);
+        ctx.pState->onRadioSelect(pWgt);
+        invalidateRadioGroup(ctx, pWgt);
+    }
+*/
+}
+
+fn process_mouse_button(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
+{
+    unimplemented!();
+/*
+    // pointer may change between onButtonUp and onButtonClick, so remember it
+    auto *p_wstate = ctx.pState;
+
+    if (kc.mouse.btn == MouseBtn::ButtonLeft)
+    {
+        changeFocusTo(ctx, pWgt->id);
+        p_wstate->onButtonDown(pWgt, kc);
+        p_wstate->invalidate(pWgt->id);
+    }
+    else if (kc.mouse.btn == MouseBtn::ButtonReleased && g_ws.pMouseDownWgt == pWgt)
+    {
+        p_wstate->onButtonUp(pWgt, kc);
+        p_wstate->onButtonClick(pWgt, g_ws.mouseDownKeyCode);
+        g_ws.pMouseDownWgt = nullptr;
+        p_wstate->invalidate(pWgt->id);
+    }
+    else
+    {
+        g_ws.pMouseDownWgt = nullptr;
+    }
+*/
+}
+
+fn process_mouse_button_release(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
+{
+    unimplemented!();
+/*
+    auto *p_wstate = ctx.pState;
+
+    p_wstate->onButtonUp(pWgt, kc);
+    g_ws.pMouseDownWgt = nullptr;
+    p_wstate->invalidate(pWgt->id);
+*/
+}
+
+fn process_mouse_page_ctrl(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
+{
+    unimplemented!();
+/*
+    if (kc.mouse.btn == MouseBtn::ButtonLeft)
+    {
+        changeFocusTo(ctx, pWgt->id);
+        int idx = ctx.pState->getPageCtrlPageIndex(pWgt);
+        int new_idx = kc.mouse.row - wgtRect.coord.row - 1 - pWgt->pagectrl.vertOffs;
+
+        if (new_idx != idx && new_idx >= 0 && new_idx < pWgt->link.childrenCnt)
+        {
+            ctx.pState->onPageControlPageChange(pWgt, new_idx);
+            ctx.pState->invalidate(pWgt->id);
+        }
+    }
+    else if (kc.mouse.btn == MouseBtn::WheelUp || kc.mouse.btn == MouseBtn::WheelDown)
+    {
+        pgControlChangePage(ctx, pWgt, kc.mouse.btn == MouseBtn::WheelDown);
+    }
+*/
+}
+
+fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
+{
+    unimplemented!();
+/*
+    const uint16_t items_visible = pWgt->size.height-2;
+
+    if (kc.mouse.btn == MouseBtn::ButtonLeft || kc.mouse.btn == MouseBtn::ButtonMid)
+    {
+        bool focus_changed = changeFocusTo(ctx, pWgt->id);
+
+        int16_t idx = 0, selidx = 0, cnt = 0;
+        ctx.pState->getListBoxState(pWgt, idx, selidx, cnt);
+
+        if (cnt <= 0)
+            return;
+
+        int page = selidx / items_visible;
+        unsigned new_selidx = page * items_visible;
+        new_selidx += (int)kc.mouse.row - wgtRect.coord.row - 1;
+
+        if (kc.mouse.btn == MouseBtn::ButtonLeft)
+        {
+            if (new_selidx < (unsigned)cnt && (((signed)new_selidx != selidx) || focus_changed))
+            {
+                selidx = new_selidx;
+                ctx.pState->onListBoxSelect(pWgt, selidx);
+            }
+        }
+        else
+        {
+            if (new_selidx < (unsigned)cnt && new_selidx != (unsigned)idx)
+            {
+                selidx = new_selidx;
+                ctx.pState->onListBoxSelect(pWgt, selidx);
+                ctx.pState->onListBoxChange(pWgt, selidx);
+            }
+        }
+
+        ctx.pState->invalidate(pWgt->id);
+    }
+    else if (kc.mouse.btn == MouseBtn::WheelUp || kc.mouse.btn == MouseBtn::WheelDown)
+    {
+        changeFocusTo(ctx, pWgt->id);
+
+        int16_t idx = 0, selidx = 0, cnt = 0;
+        ctx.pState->getListBoxState(pWgt, idx, selidx, cnt);
+
+        if (cnt <= 0)
+            return;
+
+        int delta = kc.mouse.btn == MouseBtn::WheelUp ? -1 : 1;
+        if (kc.m_ctrl) delta *= items_visible;
+        selidx += delta;
+
+        if (selidx < 0)
+            selidx = cnt - 1;
+
+        if (selidx >= cnt)
+            selidx = 0;
+
+        ctx.pState->onListBoxSelect(pWgt, selidx);
+        ctx.pState->invalidate(pWgt->id);
+    }
+
+*/
+}
+
+fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
+{
+    unimplemented!();
+/*
+    if (kc.mouse.btn == MouseBtn::ButtonLeft)
+    {
+        changeFocusTo(ctx, pWgt->id);
+
+        auto col = kc.mouse.col - wgtRect.coord.col;
+        auto row = kc.mouse.row - wgtRect.coord.row - 1;
+
+        if (row >= 0 && row < pWgt->combobox.dropDownSize)
+        {
+            int16_t idx = 0, selidx = 0, cnt = 0; bool drop_down = false;
+            ctx.pState->getComboBoxState(pWgt, idx, selidx, cnt, drop_down);
+            selidx = (selidx / pWgt->combobox.dropDownSize) * pWgt->combobox.dropDownSize; // top item
+            selidx += row;
+            if (selidx < cnt)
+            {
+                ctx.pState->onComboBoxSelect(pWgt, selidx);
+                ctx.pState->invalidate(pWgt->id);
+            }
+        }
+        else if (col >= wgtRect.size.width - 3 && col <= wgtRect.size.width - 1)
+        {
+            // drop down arrow clicked
+            int16_t _, cnt = 0; bool drop_down = false;
+            ctx.pState->getComboBoxState(pWgt, _, _, cnt, drop_down);
+
+            if (cnt <= 0)
+                return;
+
+            drop_down = !drop_down;
+
+            if (drop_down)
+            {
+                ctx.pState->onComboBoxDrop(pWgt, true);
+                ctx.pState->invalidate(pWgt->id);
+                g_ws.pDropDownCombo = pWgt;
+            }
+            else
+            {
+                comboBoxHideList(ctx, pWgt);
+            }
+        }
+    }
+    else if (kc.mouse.btn == MouseBtn::WheelUp || kc.mouse.btn == MouseBtn::WheelDown)
+    {
+        changeFocusTo(ctx, pWgt->id);
+
+        int16_t idx = 0, selidx = 0, cnt = 0; bool drop_down = false;
+        ctx.pState->getComboBoxState(pWgt, idx, selidx, cnt, drop_down);
+
+        if (!drop_down || cnt <= 0)
+            return;
+
+        int delta = kc.mouse.btn == MouseBtn::WheelUp ? -1 : 1;
+        if (kc.m_ctrl) delta *= pWgt->combobox.dropDownSize;
+        selidx += delta;
+
+        if (selidx < 0)
+            selidx = cnt - 1;
+
+        if (selidx >= cnt)
+            selidx = 0;
+
+        ctx.pState->onComboBoxSelect(pWgt, selidx);
+        ctx.pState->invalidate(pWgt->id);
+    }
+    else if (kc.mouse.btn == MouseBtn::ButtonMid)
+    {
+        twins::KeyCode key_left = kc;
+        key_left.mouse.btn = MouseBtn::ButtonLeft;
+        processMouse_ComboBox(ctx, pWgt, wgtRect, key_left);
+
+        int16_t _, selidx = 0; bool drop_down = false;
+        ctx.pState->getComboBoxState(pWgt, _, selidx, _, drop_down);
+
+        if (!drop_down)
+            return;
+
+        ctx.pState->onComboBoxChange(pWgt, selidx);
+        comboBoxHideList(ctx, pWgt);
+    }
+
+*/
+}
+
+fn process_mouse_custom_wgt(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
+{
+    unimplemented!();
+/*
+    ctx.pState->onCustomWidgetInputEvt(pWgt, kc);
+*/
+}
+
+fn process_mouse_text_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
+{
+    unimplemented!();
+/*
+    changeFocusTo(ctx, pWgt->id);
+
+    if (kc.mouse.btn == MouseBtn::WheelUp || kc.mouse.btn == MouseBtn::WheelDown)
+    {
+        const twins::Vector<twins::CStrView> *p_lines = nullptr;
+        int16_t top_line = 0;
+
+        ctx.pState->getTextBoxState(pWgt, &p_lines, top_line);
+
+        if (p_lines && p_lines->size())
+        {
+            int delta = kc.mouse.btn == MouseBtn::WheelUp ? -1 : 1;
+            const uint16_t lines_visible = pWgt->size.height - 2;
+            if (kc.m_ctrl) delta *= lines_visible;
+
+            top_line += delta;
+
+            if (top_line > (int)p_lines->size() - lines_visible)
+                top_line = p_lines->size() - lines_visible;
+
+            if (top_line < 0)
+                top_line = 0;
+
+            changeFocusTo(ctx, pWgt->id);
+            ctx.pState->onTextBoxScroll(pWgt, top_line);
+            ctx.pState->invalidate(pWgt->id);
+        }
+    }
+
+*/
+}
+
+// ---------------------------------------------------------------------------------------------- //
