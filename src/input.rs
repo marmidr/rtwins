@@ -134,7 +134,7 @@ pub struct KeyMod {
 }
 
 impl KeyMod {
-    pub fn has_none(&self) ->   bool { self.mask == 0 }
+    pub fn is_empty(&self) ->   bool { self.mask == 0 }
     pub fn has_ctrl(&self) ->   bool { self.mask & KEY_MOD_CTRL != 0 }
     pub fn has_alt(&self) ->    bool { self.mask & KEY_MOD_ALT != 0 }
     pub fn has_shift(&self) ->  bool { self.mask & KEY_MOD_SHIFT != 0 }

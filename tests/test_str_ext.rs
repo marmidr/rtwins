@@ -4,6 +4,8 @@ extern crate rtwins;
 use rtwins::esc;
 use rtwins::string_ext::*;
 
+use pretty_assertions::{assert_eq};
+
 #[test]
 fn esc_len() {
     assert_eq!(0, "".esc_seq_len());
@@ -141,5 +143,90 @@ fn set_displayed_width() {
         let mut s = String::from("**😁");
         s.set_displayed_width(3);
         assert_eq!("**…", s);
+    }
+}
+
+#[test]
+fn erase_range() {
+    // empty str
+    {
+        let mut s = String::from("");
+        s.erase_range(0, 0);
+        assert_eq!("", s);
+
+        s.erase_range(0, 1);
+        assert_eq!("", s);
+
+        s.erase_range(1, 1);
+        assert_eq!("", s);
+    }
+
+    // idx out of range
+    {
+        let mut s = String::from("😎");
+        s.erase_range(10, 1);
+        assert_eq!("😎", s);
+
+        s.erase_range(10, 1);
+        assert_eq!("😎", s);
+    }
+
+    // idx in range
+    {
+        let mut s = String::from("*Good-morning 🌄 star!");
+        s.erase_range(0, 0);
+        assert_eq!("*Good-morning 🌄 star!", s);
+
+        s.erase_range(0, 1);
+        assert_eq!("Good-morning 🌄 star!", s);
+
+        s.erase_range(4, 1);
+        assert_eq!("Goodmorning 🌄 star!", s);
+
+        s.erase_range(4, 7);
+        assert_eq!("Good 🌄 star!", s);
+
+        s.erase_range(7, 4);
+        assert_eq!("Good 🌄 !", s);
+
+        // len out of range
+        s.erase_range(1, 10);
+        assert_eq!("G", s);
+    }
+}
+
+#[test]
+fn trim_at() {
+    // empty str
+    {
+        let mut s = String::from("");
+        s.trim_at(0);
+        assert_eq!("", s);
+
+        s.trim_at(3);
+        assert_eq!("", s);
+    }
+
+    // idx out of range
+    {
+        let mut s = String::from("🌄!");
+        s.trim_at(2);
+        assert_eq!("🌄!", s);
+
+        s.trim_at(20);
+        assert_eq!("🌄!", s);
+    }
+
+    // idx in range
+    {
+        let mut s = String::from("Hello 🌄!!!");
+        s.trim_at(8);
+        assert_eq!("Hello 🌄!", s);
+
+        s.trim_at(6);
+        assert_eq!("Hello ", s);
+
+        s.trim_at(0);
+        assert_eq!("", s);
     }
 }

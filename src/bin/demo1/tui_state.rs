@@ -118,6 +118,10 @@ impl rtwins::WindowState for DemoWndState {
 
     }
 
+    fn on_button_key(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
+        false
+    }
+
     fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {
 
     }
@@ -371,8 +375,13 @@ impl rtwins::WindowState for DemoWndState {
 
     /* */
 
-    fn invalidate(&mut self, wids: &[WId]) {
+    fn invalidate_many(&mut self, wids: &[WId]) {
         self.invalidated.extend(wids.iter());
+    }
+
+    fn invalidate_now(&mut self, wid: WId) {
+        // TODO:
+        self.invalidate(wid);
     }
 
     fn invalidate_clear(&mut self) {

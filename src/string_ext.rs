@@ -16,6 +16,10 @@ pub trait StringExt {
     fn append(&mut self, s: &str) -> &mut Self;
     /// Returns stream operator wrapper
     fn stream(&mut self) -> StrStreamOp;
+    /// Erase characters (not byte, like `remove()`) range; Never panics
+    fn erase_range(&mut self, ch_from: usize, len: usize);
+    /// Remove trailing text, starting at given char (not byte) index
+    fn trim_at(&mut self, ch_idx: usize);
 }
 
 impl StringExt for String {
@@ -68,6 +72,34 @@ impl StringExt for String {
 
     fn stream(&mut self) -> StrStreamOp {
         StrStreamOp::new(self)
+    }
+
+    fn erase_range(&mut self, ch_from: usize, len: usize) {
+        let mut ch_idx = 0;
+
+        for (byte_idx, _) in self.char_indices() {
+            if ch_idx == ch_from {
+                (0..len).for_each(|_| {
+                    if byte_idx < self.len() {
+                        self.remove(byte_idx);
+                    }
+                });
+                break;
+            }
+            ch_idx += 1;
+        }
+    }
+
+    fn trim_at(&mut self, ch_from: usize) {
+        let mut ch_idx = 0;
+
+        for (byte_idx, _) in self.char_indices() {
+            if ch_idx == ch_from {
+                self.truncate(byte_idx);
+                break;
+            }
+            ch_idx += 1;
+        }
     }
 }
 

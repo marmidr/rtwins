@@ -545,6 +545,7 @@ pub trait WindowState {
     fn on_button_down(&mut self, wgt: &Widget, ii: &InputInfo) {}
     fn on_button_up(&mut self, wgt: &Widget, ii: &InputInfo) {}
     fn on_button_click(&mut self, wgt: &Widget, ii: &InputInfo) {}
+    fn on_button_key(&mut self, wgt: &Widget, ii: &InputInfo) -> bool { false }
     fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {}
     fn on_text_edit_input_evt(&mut self, wgt: &Widget, ii: &InputInfo, txt: &mut String, cursor_pos: &mut i16) -> bool { false }
     fn on_checkbox_toggle(&mut self, wgt: &Widget) {}
@@ -589,7 +590,10 @@ pub trait WindowState {
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {}
 
     /// requests
-    fn invalidate(&mut self, wids: &[WId]) {}
+    #[inline]
+    fn invalidate(&mut self, wid: WId) { self.invalidate_many(&[wid]); }
+    fn invalidate_now(&mut self, wid: WId) { unimplemented!(); }
+    fn invalidate_many(&mut self, wids: &[WId]) {}
     fn invalidate_clear(&mut self) {}
     fn get_invalidated(&mut self) -> Vec<WId> { vec![] }
 }

@@ -130,7 +130,7 @@ fn tui_demo() {
     let mut itty = rtwins::input_tty::InputTty::new(1000);
     let mut ique = rtwins::input_decoder::InputQue::new();
     let mut dec =  rtwins::input_decoder::Decoder::default();
-    let mut inp = rtwins::input::InputInfo::default();
+    let mut ii = rtwins::input::InputInfo::default();
 
     loop {
         let (inp_seq, q) = itty.read_input();
@@ -149,23 +149,34 @@ fn tui_demo() {
             if false {
                 let mut s = String::with_capacity(10);
                 for b in inp_seq {
-                    if *b == 0 { break; }
-                    if *b < b' ' { s.push('�') } else { s.push(*b as char) };
+                    if *b == 0 {
+                        break;
+                    }
+
+                    if *b < b' ' {
+                        s.push('�')
+                    } else {
+                        s.push(*b as char)
+                    };
                 }
                 rtwins::tr_debug!("seq={}", s);
             }
 
-            while dec.decode_input_seq(&mut ique, &mut inp) > 0 {
+            while dec.decode_input_seq(&mut ique, &mut ii) > 0 {
                 use rtwins::input::InputEvent;
                 use rtwins::input::Key;
 
+                // pass key to top-window
+                // let key_handled =  rtwins::wgt::process_input(rtwins::glob::wMngr.topWndWidgets(), &ii);
+                let key_handled = rtwins::wgt::process_input(&mut dws, &ii);
+
                 // input debug info
-                match inp.evnt {
+                match ii.evnt {
                     InputEvent::Char(ref cb) => {
-                        rtwins::tr_debug!("char={}", cb.utf8str());
+                        rtwins::tr_debug!("char='{}'", cb.utf8str());
                     },
                     InputEvent::Key(ref k) => {
-                        rtwins::tr_debug!("key={}", inp.name);
+                        rtwins::tr_debug!("key={}", ii.name);
                     },
                     InputEvent::Mouse(ref m) => {
                         let mut r = rtwins::Rect::cdeflt();
@@ -182,22 +193,22 @@ fn tui_demo() {
                 }
 
                 // input processing
-                if let InputEvent::Key(ref k) = inp.evnt {
+                if let InputEvent::Key(ref key) = ii.evnt {
                     use tui_def::Id;
 
-                    if *k == Key::F2 {
+                    if *key == Key::F2 {
                         dws.rs.set_enabled(Id::WndMain.into(),
                             !dws.rs.get_enabled_or_default(Id::WndMain.into()));
-                        dws.invalidate(&[rtwins::WIDGET_ID_ALL]);
+                        dws.invalidate(rtwins::WIDGET_ID_ALL);
                     }
-                    else if *k == Key::F4 {
+                    else if *key == Key::F4 {
                         mouse_on = !mouse_on;
                         rtwins::tr_info!("Mouse {}", if mouse_on {"ON"} else {"OFF"});
                         let mut term = rtwins::Term::lock_write();
                         term.mouse_mode(if mouse_on {rtwins::MouseMode::M2} else {rtwins::MouseMode::Off});
                         term.flush_buff();
                     }
-                    else if *k == Key::F5 {
+                    else if *key == Key::F5 {
                         let mut term = rtwins::Term::lock_write();
                         term.screen_clr_all();
                         // draw windows from bottom to top
@@ -205,20 +216,20 @@ fn tui_demo() {
                         term.draw_wnd(&mut dws);
                         term.flush_buff();
                     }
-                    else if *k == Key::F6 {
+                    else if *key == Key::F6 {
                         let mut term = rtwins::Term::lock_write();
                         term.trace_area_clear();
                     }
-                    else if inp.kmod.has_ctrl() && (*k == Key::PgUp || *k == Key::PgDown) {
+                    else if ii.kmod.has_ctrl() && (*key == Key::PgUp || *key == Key::PgDown) {
                         // if wm.is_top_wnd(&dws) {
-                            rtwins::wgt::pagectrl_select_next_page(&mut dws, Id::PgControl.into(), *k == Key::PgDown);
-                            dws.invalidate(&[Id::PgControl.into()]);
+                            rtwins::wgt::pagectrl_select_next_page(&mut dws, Id::PgControl.into(), *key == Key::PgDown);
+                            dws.invalidate(Id::PgControl.into());
                         // }
                     }
-                    else if *k == Key::F9 || *k == Key::F10 {
+                    else if *key == Key::F9 || *key == Key::F10 {
                         // if wm.is_top_wnd(&dws) {
-                            rtwins::wgt::pagectrl_select_next_page(&mut dws, Id::PgControl.into(), *k == Key::F10);
-                            dws.invalidate(&[Id::PgControl.into()]);
+                            rtwins::wgt::pagectrl_select_next_page(&mut dws, Id::PgControl.into(), *key == Key::F10);
+                            dws.invalidate(Id::PgControl.into());
                         // }
                     }
                 }

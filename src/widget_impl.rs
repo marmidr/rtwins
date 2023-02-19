@@ -4,6 +4,7 @@
 #![allow(unused_variables)]
 
 use crate::string_ext::StrExt;
+use crate::string_ext::StringExt;
 use crate::widget_def::*;
 use crate::common::*;
 use crate::input;
@@ -31,7 +32,7 @@ impl WidgetState {
 }
 
 #[allow(dead_code)]
-#[derive(Default)]
+#[derive(Default, Clone)]
 struct TextEditState {
     wgt_id: WId,
     cursor_pos: i16,
@@ -122,8 +123,8 @@ pub fn get_parent(wgt: &Widget) -> &Widget {
         // in the contiguous array, thus, having self/parent/children indexes in that array
         // we can safely find any of them having only particular widget handle, without entire array
         let parent_idx_offset = wgt.link.parent_idx as isize - wgt.link.own_idx as isize;
-        let p_wgt = wgt as *const Widget;
-        &*p_wgt.offset(parent_idx_offset)
+        let wgt = wgt as *const Widget;
+        &*wgt.offset(parent_idx_offset)
     }
 }
 
@@ -228,8 +229,8 @@ pub fn get_screen_coord(wgt: &Widget) -> Coord {
         .fold(wgt.coord, |c, parent| {
             let mut c = c;
 
-            if let Property::Window(ref wnd) = parent.prop {
-                if wnd.is_popup {
+            if let Property::Window(ref prop) = parent.prop {
+                if prop.is_popup {
                     // TODO: for popups must be centered on parent window
                 }
                 c = c + parent.coord;
@@ -238,8 +239,8 @@ pub fn get_screen_coord(wgt: &Widget) -> Coord {
                 c = c + parent.coord;
             }
 
-            if let Property::PageCtrl(ref p) = parent.prop {
-                c.col += p.tab_width;
+            if let Property::PageCtrl(ref prop) = parent.prop {
+                c.col += prop.tab_width;
             }
 
             c
@@ -330,58 +331,51 @@ pub fn reset_internal_state() {
 }
 
 pub fn process_input(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
-    unimplemented!();
-/*
-    CallCtx ctx(pWindowWidgets);
-    bool key_processed = false;
-
-    if (kc.key == Key::None)
-        return true;
+    let mut key_processed = false;
 
     // TWINS_LOG_D("---");
-
-    if (kc.key == Key::MouseEvent)
-    {
-        key_processed = processMouse(ctx, kc);
+    if let InputEvent::None = ii.evnt {
+        return true;
     }
-    else
-    {
-        key_processed = processKey(ctx, kc);
+    else if let InputEvent::Mouse(_) = ii.evnt {
+        key_processed = process_mouse(ws, ii);
+    }
+    else if let InputEvent::Key(ref key) = ii.evnt {
+        key_processed = process_key(ws, ii);
 
-        if (!key_processed && kc.m_spec)
-        {
-            if (g_ws.pDropDownCombo)
-            {
-                comboBoxHideList(ctx, g_ws.pDropDownCombo);
-            }
+        if !key_processed && ii.kmod.has_special() {
+            WGT_STATE.with(|wgtstate|{
+                let dd_combo_id = wgtstate.borrow().drop_down_combo;
+                if dd_combo_id!= WIDGET_ID_NONE {
+                    if let Some(wgt) = find_by_id(ws.get_widgets(), dd_combo_id) {
+                        combo_box_hide_list(ws, wgt);
+                    }
+                }
+            });
 
-            switch (kc.key)
-            {
-            case Key::Esc:
-            {
-                auto curr_id = ctx.pState->getFocusedID();
-                auto new_id = getParentToFocus(ctx, curr_id);
-                key_processed = changeFocusTo(ctx, new_id);
-                break;
-            }
-            case Key::Tab:
-            {
-                auto curr_id = ctx.pState->getFocusedID();
-                auto new_id = getNextToFocus(ctx, curr_id, !kc.m_shift);
-                key_processed = changeFocusTo(ctx, new_id);
-                break;
-            }
-            default:
-                break;
+            match *key {
+                Key::Esc => {
+                    let curr_id = ws.get_focused_id();
+                    let new_id = get_parent_to_focus(ws, curr_id);
+                    key_processed = change_focus_to(ws, new_id);
+                }
+                Key::Tab => {
+                    let curr_id = ws.get_focused_id();
+                    let new_id = get_next_to_focus(ws, curr_id, !ii.kmod.has_shift());
+                    key_processed = change_focus_to(ws, new_id);
+                }
+                _ => {}
             }
         }
 
-        if (!key_processed)
-            key_processed = ctx.pState->onWindowUnhandledInputEvt(ctx.pWidgets, kc);
+        if !key_processed {
+            if let Some(wgt) = ws.get_widgets().first() {
+                key_processed = ws.on_window_unhandled_input_evt(wgt, ii);
+            }
+        }
     }
 
     return key_processed;
-    */
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -428,7 +422,7 @@ pub fn pagectrl_select_page(ws: &mut dyn WindowState, pgctrl_id: WId, page_id: W
         if let Some(page) = pagectrl_find_page(pgctrl, page_id) {
             if let Some(pg_idx) = page_page_idx(page) {
                 ws.on_page_control_page_change(pgctrl, pg_idx);
-                ws.invalidate(&[pgctrl_id]);
+                ws.invalidate(pgctrl_id);
                 return;
             }
         }
@@ -561,8 +555,7 @@ fn is_focusable_by_id(ws: &mut dyn WindowState, widget_id: WId) -> bool {
 fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, focused_id: WId, forward: bool,
     mut first_parent: Option<&'static Widget>, break_search: &mut bool) -> Option<&'static Widget>
 {
-    if let Some(fp) = first_parent
-    {
+    if let Some(fp) = first_parent {
         if std::ptr::eq(parent, fp) {
             tr_err!("full loop detected");// (pFirstParent id=%d)", pFirstParent?pFirstParent->id:-1);
             *break_search = true;
@@ -574,7 +567,7 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
         return None;
     }
 
-    let mut childrens;
+    let children;
     let child_cnt;
 
     // get childrens and their number
@@ -582,9 +575,8 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
         Property::Window(_) |
         Property::Panel(_) |
         Property::Page(_) |
-        Property::Layer(_) =>  {
-            childrens = ws.get_widgets();
-            childrens = &childrens[parent.link.children_idx as usize..];
+        Property::Layer(_) => {
+            children = &ws.get_widgets()[parent.link.children_idx as usize..];
             child_cnt = parent.link.children_cnt;
         }
         Property::PageCtrl(_) => {
@@ -592,9 +584,10 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
             let idx = ws.get_page_ctrl_page_index(parent);
 
             if idx < parent.link.children_cnt {
-                childrens = ws.get_widgets();
-                parent = &childrens[parent.link.children_idx as usize + idx as usize];
-                childrens = &childrens[parent.link.children_idx as usize..];
+                let wgts = ws.get_widgets();
+                let idx = parent.link.children_idx as usize + idx as usize;
+                parent = &wgts[idx];
+                children = &wgts[parent.link.children_idx as usize..];
                 child_cnt = parent.link.children_cnt;
             }
             else {
@@ -602,7 +595,7 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
             }
         }
         _ => {
-            tr_err!("Not a parent type widget");
+            tr_err!("Widget [{} id:{}] is not a parent type widget", parent.prop.to_string(), parent.id);
             return None;
         }
     }
@@ -617,28 +610,27 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
         Property::Layer(_) => {
             if first_parent.is_none() {
                 // it must be Panel/Page/Layer because while traversing we never step below Page level
-                // TWINS_LOG_D("1st parent[%s id:%u]", toString(pParent->type), pParent->id);
-
+                tr_debug!("1st parent[%{} id:{}]", parent.prop.to_string(), parent.id);
                 first_parent = Some(parent);
             }
         }
         _ => {}
     }
 
-    assert!(!childrens.is_empty());
-    let mut wgt_idx = 0;
+    assert!(!children.is_empty());
+    let mut child_idx = 0;
     tr_debug!("parent[{} id:{}] focused_id={}", parent.prop.to_string(), parent.id, focused_id); //crate::sleepMs(200);
 
     if focused_id == WIDGET_ID_NONE {
         // get first/last of the children ID
-        wgt_idx = if forward { 0 } else { child_cnt as usize -1 };
-        let wgt = &childrens[wgt_idx];
+        child_idx = if forward { 0 } else { child_cnt as usize -1 };
+        let child = &children[child_idx];
 
-        if is_focusable(ws, wgt) && is_visible(ws, wgt) {
-            return Some(wgt);
+        if is_focusable(ws, child) && is_visible(ws, child) {
+            return Some(child);
         }
 
-        if is_parent(wgt) {
+        if is_parent(child) {
             if let Some(nf) = get_next_focusable(ws, parent, WIDGET_ID_NONE, forward, first_parent, break_search) {
                 return Some(nf);
             }
@@ -646,52 +638,57 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
     }
     else {
         // get pointer to focusedID
-        while wgt_idx < child_cnt as usize && childrens[wgt_idx].id != focused_id {
-            wgt_idx += 1;
+        while child_idx < child_cnt as usize && children[child_idx].id != focused_id {
+            child_idx += 1;
         }
 
-        if wgt_idx >= child_cnt as usize {
+        if child_idx >= child_cnt as usize {
             tr_warn!("Focused ID={} not found on parent ID={}", focused_id, parent.id);
             return None;
         }
     }
 
-    tr_debug!("search in [%{} id:{} children:{}]", parent.prop.to_string(), parent.id, child_cnt);
+    tr_debug!("search in [{} id:{} children cnt:{}]", parent.prop.to_string(), parent.id, child_cnt);
 
     // iterate until focusable found or children border reached
     for _ in 0..child_cnt {
-        if forward { wgt_idx += 1; } else { wgt_idx = wgt_idx.overflowing_sub(1).0; }
-        let wgt = &childrens[wgt_idx];
+        if forward {
+            child_idx += 1;
+        }
+        else {
+            child_idx = child_idx.overflowing_sub(1).0;
+        }
 
-        if wgt_idx == child_cnt as usize || wgt_idx == usize::MAX {
+        if child_idx == child_cnt as usize || child_idx == usize::MAX {
             // border reached: if we are on Panel or Layer, jump to next sibling
             match parent.prop {
                 Property::Panel(_) |
                 Property::Layer(_) => {
-                    let p = get_parent(parent);
+                    let parents_parent = get_parent(parent);
                     let mut brk = false;
-                    return get_next_focusable(ws, p, parent.id, forward, first_parent, &mut brk);
+                    return get_next_focusable(ws, parents_parent, parent.id, forward, first_parent, &mut brk);
                 }
-                _ => {
-                    // make a turn around
-                    if wgt_idx >= child_cnt as usize {
-                        wgt_idx = 0;
-                    }
-                    else {
-                        wgt_idx = child_cnt as usize;
-                    }
-                }
+                _ => {}
+            }
+
+            // make a turn around
+            if child_idx >= child_cnt as usize {
+                child_idx = 0;
+            }
+            else {
+                child_idx = child_cnt as usize - 1;
             }
         }
 
-        if is_focusable(ws, wgt) && is_visible(ws, wgt) {
-            return Some(wgt);
+        let child = &children[child_idx];
+        if is_focusable(ws, child) && is_visible(ws, child) {
+            return Some(child);
         }
 
-        if is_parent(&childrens[wgt_idx]) {
+        if is_parent(&children[child_idx]) {
             let mut brk = false;
 
-            if let Some(nf) = get_next_focusable(ws, &childrens[wgt_idx], WIDGET_ID_NONE,
+            if let Some(nf) = get_next_focusable(ws, &children[child_idx], WIDGET_ID_NONE,
                     forward, first_parent, &mut brk) {
                 return Some(nf);
             }
@@ -709,13 +706,17 @@ fn get_next_to_focus(ws: &mut dyn WindowState, focused_id: WId, forward: bool) -
     let mut focused_wgt = find_by_id(ws.get_widgets(), focused_id);
 
     if focused_wgt.is_none() {
-        // here, find may fail only if invalid focusedID was given
+        // here, fail is possible only if invalid focused_id was passed
         focused_wgt = ws.get_widgets().first();
     }
 
     if let Some(focused_wgt) = focused_wgt {
+        tr_debug!("focused_wgt: {} id={}", focused_wgt.prop.to_string(), focused_wgt.id);
+
+        // use the parent to get next widget
+        let focused_wgt_parent = get_parent(focused_wgt);
         let mut brk = false;
-        if let Some(nf) = get_next_focusable(ws, focused_wgt, WIDGET_ID_NONE,
+        if let Some(nf) = get_next_focusable(ws, focused_wgt_parent, focused_id,
                 forward, None, &mut brk) {
             return nf.id;
         }
@@ -740,14 +741,15 @@ fn get_parent_to_focus(ws: &mut dyn WindowState, focused_id: WId) -> WId {
 
 fn change_focus_to(ws: &mut dyn WindowState, new_id: WId) -> bool {
     let curr_id = ws.get_focused_id();
-    tr_debug!("curr_id={}, new_id={}", curr_id, new_id);
+    tr_debug!("change_focus_to() curr_id={}, new_id={}", curr_id, new_id);
 
     if new_id != curr_id {
         let prev_id = curr_id;
         ws.set_focused_id(new_id);
-        let new_focused_wgt = find_by_id(ws.get_widgets(), new_id);
 
-        if let Some(new_focused_wgt) = new_focused_wgt {
+        if let Some(new_focused_wgt) = find_by_id(ws.get_widgets(), new_id) {
+            tr_debug!("new_focused_wgt: {} id={}", new_focused_wgt.prop.to_string(), new_focused_wgt.id);
+
             if let Property::ListBox(_) = new_focused_wgt.prop {
                 let mut idx = 0;
                 let mut selidx = 0;
@@ -770,11 +772,11 @@ fn change_focus_to(ws: &mut dyn WindowState, new_id: WId) -> bool {
         }
 
         if is_focusable_by_id(ws, prev_id) {
-            ws.invalidate(&[prev_id]);
+            ws.invalidate(prev_id);
         }
 
         if is_focusable_by_id(ws, new_id) {
-            ws.invalidate(&[new_id]);
+            ws.invalidate(new_id);
         }
 
         return true;
@@ -786,7 +788,7 @@ fn change_focus_to(ws: &mut dyn WindowState, new_id: WId) -> bool {
 // ---------------------------------------------------------------------------------------------- //
 
 fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
-    // assert(pWgt->type == Widget::PageCtrl);
+    // assert(wgt->type == Widget::PageCtrl);
 
     let pgidx = {
         let mut idx = ws.get_page_ctrl_page_index(pgctrl) as i16;
@@ -801,7 +803,7 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
     };
 
     ws.on_page_control_page_change(pgctrl, pgidx);
-    ws.invalidate(&[pgctrl.id]);
+    ws.invalidate(pgctrl.id);
 
     // cancel EDIT mode
     WGT_STATE.with(|wgstate|
@@ -836,14 +838,11 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
 }
 
 fn find_main_pg_control(ws: &mut dyn WindowState) -> Option<&'static Widget> {
-    let wnd = &ws.get_widgets()[0];
+    let wnd = ws.get_widgets().first().unwrap();
 
-    for i in 0..wnd.link.children_cnt {
-        let idx = (wnd.link.children_idx + i) as usize;
-        let wgt = &ws.get_widgets()[idx];
-
-        if let Property::PageCtrl(_) = wgt.prop {
-            return Some(wgt);
+    for child in wnd.iter_children() {
+        if let Property::PageCtrl(_) = child.prop {
+            return Some(child);
         }
     }
 
@@ -856,453 +855,459 @@ fn combo_box_hide_list(ws: &mut dyn WindowState, wgt: &Widget) {
     ws.on_combo_box_drop(wgt, false);
     // redraw parent to hide list
     let parent = get_parent(wgt);
-    ws.invalidate(&[parent.id]);
+    ws.invalidate(parent.id);
 
     WGT_STATE.with(|wgtstate|{
         wgtstate.borrow_mut().drop_down_combo = WIDGET_ID_NONE;
     });
 }
 
+fn invalidate_radio_group(ws: &mut dyn WindowState, wgt: &Widget) {
+    if let Property::Radio(ref prop) = wgt.prop {
+        let group_id = prop.group_id;
+        let wgt_parent = get_parent(wgt);
+
+        for child in wgt_parent.iter_children() {
+            if let Property::Radio(ref prop) = child.prop {
+                if prop.group_id == group_id {
+                    ws.invalidate(child.id)
+                }
+            }
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------------------------- //
 // ---- WIDGETS KEYBOARD PROCESSING FUNCTIONS --------------------------------------------------- //
 // ---------------------------------------------------------------------------------------------- //
 
-fn process_key(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
-    unimplemented!();
-/*
-    auto focused_id = ctx.pState->getFocusedID();
-    const Widget* p_wgt = getWidgetByWID(ctx, focused_id);
-    bool key_handled = false;
+fn process_key(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
+    let focused_id = ws.get_focused_id();
+    let wgt = find_by_id(ws.get_widgets(), focused_id);
+    let mut key_handled = false;
 
-    if (!p_wgt)
-        return false;
+    if let Some(wgt) = wgt {
+        if !is_enabled(ws, wgt) {
+            return true;
+        }
 
-    if (!isEnabled(ctx, p_wgt))
-        return true;
-
-    switch (p_wgt->type)
-    {
-    case Widget::TextEdit:
-        key_handled = processKey_TextEdit(ctx, p_wgt, kc);
-        break;
-    case Widget::CheckBox:
-        key_handled = processKey_CheckBox(ctx, p_wgt, kc);
-        break;
-    case Widget::Radio:
-        key_handled = processKey_Radio(ctx, p_wgt, kc);
-        break;
-    case Widget::Button:
-        key_handled = processKey_Button(ctx, p_wgt, kc);
-        break;
-    case Widget::PageCtrl:
-        key_handled = processKey_PageCtrl(ctx, p_wgt, kc);
-        break;
-    case Widget::ListBox:
-        key_handled = processKey_ListBox(ctx, p_wgt, kc);
-        break;
-    case Widget::ComboBox:
-        key_handled = processKey_ComboBox(ctx, p_wgt, kc);
-        break;
-    case Widget::TextBox:
-        key_handled = processKey_TextBox(ctx, p_wgt, kc);
-        break;
-    default:
-        break;
+        key_handled = match wgt.prop {
+            Property::TextEdit(_) => process_key_text_edit(ws, wgt, ii),
+            Property::CheckBox(_) => process_key_check_box(ws, wgt, ii),
+            Property::Radio(_) => process_key_radio(ws, wgt, ii),
+            Property::Button(_) => process_key_button(ws, wgt, ii),
+            Property::PageCtrl(_) => process_key_page_ctrl(ws, wgt, ii),
+            Property::ListBox(_) => process_key_list_box(ws, wgt, ii),
+            Property::ComboBox(_) => process_key_combo_box(ws, wgt, ii),
+            Property::TextBox(_) => process_key_text_box(ws, wgt, ii),
+            _ => false
+        };
     }
 
     return key_handled;
-    */
 }
 
 
 fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
-    unimplemented!();
-/*
-    if (pWgt == g_ws.textEditState.pWgt)
-    {
-        // if in edit state, allow user to handle key
-        if (ctx.pState->onTextEditInputEvt(pWgt, kc, g_ws.textEditState.str, g_ws.textEditState.cursorPos))
-        {
-            ctx.pState->invalidate(pWgt->id);
-            return true;
+    let mut text_edit_state = TextEditState::default();
+
+    let user_handled = WGT_STATE.with(|wgtstate|{
+        let te_state = &mut wgtstate.borrow_mut().text_edit_state;
+
+        if wgt.id == te_state.wgt_id {
+            // if in edit state, allow user to handle key
+            if ws.on_text_edit_input_evt(wgt, ii, &mut te_state.txt, &mut te_state.cursor_pos) {
+                ws.invalidate(wgt.id);
+                return true;
+            }
+            // user let us continue checking the key
         }
-        // user let us continue checking the key
+
+        text_edit_state = te_state.clone();
+        false
+    });
+
+    if user_handled {
+        return true;
     }
 
-    bool key_handled = false;
+    let mut key_handled = false;
 
-    if (g_ws.textEditState.pWgt)
-    {
-        auto cursor_pos = g_ws.textEditState.cursorPos;
+    if text_edit_state.wgt_id != WIDGET_ID_NONE {
+        let mut cursor_pos = text_edit_state.cursor_pos as isize;
 
-        if (kc.m_spec)
-        {
-            switch (kc.key)
-            {
-            case Key::Esc:
-                // cancel editing
-                g_ws.textEditState.pWgt = nullptr;
-                ctx.pState->invalidate(pWgt->id);
-                key_handled = true;
-                break;
-            case Key::Tab:
-                // real TAB may have different widths and require extra processing
-                g_ws.textEditState.str.insert(cursor_pos, "    ");
-                cursor_pos += 4;
-                ctx.pState->invalidate(pWgt->id);
-                key_handled = true;
-                break;
-            case Key::Enter:
-                // finish editing
-                ctx.pState->onTextEditChange(pWgt, std::move(g_ws.textEditState.str));
-                g_ws.textEditState.pWgt = nullptr;
-                ctx.pState->invalidate(pWgt->id);
-                key_handled = true;
-                break;
-            case Key::Backspace:
-                if (cursor_pos > 0)
-                {
-                    if (kc.m_ctrl)
-                    {
-                        g_ws.textEditState.str.erase(0, cursor_pos);
+        if ii.kmod.has_special() {
+            if let InputEvent::Key(ref key) = ii.evnt {
+                match *key {
+                    Key::Esc => {
+                        // cancel editing
+                        text_edit_state.wgt_id = WIDGET_ID_NONE;
+                        ws.invalidate(wgt.id);
+                        key_handled = true;
+                    }
+                    Key::Tab => {
+                        // real TAB may have different widths and require extra processing
+                        text_edit_state.txt.insert_str(cursor_pos.max(0) as usize, "    ");
+                        cursor_pos += 4;
+                        ws.invalidate(wgt.id);
+                        key_handled = true;
+                    }
+                    Key::Enter => {
+                        // finish editing
+                        ws.on_text_edit_change(wgt, &mut text_edit_state.txt);
+                        text_edit_state.wgt_id = WIDGET_ID_NONE;
+                        ws.invalidate(wgt.id);
+                        key_handled = true;
+                    }
+                    Key::Backspace => {
+                        if cursor_pos > 0 {
+                            if ii.kmod.has_ctrl() {
+                                text_edit_state.txt.erase_range(0, cursor_pos as usize);
+                                cursor_pos = 0;
+                            }
+                            else {
+                                text_edit_state.txt.erase_range((cursor_pos - 1).max(0) as usize, 1);
+                                cursor_pos -= 1;
+                            }
+                            ws.invalidate(wgt.id);
+                        }
+                        key_handled = true;
+                    }
+                    Key::Delete => {
+                        if ii.kmod.has_ctrl() {
+                            text_edit_state.txt.trim_at(cursor_pos as usize);
+                        }
+                        else {
+                            text_edit_state.txt.erase_range(cursor_pos as usize, 1);
+                        }
+
+                        key_handled = true;
+                        ws.invalidate(wgt.id);
+                    }
+                    Key::Up | Key::Down => {}
+                    Key::Left => {
+                        if cursor_pos > 0 {
+                            cursor_pos -= 1;
+                            ws.invalidate(wgt.id);
+                        }
+                        key_handled = true;
+                    }
+                    Key::Right => {
+                        if cursor_pos < text_edit_state.txt.chars().count() as isize {
+                            cursor_pos += 1;
+                            ws.invalidate(wgt.id);
+                        }
+                        key_handled = true;
+                    }
+                    Key::Home => {
                         cursor_pos = 0;
+                        ws.invalidate(wgt.id);
+                        key_handled = true;
                     }
-                    else
-                    {
-                        g_ws.textEditState.str.erase(cursor_pos-1);
-                        cursor_pos--;
+                    Key::End => {
+                        cursor_pos = text_edit_state.txt.chars().count() as isize;
+                        ws.invalidate(wgt.id);
+                        key_handled = true;
                     }
-                    ctx.pState->invalidate(pWgt->id);
+                    _  => {}
                 }
-                key_handled = true;
-                break;
-            case Key::Delete:
-                if (kc.m_ctrl)
-                    g_ws.textEditState.str.trim(cursor_pos);
-                else
-                    g_ws.textEditState.str.erase(cursor_pos);
-
-                key_handled = true;
-                ctx.pState->invalidate(pWgt->id);
-                break;
-            case Key::Up:
-            case Key::Down:
-                break;
-            case Key::Left:
-                if (cursor_pos > 0)
-                {
-                    cursor_pos --;
-                    ctx.pState->invalidate(pWgt->id);
-                }
-                key_handled = true;
-                break;
-            case Key::Right:
-                if (cursor_pos < (signed)g_ws.textEditState.str.u8len())
-                {
-                    cursor_pos++;
-                    ctx.pState->invalidate(pWgt->id);
-                }
-                key_handled = true;
-                break;
-            case Key::Home:
-                cursor_pos = 0;
-                ctx.pState->invalidate(pWgt->id);
-                key_handled = true;
-                break;
-            case Key::End:
-                cursor_pos = g_ws.textEditState.str.u8len();
-                ctx.pState->invalidate(pWgt->id);
-                key_handled = true;
-                break;
-            default:
-                break;
             }
         }
-        else
-        {
-            g_ws.textEditState.str.insert(cursor_pos, kc.utf8);
-            cursor_pos++;
-            ctx.pState->invalidate(pWgt->id);
+        else if let InputEvent::Char(ref ch) = ii.evnt {
+            let ch = ch.utf8seq[0] as char;
+            text_edit_state.txt.insert(cursor_pos as usize, ch);
+            cursor_pos += 1;
+            ws.invalidate(wgt.id);
             key_handled = true;
         }
 
-        g_ws.textEditState.cursorPos = cursor_pos;
+        text_edit_state.cursor_pos = cursor_pos as i16;
     }
-    else if (kc.key == Key::Enter)
-    {
-        // enter edit mode
-        g_ws.textEditState.pWgt = pWgt;
-        g_ws.textEditState.str.clear();
-        ctx.pState->getTextEditText(pWgt, g_ws.textEditState.str, true);
-        g_ws.textEditState.cursorPos = g_ws.textEditState.str.u8len();
-        ctx.pState->invalidate(pWgt->id);
-        key_handled = true;
+    else if let InputEvent::Key(ref key) = ii.evnt {
+        if *key == Key::Enter {
+            // enter edit mode
+            text_edit_state.wgt_id = wgt.id;
+            text_edit_state.txt.clear();
+            ws.get_text_edit_text(wgt, &mut text_edit_state.txt, true);
+            text_edit_state.cursor_pos = text_edit_state.txt.chars().count() as i16;
+            ws.invalidate(wgt.id);
+            key_handled = true;
+        }
     }
 
+    WGT_STATE.with(|wgtstate|{
+        wgtstate.borrow_mut().text_edit_state = text_edit_state;
+    });
+
     return key_handled;
- */
 }
 
 fn process_key_check_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
-    unimplemented!();
-/*
-    if (kc.mod_all == KEY_MOD_NONE && kc.utf8[0] == ' ')
-    {
-        ctx.pState->onCheckboxToggle(pWgt);
-        ctx.pState->invalidate(pWgt->id);
-        return true;
+    if let InputEvent::Char(ref ch) = ii.evnt {
+        if ii.kmod.is_empty() && ch.utf8seq[0] == b' ' {
+            ws.on_checkbox_toggle(wgt);
+            ws.invalidate(wgt.id);
+            return true;
+        }
     }
 
-    if (kc.key == Key::Enter)
-    {
-        ctx.pState->onCheckboxToggle(pWgt);
-        ctx.pState->invalidate(pWgt->id);
-        return true;
+    if let InputEvent::Key(ref key) = ii.evnt {
+        if *key == Key::Enter {
+            ws.on_checkbox_toggle(wgt);
+            ws.invalidate(wgt.id);
+            return true;
+        }
     }
+
     return false;
-*/
 }
 
 fn process_key_radio(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
-    unimplemented!();
-/*
-    if (kc.mod_all == KEY_MOD_NONE && kc.utf8[0] == ' ')
-    {
-        ctx.pState->onRadioSelect(pWgt);
-        invalidateRadioGroup(ctx, pWgt);
-        return true;
+    if let InputEvent::Char(ref ch) = ii.evnt {
+        if ii.kmod.is_empty() && ch.utf8seq[0] == b' ' {
+            ws.on_radio_select(wgt);
+            invalidate_radio_group(ws, wgt);
+            return true;
+        }
     }
 
-    if (kc.key == Key::Enter)
-    {
-        ctx.pState->onRadioSelect(pWgt);
-        invalidateRadioGroup(ctx, pWgt);
-        return true;
+    if let InputEvent::Key(ref key) = ii.evnt {
+        if *key == Key::Enter {
+            ws.on_radio_select(wgt);
+            invalidate_radio_group(ws, wgt);
+            return true;
+        }
     }
+
     return false;
-*/
 }
 
 fn process_key_button(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
-    unimplemented!();
-/*
-    auto *p_wstate = ctx.pState;
-
-    if (p_wstate->onButtonKey(pWgt, kc))
-    {
+    if ws.on_button_key(wgt, ii) {
         // user handled the keyboard event
         return true;
     }
 
-    if (kc.key == Key::Enter)
-    {
-        // pointer may change between onButtonUp and onButtonClick, so remember it
-        g_ws.pMouseDownWgt = pWgt;
-        p_wstate->onButtonDown(pWgt, kc);
-        p_wstate->invalidate(pWgt->id, true);
-        sleepMs(50);
-        g_ws.pMouseDownWgt = nullptr;
-        p_wstate->onButtonUp(pWgt, kc);
-        p_wstate->onButtonClick(pWgt, kc);
-        p_wstate->invalidate(pWgt->id);
-        return true;
+    if let InputEvent::Key(ref key) = ii.evnt {
+        if *key == Key::Enter {
+            // pointer may change between onButtonUp and onButtonClick, so remember it
+            WGT_STATE.with(|wgtstate|{
+                wgtstate.borrow_mut().mouse_down_wgt = wgt.id;
+            });
+
+            ws.on_button_down(wgt, ii);
+            ws.invalidate_now(wgt.id);
+            // TODO: sleepMs(50);
+            WGT_STATE.with(|wgtstate|{
+                wgtstate.borrow_mut().mouse_down_wgt = WIDGET_ID_NONE;
+            });
+
+            ws.on_button_up(wgt, ii);
+            ws.on_button_click(wgt, ii);
+            ws.invalidate(wgt.id);
+            return true;
+        }
     }
+
     return false;
-*/
 }
 
 fn process_key_page_ctrl(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
-    unimplemented!();
-/*
-    if (kc.key == Key::PgDown || kc.key == Key::PgUp ||
-        kc.key == Key::F11 || kc.key == Key::F12)
-    {
-        pgControlChangePage(ctx, pWgt, kc.key == Key::PgDown || kc.key == Key::F12);
-        return true;
+    if let InputEvent::Key(ref key) = ii.evnt {
+        match *key {
+            Key::PgDown | Key::PgUp | Key::F11 | Key::F12 => {
+                pagectrl_change_page(ws, wgt, *key == Key::PgDown || *key == Key::F12);
+                return true;
+            }
+            _ => {}
+        }
     }
+
     return false;
-*/
 }
 
 fn process_key_list_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
-    unimplemented!();
-/*
-    int delta = 0;
-    const uint16_t items_visible = pWgt->size.height-2;
+    let mut delta = 0;
 
-    switch (kc.key)
-    {
-    case Key::Enter:
-    {
-        int16_t idx = 0, selidx = 0, cnt = 0;
-        ctx.pState->getListBoxState(pWgt, idx, selidx, cnt);
-        if (cnt > 0)
-        {
-            if (selidx >= 0 && selidx != idx)
-                ctx.pState->onListBoxChange(pWgt, selidx);
-            ctx.pState->invalidate(pWgt->id);
+    if let InputEvent::Key(ref key) = ii.evnt {
+        let items_visible = wgt.size.height as i16 - 2;
+
+        match *key {
+            Key::Enter => {
+                let mut idx = 0;
+                let mut selidx = 0;
+                let mut cnt = 0;
+                ws.get_list_box_state(wgt, &mut idx, &mut selidx, &mut cnt);
+
+                if cnt > 0 {
+                    if selidx >= 0 && selidx != idx {
+                        ws.on_list_box_change(wgt, selidx);
+                    }
+                    ws.invalidate(wgt.id);
+                }
+
+                return true;
+            }
+            Key::Up => {
+                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {-1} else {0};
+            }
+            Key::Down => {
+                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {1} else {0};
+            }
+            Key::PgUp => {
+                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {-items_visible} else {0};
+            }
+            Key::PgDown => {
+                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {items_visible} else {0};
+            }
+            _ => {}
         }
-        return true;
-    }
-    case Key::Up:
-        delta = kc.mod_all == KEY_MOD_SPECIAL ? -1 : 0;
-        break;
-    case Key::Down:
-        delta = kc.mod_all == KEY_MOD_SPECIAL ? 1 : 0;
-        break;
-    case Key::PgUp:
-        delta = kc.mod_all == KEY_MOD_SPECIAL ? -items_visible : 0;
-        break;
-    case Key::PgDown:
-        delta = kc.mod_all == KEY_MOD_SPECIAL ? items_visible : 0;
-        break;
-    default:
-        break;
     }
 
-    if (delta != 0)
-    {
-        int16_t idx = 0, selidx = 0, cnt = 0;
-        ctx.pState->getListBoxState(pWgt, idx, selidx, cnt);
+    if delta != 0 {
+        let mut idx = 0;
+        let mut selidx = 0;
+        let mut cnt = 0;
+        ws.get_list_box_state(wgt, &mut idx, &mut selidx, &mut cnt);
 
-        if (cnt > 0)
-        {
+        if cnt > 0 {
             selidx += delta;
 
-            if (selidx < 0)
+            if selidx < 0 {
                 selidx = cnt - 1;
+            }
 
-            if (selidx >= cnt)
+            if selidx >= cnt {
                 selidx = 0;
+            }
 
-            ctx.pState->onListBoxSelect(pWgt, selidx);
-            ctx.pState->invalidate(pWgt->id);
+            ws.on_list_box_select(wgt, selidx);
+            ws.invalidate(wgt.id);
         }
+
         return true;
     }
+
     return false;
-*/
 }
 
 fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
-    unimplemented!();
-/*
-    int16_t idx = 0, selidx = 0, cnt = 0; bool drop_down = false;
-    ctx.pState->getComboBoxState(pWgt, idx, selidx, cnt, drop_down);
+    let mut idx = 0;
+    let mut selidx = 0;
+    let mut cnt = 0;
+    let mut drop_down = false;
+    ws.get_combo_box_state(wgt, &mut idx, &mut selidx, &mut cnt, &mut drop_down);
 
-    if (kc.utf8[0] == ' ')
-    {
-        if (cnt > 0)
-        {
-            drop_down = !drop_down;
+    if let InputEvent::Char(ref ch) = ii.evnt {
+        if ch.utf8seq[0] == b' ' {
+            if cnt > 0 {
+                drop_down = !drop_down;
 
-            if (drop_down)
-            {
-                ctx.pState->onComboBoxDrop(pWgt, true);
-                g_ws.pDropDownCombo = pWgt;
+                if drop_down {
+                    ws.on_combo_box_drop(wgt, true);
+
+                    WGT_STATE.with(|wgtstate|{
+                        wgtstate.borrow_mut().drop_down_combo = wgt.id;
+                    });
+                }
+                else {
+                    combo_box_hide_list(ws, wgt);
+                }
             }
-            else
-            {
-                comboBoxHideList(ctx, pWgt);
+        }
+    }
+    else if let InputEvent::Key(ref key) = ii.evnt {
+        if *key == Key::Esc {
+            combo_box_hide_list(ws, wgt);
+        }
+        else if drop_down {
+            if *key == Key::Up {
+                if --selidx < 0 {
+                    selidx = cnt-1;
+                }
+                ws.on_combo_box_select(wgt, selidx);
+            }
+            else if *key == Key::Down {
+                selidx += 1;
+                if selidx >= cnt {
+                    selidx = 0;
+                }
+                ws.on_combo_box_select(wgt, selidx);
+            }
+            else if *key == Key::PgUp && ii.kmod.mask == KEY_MOD_SPECIAL {
+                if let Property::ComboBox(ref prop) = wgt.prop {
+                    selidx -= prop.drop_down_size as i16;
+                }
+
+                if selidx < 0 {
+                    selidx = cnt-1;
+                }
+                ws.on_combo_box_select(wgt, selidx);
+            }
+            else if *key == Key::PgDown && ii.kmod.mask == KEY_MOD_SPECIAL {
+                if let Property::ComboBox(ref prop) = wgt.prop {
+                    selidx += prop.drop_down_size as i16;
+                }
+
+                if selidx >= cnt {
+                    selidx = 0;
+                }
+                ws.on_combo_box_select(wgt, selidx);
+            }
+            else if *key == Key::Enter {
+                ws.on_combo_box_change(wgt, selidx);
+                combo_box_hide_list(ws, wgt);
+            }
+            else {
+                return false;
             }
         }
     }
-    else if (kc.key == Key::Esc)
-    {
-        comboBoxHideList(ctx, pWgt);
-    }
-    else if (drop_down)
-    {
-        if (kc.key == Key::Up)
-        {
-            if (--selidx < 0) selidx = cnt-1;
-            ctx.pState->onComboBoxSelect(pWgt, selidx);
-        }
-        else if (kc.key == Key::Down)
-        {
-            if (++selidx >= cnt) selidx = 0;
-            ctx.pState->onComboBoxSelect(pWgt, selidx);
-        }
-        else if (kc.key == Key::PgUp && kc.mod_all == KEY_MOD_SPECIAL)
-        {
-            selidx -= pWgt->combobox.dropDownSize;
-            if (selidx < 0) selidx = cnt-1;
-            ctx.pState->onComboBoxSelect(pWgt, selidx);
-        }
-        else if (kc.key == Key::PgDown && kc.mod_all == KEY_MOD_SPECIAL)
-        {
-            selidx += pWgt->combobox.dropDownSize;
-            if (selidx >= cnt) selidx = 0;
-            ctx.pState->onComboBoxSelect(pWgt, selidx);
-        }
-        else if (kc.key == Key::Enter)
-        {
-            ctx.pState->onComboBoxChange(pWgt, selidx);
-            comboBoxHideList(ctx, pWgt);
-        }
-        else
-        {
-            return false;
-        }
-    }
-    else
-    {
+    else {
         return false;
     }
 
-    ctx.pState->invalidate(pWgt->id);
+    ws.invalidate(wgt.id);
     return true;
-    */
 }
 
 fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
-    unimplemented!();
-/*
-    int delta = 0;
-    const uint16_t lines_visible = pWgt->size.height - 2;
+    if let InputEvent::Key(ref key) = ii.evnt {
+        let mut delta = 0;
+        let lines_visible = wgt.size.height as i16 - 2;
 
-    switch (kc.key)
-    {
-    case Key::Up:
-        delta = kc.mod_all == KEY_MOD_SPECIAL ? -1 : 0;
-        break;
-    case Key::Down:
-        delta = kc.mod_all == KEY_MOD_SPECIAL ? 1 : 0;
-        break;
-    case Key::PgUp:
-        delta = kc.mod_all == KEY_MOD_SPECIAL ? -lines_visible : 0;
-        break;
-    case Key::PgDown:
-        delta = kc.mod_all == KEY_MOD_SPECIAL ? lines_visible : 0;
-        break;
-    default:
-        break;
-    }
+        match *key {
+            Key::Up => delta = if ii.kmod.mask == KEY_MOD_SPECIAL {-1} else {0},
+            Key::Down => delta = if ii.kmod.mask == KEY_MOD_SPECIAL {1} else {0},
+            Key::PgUp => delta = if ii.kmod.mask == KEY_MOD_SPECIAL {-lines_visible} else {0},
+            Key::PgDown => delta = if ii.kmod.mask == KEY_MOD_SPECIAL {lines_visible} else {0},
+            _ => {}
+        }
 
-    if (delta != 0)
-    {
-        const twins::Vector<twins::CStrView> *p_lines = nullptr;
-        int16_t top_line = 0;
+        if delta != 0 {
+            let mut top_line = 0;
+            let mut lines_rc = crate::utils::StringListRc::default();
+            ws.get_text_box_state(wgt, &mut lines_rc, &mut top_line);
 
-        ctx.pState->getTextBoxState(pWgt, &p_lines, top_line);
-
-        if (p_lines)
-        {
+            let lines_len = lines_rc.borrow().len() as i16;
             top_line += delta;
 
-            if (top_line > (int)p_lines->size() - lines_visible)
-                top_line = p_lines->size() - lines_visible;
+            if top_line > lines_len - lines_visible {
+                top_line = lines_len - lines_visible;
+            }
 
-            if (top_line < 0)
+            if top_line < 0 {
                 top_line = 0;
+            }
 
-            ctx.pState->onTextBoxScroll(pWgt, top_line);
-            ctx.pState->invalidate(pWgt->id);
+            ws.on_text_box_scroll(wgt, top_line);
+            ws.invalidate(wgt.id);
+
+            return true;
         }
-        return true;
     }
+
     return false;
-*/
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -1313,18 +1318,18 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool
 {
     unimplemented!();
 /*
-    if (kc.mouse.btn == MouseBtn::ButtonGoBack || kc.mouse.btn == MouseBtn::ButtonGoForward)
+    if (ii.mouse.btn == MouseBtn::ButtonGoBack || ii.mouse.btn == MouseBtn::ButtonGoForward)
     {
-        if (const auto *p_wgt = findMainPgControl(ctx))
+        if (const auto *wgt = findMainPgControl(ws))
         {
-            if (isEnabled(ctx, p_wgt))
-                pgControlChangePage(ctx, p_wgt, kc.mouse.btn == MouseBtn::ButtonGoForward);
+            if (isEnabled(ws, wgt))
+                pgControlChangePage(ws, wgt, ii.mouse.btn == MouseBtn::ButtonGoForward);
             return true;
         }
     }
 
     Rect rct;
-    const Widget *p_wgt = getWidgetAt(ctx, kc.mouse.col, kc.mouse.row, rct);
+    const Widget *wgt = getWidgetAt(ws, ii.mouse.col, ii.mouse.row, rct);
 
     if (g_ws.pMouseDownWgt)
     {
@@ -1332,27 +1337,27 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool
         if (g_ws.pMouseDownWgt->type == Widget::Button)
         {
             // mouse button released over another widget - generate Up event for previously clicked button
-            if (kc.mouse.btn == MouseBtn::ButtonReleased && g_ws.pMouseDownWgt != p_wgt)
+            if (ii.mouse.btn == MouseBtn::ButtonReleased && g_ws.pMouseDownWgt != wgt)
             {
-                processMouse_Button_Release(ctx, g_ws.pMouseDownWgt, kc);
+                processMouse_Button_Release(ws, g_ws.pMouseDownWgt, ii);
                 return true;
             }
         }
     }
-    else if (p_wgt)
+    else if (wgt)
     {
         // remember clicked widget
-        if (kc.mouse.btn >= MouseBtn::ButtonLeft && kc.mouse.btn < MouseBtn::ButtonReleased)
+        if (ii.mouse.btn >= MouseBtn::ButtonLeft && ii.mouse.btn < MouseBtn::ButtonReleased)
         {
-            g_ws.pMouseDownWgt = p_wgt;
-            g_ws.mouseDownKeyCode = kc;
+            g_ws.pMouseDownWgt = wgt;
+            g_ws.mouseDownKeyCode = ii;
         }
     }
 
-    if (!p_wgt)
+    if (!wgt)
         return false;
 
-    // TWINS_LOG_D("WidgetAt(%2d:%2d)=%s ID:%u", kc.mouse.col, kc.mouse.row, toString(p_wgt->type), p_wgt->id);
+    // TWINS_LOG_D("WidgetAt(%2d:%2d)=%s ID:%u", ii.mouse.col, ii.mouse.row, toString(wgt->type), wgt.id);
 
     if (g_ws.pDropDownCombo)
     {
@@ -1363,50 +1368,50 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool
         dropdownlist_rct.size.width = g_ws.pDropDownCombo->size.width;
         dropdownlist_rct.size.height = g_ws.pDropDownCombo->combobox.dropDownSize;
 
-        if (isPointWithin(kc.mouse.col, kc.mouse.row, dropdownlist_rct))
+        if (isPointWithin(ii.mouse.col, ii.mouse.row, dropdownlist_rct))
         {
             // yes -> replace data for processing with g_ds.pDropDownCombo
-            p_wgt = g_ws.pDropDownCombo;
+            wgt = g_ws.pDropDownCombo;
             rct.coord = getScreenCoord(g_ws.pDropDownCombo);
             rct.size = g_ws.pDropDownCombo->size;
         }
         else
         {
-            if (kc.mouse.btn == MouseBtn::ButtonLeft)
-                comboBoxHideList(ctx, g_ws.pDropDownCombo);
+            if (ii.mouse.btn == MouseBtn::ButtonLeft)
+                comboBoxHideList(ws, g_ws.pDropDownCombo);
         }
     }
 
-    if (isEnabled(ctx, p_wgt))
+    if (isEnabled(ws, wgt))
     {
-        switch (p_wgt->type)
+        switch (wgt->type)
         {
-        case Widget::TextEdit:
-            processMouse_TextEdit(ctx, p_wgt, rct, kc);
+        Property::TextEdit:
+            processMouse_TextEdit(ws, wgt, rct, ii);
             break;
-        case Widget::CheckBox:
-            processMouse_CheckBox(ctx, p_wgt, rct, kc);
+        Property::CheckBox:
+            processMouse_CheckBox(ws, wgt, rct, ii);
             break;
-        case Widget::Radio:
-            processMouse_Radio(ctx, p_wgt, rct, kc);
+        Property::Radio:
+            processMouse_Radio(ws, wgt, rct, ii);
             break;
-        case Widget::Button:
-            processMouse_Button(ctx, p_wgt, rct, kc);
+        Property::Button:
+            processMouse_Button(ws, wgt, rct, ii);
             break;
-        case Widget::PageCtrl:
-            processMouse_PageCtrl(ctx, p_wgt, rct, kc);
+        Property::PageCtrl:
+            processMouse_PageCtrl(ws, wgt, rct, ii);
             break;
-        case Widget::ListBox:
-            processMouse_ListBox(ctx, p_wgt, rct, kc);
+        Property::ListBox:
+            processMouse_ListBox(ws, wgt, rct, ii);
             break;
-        case Widget::ComboBox:
-            processMouse_ComboBox(ctx, p_wgt, rct, kc);
+        Property::ComboBox:
+            processMouse_ComboBox(ws, wgt, rct, ii);
             break;
-        case Widget::CustomWgt:
-            processMouse_CustomWgt(ctx, p_wgt, rct, kc);
+        Property::CustomWgt:
+            processMouse_CustomWgt(ws, wgt, rct, ii);
             break;
-        case Widget::TextBox:
-            processMouse_TextBox(ctx, p_wgt, rct, kc);
+        Property::TextBox:
+            processMouse_TextBox(ws, wgt, rct, ii);
             break;
         default:
             moveToHome();
@@ -1415,7 +1420,7 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool
         }
     }
 
-    if (kc.mouse.btn == MouseBtn::ButtonReleased)
+    if (ii.mouse.btn == MouseBtn::ButtonReleased)
         g_ws.pMouseDownWgt = nullptr;
 
     return true;
@@ -1426,9 +1431,9 @@ fn process_mouse_text_edit(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
 {
     unimplemented!();
 /*
-    if (kc.mouse.btn == MouseBtn::ButtonLeft)
+    if (ii.mouse.btn == MouseBtn::ButtonLeft)
     {
-        changeFocusTo(ctx, pWgt->id);
+        changeFocusTo(ws, wgt.id);
     }
 */
 }
@@ -1437,11 +1442,11 @@ fn process_mouse_check_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
 {
     unimplemented!();
 /*
-    if (kc.mouse.btn == MouseBtn::ButtonLeft)
+    if (ii.mouse.btn == MouseBtn::ButtonLeft)
     {
-        changeFocusTo(ctx, pWgt->id);
-        ctx.pState->onCheckboxToggle(pWgt);
-        ctx.pState->invalidate(pWgt->id);
+        changeFocusTo(ws, wgt.id);
+        ws.onCheckboxToggle(wgt);
+        ws.invalidate(wgt.id);
     }
 */
 }
@@ -1450,11 +1455,11 @@ fn process_mouse_radio(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, 
 {
     unimplemented!();
 /*
-    if (kc.mouse.btn == MouseBtn::ButtonLeft)
+    if (ii.mouse.btn == MouseBtn::ButtonLeft)
     {
-        changeFocusTo(ctx, pWgt->id);
-        ctx.pState->onRadioSelect(pWgt);
-        invalidateRadioGroup(ctx, pWgt);
+        changeFocusTo(ws, wgt.id);
+        ws.onRadioSelect(wgt);
+        invalidateRadioGroup(ws, wgt);
     }
 */
 }
@@ -1464,20 +1469,19 @@ fn process_mouse_button(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect,
     unimplemented!();
 /*
     // pointer may change between onButtonUp and onButtonClick, so remember it
-    auto *p_wstate = ctx.pState;
 
-    if (kc.mouse.btn == MouseBtn::ButtonLeft)
+    if (ii.mouse.btn == MouseBtn::ButtonLeft)
     {
-        changeFocusTo(ctx, pWgt->id);
-        p_wstate->onButtonDown(pWgt, kc);
-        p_wstate->invalidate(pWgt->id);
+        changeFocusTo(ws, wgt.id);
+        ws.onButtonDown(wgt, ii);
+        ws.invalidate(wgt.id);
     }
-    else if (kc.mouse.btn == MouseBtn::ButtonReleased && g_ws.pMouseDownWgt == pWgt)
+    else if (ii.mouse.btn == MouseBtn::ButtonReleased && g_ws.pMouseDownWgt == wgt)
     {
-        p_wstate->onButtonUp(pWgt, kc);
-        p_wstate->onButtonClick(pWgt, g_ws.mouseDownKeyCode);
+        ws.onButtonUp(wgt, ii);
+        ws.onButtonClick(wgt, g_ws.mouseDownKeyCode);
         g_ws.pMouseDownWgt = nullptr;
-        p_wstate->invalidate(pWgt->id);
+        ws.invalidate(wgt.id);
     }
     else
     {
@@ -1490,11 +1494,9 @@ fn process_mouse_button_release(ws: &mut dyn WindowState, wgt: &Widget, ii: &Inp
 {
     unimplemented!();
 /*
-    auto *p_wstate = ctx.pState;
-
-    p_wstate->onButtonUp(pWgt, kc);
+    ws.onButtonUp(wgt, ii);
     g_ws.pMouseDownWgt = nullptr;
-    p_wstate->invalidate(pWgt->id);
+    ws.invalidate(wgt.id);
 */
 }
 
@@ -1502,21 +1504,21 @@ fn process_mouse_page_ctrl(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
 {
     unimplemented!();
 /*
-    if (kc.mouse.btn == MouseBtn::ButtonLeft)
+    if (ii.mouse.btn == MouseBtn::ButtonLeft)
     {
-        changeFocusTo(ctx, pWgt->id);
-        int idx = ctx.pState->getPageCtrlPageIndex(pWgt);
-        int new_idx = kc.mouse.row - wgtRect.coord.row - 1 - pWgt->pagectrl.vertOffs;
+        changeFocusTo(ws, wgt.id);
+        int idx = ws.getPageCtrlPageIndex(wgt);
+        int new_idx = ii.mouse.row - wgtRect.coord.row - 1 - wgt->pagectrl.vertOffs;
 
-        if (new_idx != idx && new_idx >= 0 && new_idx < pWgt->link.childrenCnt)
+        if (new_idx != idx && new_idx >= 0 && new_idx < wgt->link.childrenCnt)
         {
-            ctx.pState->onPageControlPageChange(pWgt, new_idx);
-            ctx.pState->invalidate(pWgt->id);
+            ws.onPageControlPageChange(wgt, new_idx);
+            ws.invalidate(wgt.id);
         }
     }
-    else if (kc.mouse.btn == MouseBtn::WheelUp || kc.mouse.btn == MouseBtn::WheelDown)
+    else if (ii.mouse.btn == MouseBtn::WheelUp || ii.mouse.btn == MouseBtn::WheelDown)
     {
-        pgControlChangePage(ctx, pWgt, kc.mouse.btn == MouseBtn::WheelDown);
+        pgControlChangePage(ws, wgt, ii.mouse.btn == MouseBtn::WheelDown);
     }
 */
 }
@@ -1525,28 +1527,28 @@ fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
 {
     unimplemented!();
 /*
-    const uint16_t items_visible = pWgt->size.height-2;
+    const uint16_t items_visible = wgt->size.height-2;
 
-    if (kc.mouse.btn == MouseBtn::ButtonLeft || kc.mouse.btn == MouseBtn::ButtonMid)
+    if (ii.mouse.btn == MouseBtn::ButtonLeft || ii.mouse.btn == MouseBtn::ButtonMid)
     {
-        bool focus_changed = changeFocusTo(ctx, pWgt->id);
+        bool focus_changed = changeFocusTo(ws, wgt.id);
 
         int16_t idx = 0, selidx = 0, cnt = 0;
-        ctx.pState->getListBoxState(pWgt, idx, selidx, cnt);
+        ws.getListBoxState(wgt, idx, selidx, cnt);
 
         if (cnt <= 0)
             return;
 
         int page = selidx / items_visible;
         unsigned new_selidx = page * items_visible;
-        new_selidx += (int)kc.mouse.row - wgtRect.coord.row - 1;
+        new_selidx += (int)ii.mouse.row - wgtRect.coord.row - 1;
 
-        if (kc.mouse.btn == MouseBtn::ButtonLeft)
+        if (ii.mouse.btn == MouseBtn::ButtonLeft)
         {
             if (new_selidx < (unsigned)cnt && (((signed)new_selidx != selidx) || focus_changed))
             {
                 selidx = new_selidx;
-                ctx.pState->onListBoxSelect(pWgt, selidx);
+                ws.onListBoxSelect(wgt, selidx);
             }
         }
         else
@@ -1554,25 +1556,25 @@ fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
             if (new_selidx < (unsigned)cnt && new_selidx != (unsigned)idx)
             {
                 selidx = new_selidx;
-                ctx.pState->onListBoxSelect(pWgt, selidx);
-                ctx.pState->onListBoxChange(pWgt, selidx);
+                ws.onListBoxSelect(wgt, selidx);
+                ws.onListBoxChange(wgt, selidx);
             }
         }
 
-        ctx.pState->invalidate(pWgt->id);
+        ws.invalidate(wgt.id);
     }
-    else if (kc.mouse.btn == MouseBtn::WheelUp || kc.mouse.btn == MouseBtn::WheelDown)
+    else if (ii.mouse.btn == MouseBtn::WheelUp || ii.mouse.btn == MouseBtn::WheelDown)
     {
-        changeFocusTo(ctx, pWgt->id);
+        changeFocusTo(ws, wgt.id);
 
         int16_t idx = 0, selidx = 0, cnt = 0;
-        ctx.pState->getListBoxState(pWgt, idx, selidx, cnt);
+        ws.getListBoxState(wgt, idx, selidx, cnt);
 
         if (cnt <= 0)
             return;
 
-        int delta = kc.mouse.btn == MouseBtn::WheelUp ? -1 : 1;
-        if (kc.m_ctrl) delta *= items_visible;
+        int delta = ii.mouse.btn == MouseBtn::WheelUp ? -1 : 1;
+        if (ii.m_ctrl) delta *= items_visible;
         selidx += delta;
 
         if (selidx < 0)
@@ -1581,8 +1583,8 @@ fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
         if (selidx >= cnt)
             selidx = 0;
 
-        ctx.pState->onListBoxSelect(pWgt, selidx);
-        ctx.pState->invalidate(pWgt->id);
+        ws.onListBoxSelect(wgt, selidx);
+        ws.invalidate(wgt.id);
     }
 
 */
@@ -1592,30 +1594,30 @@ fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
 {
     unimplemented!();
 /*
-    if (kc.mouse.btn == MouseBtn::ButtonLeft)
+    if (ii.mouse.btn == MouseBtn::ButtonLeft)
     {
-        changeFocusTo(ctx, pWgt->id);
+        changeFocusTo(ws, wgt.id);
 
-        auto col = kc.mouse.col - wgtRect.coord.col;
-        auto row = kc.mouse.row - wgtRect.coord.row - 1;
+        auto col = ii.mouse.col - wgtRect.coord.col;
+        auto row = ii.mouse.row - wgtRect.coord.row - 1;
 
-        if (row >= 0 && row < pWgt->combobox.dropDownSize)
+        if (row >= 0 && row < wgt->combobox.dropDownSize)
         {
             int16_t idx = 0, selidx = 0, cnt = 0; bool drop_down = false;
-            ctx.pState->getComboBoxState(pWgt, idx, selidx, cnt, drop_down);
-            selidx = (selidx / pWgt->combobox.dropDownSize) * pWgt->combobox.dropDownSize; // top item
+            ws.getComboBoxState(wgt, idx, selidx, cnt, drop_down);
+            selidx = (selidx / wgt->combobox.dropDownSize) * wgt->combobox.dropDownSize; // top item
             selidx += row;
             if (selidx < cnt)
             {
-                ctx.pState->onComboBoxSelect(pWgt, selidx);
-                ctx.pState->invalidate(pWgt->id);
+                ws.onComboBoxSelect(wgt, selidx);
+                ws.invalidate(wgt.id);
             }
         }
         else if (col >= wgtRect.size.width - 3 && col <= wgtRect.size.width - 1)
         {
             // drop down arrow clicked
             int16_t _, cnt = 0; bool drop_down = false;
-            ctx.pState->getComboBoxState(pWgt, _, _, cnt, drop_down);
+            ws.getComboBoxState(wgt, _, _, cnt, drop_down);
 
             if (cnt <= 0)
                 return;
@@ -1624,28 +1626,28 @@ fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
 
             if (drop_down)
             {
-                ctx.pState->onComboBoxDrop(pWgt, true);
-                ctx.pState->invalidate(pWgt->id);
-                g_ws.pDropDownCombo = pWgt;
+                ws.onComboBoxDrop(wgt, true);
+                ws.invalidate(wgt.id);
+                g_ws.pDropDownCombo = wgt;
             }
             else
             {
-                comboBoxHideList(ctx, pWgt);
+                comboBoxHideList(ws, wgt);
             }
         }
     }
-    else if (kc.mouse.btn == MouseBtn::WheelUp || kc.mouse.btn == MouseBtn::WheelDown)
+    else if (ii.mouse.btn == MouseBtn::WheelUp || ii.mouse.btn == MouseBtn::WheelDown)
     {
-        changeFocusTo(ctx, pWgt->id);
+        changeFocusTo(ws, wgt.id);
 
         int16_t idx = 0, selidx = 0, cnt = 0; bool drop_down = false;
-        ctx.pState->getComboBoxState(pWgt, idx, selidx, cnt, drop_down);
+        ws.getComboBoxState(wgt, idx, selidx, cnt, drop_down);
 
         if (!drop_down || cnt <= 0)
             return;
 
-        int delta = kc.mouse.btn == MouseBtn::WheelUp ? -1 : 1;
-        if (kc.m_ctrl) delta *= pWgt->combobox.dropDownSize;
+        int delta = ii.mouse.btn == MouseBtn::WheelUp ? -1 : 1;
+        if (ii.m_ctrl) delta *= wgt->combobox.dropDownSize;
         selidx += delta;
 
         if (selidx < 0)
@@ -1654,23 +1656,23 @@ fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
         if (selidx >= cnt)
             selidx = 0;
 
-        ctx.pState->onComboBoxSelect(pWgt, selidx);
-        ctx.pState->invalidate(pWgt->id);
+        ws.onComboBoxSelect(wgt, selidx);
+        ws.invalidate(wgt.id);
     }
-    else if (kc.mouse.btn == MouseBtn::ButtonMid)
+    else if (ii.mouse.btn == MouseBtn::ButtonMid)
     {
-        twins::KeyCode key_left = kc;
+        twins::KeyCode key_left = ii;
         key_left.mouse.btn = MouseBtn::ButtonLeft;
-        processMouse_ComboBox(ctx, pWgt, wgtRect, key_left);
+        processMouse_ComboBox(ws, wgt, wgtRect, key_left);
 
         int16_t _, selidx = 0; bool drop_down = false;
-        ctx.pState->getComboBoxState(pWgt, _, selidx, _, drop_down);
+        ws.getComboBoxState(wgt, _, selidx, _, drop_down);
 
         if (!drop_down)
             return;
 
-        ctx.pState->onComboBoxChange(pWgt, selidx);
-        comboBoxHideList(ctx, pWgt);
+        ws.onComboBoxChange(wgt, selidx);
+        comboBoxHideList(ws, wgt);
     }
 
 */
@@ -1680,7 +1682,7 @@ fn process_mouse_custom_wgt(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &R
 {
     unimplemented!();
 /*
-    ctx.pState->onCustomWidgetInputEvt(pWgt, kc);
+    ws.onCustomWidgetInputEvt(wgt, ii);
 */
 }
 
@@ -1688,20 +1690,20 @@ fn process_mouse_text_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
 {
     unimplemented!();
 /*
-    changeFocusTo(ctx, pWgt->id);
+    changeFocusTo(ws, wgt.id);
 
-    if (kc.mouse.btn == MouseBtn::WheelUp || kc.mouse.btn == MouseBtn::WheelDown)
+    if (ii.mouse.btn == MouseBtn::WheelUp || ii.mouse.btn == MouseBtn::WheelDown)
     {
         const twins::Vector<twins::CStrView> *p_lines = nullptr;
         int16_t top_line = 0;
 
-        ctx.pState->getTextBoxState(pWgt, &p_lines, top_line);
+        ws.getTextBoxState(wgt, &p_lines, top_line);
 
         if (p_lines && p_lines->size())
         {
-            int delta = kc.mouse.btn == MouseBtn::WheelUp ? -1 : 1;
-            const uint16_t lines_visible = pWgt->size.height - 2;
-            if (kc.m_ctrl) delta *= lines_visible;
+            int delta = ii.mouse.btn == MouseBtn::WheelUp ? -1 : 1;
+            const uint16_t lines_visible = wgt->size.height - 2;
+            if (ii.m_ctrl) delta *= lines_visible;
 
             top_line += delta;
 
@@ -1711,9 +1713,9 @@ fn process_mouse_text_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
             if (top_line < 0)
                 top_line = 0;
 
-            changeFocusTo(ctx, pWgt->id);
-            ctx.pState->onTextBoxScroll(pWgt, top_line);
-            ctx.pState->invalidate(pWgt->id);
+            changeFocusTo(ws, wgt.id);
+            ws.onTextBoxScroll(wgt, top_line);
+            ws.invalidate(wgt.id);
         }
     }
 
