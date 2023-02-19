@@ -526,6 +526,10 @@ impl RuntimeState {
         self.states.insert(id, state);
     }
 
+    pub fn get_state(&self, id: WId) -> Option<&prop_rt::State> {
+        self.states.get(&id)
+    }
+
     impl_as!(as_chbx, Chbx);
     impl_as!(as_led, Led);
     impl_as!(as_lbx, Lbx);
@@ -562,9 +566,9 @@ pub trait WindowState {
     fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool { false }
 
     /// common state queries
-    fn is_enabled(&mut self, wgt: &Widget) -> bool { true }
-    fn is_focused(&mut self, wgt: &Widget) -> bool { false }
-    fn is_visible(&mut self, wgt: &Widget) -> bool { true }
+    fn is_enabled(&self, wgt: &Widget) -> bool { true }
+    fn is_focused(&self, wgt: &Widget) -> bool { false }
+    fn is_visible(&self, wgt: &Widget) -> bool { true }
     fn is_desktop(&self) -> bool { false }
     fn get_focused_id(&mut self) -> WId { WIDGET_ID_NONE }
     fn set_focused_id(&mut self, wid: WId) {}

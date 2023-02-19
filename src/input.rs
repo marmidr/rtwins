@@ -85,7 +85,7 @@ impl Default for Key {
 }
 
 /// Mouse button click events
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, PartialOrd, Debug, Clone)]
 pub enum MouseEvent {
     None,
     ButtonLeft,
@@ -105,7 +105,7 @@ impl Default for MouseEvent {
 }
 
 /// Mouse event representation
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MouseInfo {
     // button or wheel event
     pub evt: MouseEvent,
@@ -128,7 +128,7 @@ pub const KEY_MOD_SHIFT:   u8 = 0b0100;
 pub const KEY_MOD_SPECIAL: u8 = 0b1000;
 
 /// Representation of key modifiers coded on bits
-#[derive(Debug, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct KeyMod {
     pub mask: u8
 }
@@ -146,7 +146,7 @@ impl KeyMod {
 }
 
 /// Buffer for UTF-8 sequence
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct CharBuff {
     pub utf8seq: [u8; 4],   // UTF-8 code: 'a', '4', 'Ł'
     pub utf8sl: u8,         // length of utf8seq seq
@@ -173,7 +173,7 @@ impl CharBuff {
 }
 
 /// Decoded input type
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum InputEvent {
     /// No event decoded
     None,
@@ -185,7 +185,14 @@ pub enum InputEvent {
     Mouse(MouseInfo),
 }
 
+impl Default for InputEvent {
+    fn default() -> Self {
+        InputEvent::None
+    }
+}
+
 /// Describes decoded input
+#[derive(Debug, Clone)]
 pub struct InputInfo {
     /// Input type with details
     pub evnt:   InputEvent,

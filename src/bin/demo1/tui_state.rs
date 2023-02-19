@@ -190,21 +190,24 @@ impl rtwins::WindowState for DemoWndState {
 
     /** common state queries **/
 
-    fn is_enabled(&mut self, wgt: &Widget) -> bool {
+    fn is_enabled(&self, wgt: &Widget) -> bool {
         self.rs.get_enabled_or_default(wgt.id)
     }
 
-    fn is_focused(&mut self, wgt: &Widget) -> bool {
+    fn is_focused(&self, wgt: &Widget) -> bool {
         self.focused_id == wgt.id
     }
 
-    fn is_visible(&mut self, wgt: &Widget) -> bool {
+    fn is_visible(&self, wgt: &Widget) -> bool {
         if let Property::Page(_) = wgt.prop {
             let pgctrl = get_parent(wgt);
-            let active_page_no = self.rs.as_pgctrl(pgctrl.id).page;
 
-            if let Some(pn) = page_page_idx(wgt) {
-                return pn == active_page_no;
+            if let Some(stat) = self.rs.get_state(pgctrl.id) {
+                if let Some(pg_idx) = page_page_idx(wgt) {
+                    if let prop_rt::State::Pgctrl(ref pgctrl) = stat {
+                        return pg_idx == pgctrl.page;
+                    }
+                }
             }
         }
 

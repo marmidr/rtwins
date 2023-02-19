@@ -195,17 +195,17 @@ impl WndTestState {
 impl WindowState for WndTestState {
     /** common state queries **/
 
-    fn is_enabled(&mut self, wgt: &Widget) -> bool {
+    fn is_enabled(&self, wgt: &Widget) -> bool {
         if wgt.id == Id::WndTest.into() { self.wnd_enabled }
         else if wgt.id == Id::LabelAbout.into() { self.lbl_about_enabled }
         else { true }
     }
 
-    fn is_focused(&mut self, _wgt: &Widget) -> bool {
+    fn is_focused(&self, _wgt: &Widget) -> bool {
         true
     }
 
-    fn is_visible(&mut self, wgt: &Widget) -> bool {
+    fn is_visible(&self, wgt: &Widget) -> bool {
         if wgt.id == Id::WndTest.into() { self.wnd_visible }
         else if wgt.id == Id::LabelAbout.into() { self.lbl_about_visible }
         else { true }

@@ -7,7 +7,6 @@ use crate::string_ext::StrExt;
 use crate::string_ext::StringExt;
 use crate::widget_def::*;
 use crate::common::*;
-use crate::input;
 use crate::input::*;
 use crate::*;
 
@@ -21,8 +20,7 @@ struct WidgetState {
     mouse_down_wgt:  WId,
     drop_down_combo: WId,
     text_edit_state: TextEditState,
-    mouse_down_key_code: input::Key,
-    // parent_coord: Coord
+    mouse_down_ii:   InputInfo,
 }
 
 impl WidgetState {
@@ -135,8 +133,8 @@ pub fn find_by_id(wndarray: &[Widget], id: WId) -> Option<&Widget> {
 
 /// Finds visible Widget at cursor position `col:row`;
 /// Sets `wgt_rect` to found widget screen-based coordinates
-pub fn find_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) -> Option<&'a Widget> {
-    let mut found_wgt: Option<&'a Widget> = None;
+pub fn find_at(ws: &mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) -> Option<&'static Widget> {
+    let mut found_wgt: Option<&'static Widget> = None;
     let mut best_rect = Rect::cdeflt();
     best_rect.set_max();
     let wgts = ws.get_widgets();
@@ -190,7 +188,7 @@ pub fn find_at<'a>(ws: &'a mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut
                         wgt_screen_rect.size.height = 3;
                         wgt_screen_rect.size.width = 2 + txt_w;
                     },
-                    }
+                }
             },
             Property::PageCtrl(ref p) => {
                 wgt_screen_rect.size.width = p.tab_width;
@@ -315,11 +313,11 @@ pub fn set_cursor_at(term: &mut Term, ws: &mut dyn WindowState, wgt: &Widget) {
     term.move_to(coord.col as u16, coord.row as u16);
 }
 
-pub fn is_visible(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
+pub fn is_visible(ws: &dyn WindowState, wgt: &Widget) -> bool {
     wgt.iter_parents().all(|wgt| ws.is_visible(wgt))
 }
 
-pub fn is_enabled(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
+pub fn is_enabled(ws: &dyn WindowState, wgt: &Widget) -> bool {
     wgt.iter_parents().all(|wgt| ws.is_enabled(wgt))
 }
 
@@ -1314,412 +1312,413 @@ fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
 // ---- WIDGETS MOUSE PROCESSING FUNCTIONS ------------------------------------------------------ //
 // ---------------------------------------------------------------------------------------------- //
 
-fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool
-{
-    unimplemented!();
-/*
-    if (ii.mouse.btn == MouseBtn::ButtonGoBack || ii.mouse.btn == MouseBtn::ButtonGoForward)
-    {
-        if (const auto *wgt = findMainPgControl(ws))
-        {
-            if (isEnabled(ws, wgt))
-                pgControlChangePage(ws, wgt, ii.mouse.btn == MouseBtn::ButtonGoForward);
-            return true;
-        }
-    }
-
-    Rect rct;
-    const Widget *wgt = getWidgetAt(ws, ii.mouse.col, ii.mouse.row, rct);
-
-    if (g_ws.pMouseDownWgt)
-    {
-        // apply only for Button widget
-        if (g_ws.pMouseDownWgt->type == Widget::Button)
-        {
-            // mouse button released over another widget - generate Up event for previously clicked button
-            if (ii.mouse.btn == MouseBtn::ButtonReleased && g_ws.pMouseDownWgt != wgt)
-            {
-                processMouse_Button_Release(ws, g_ws.pMouseDownWgt, ii);
+fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
+    if let InputEvent::Mouse(ref mouse) = ii.evnt {
+        if mouse.evt == MouseEvent::ButtonGoBack || mouse.evt == MouseEvent::ButtonGoForward {
+            if let Some(main_pg_ctrl) = find_main_pg_control(ws) {
+                if is_enabled(ws, main_pg_ctrl) {
+                    pagectrl_change_page(ws, main_pg_ctrl, mouse.evt == MouseEvent::ButtonGoForward);
+                }
                 return true;
             }
         }
-    }
-    else if (wgt)
-    {
-        // remember clicked widget
-        if (ii.mouse.btn >= MouseBtn::ButtonLeft && ii.mouse.btn < MouseBtn::ButtonReleased)
-        {
-            g_ws.pMouseDownWgt = wgt;
-            g_ws.mouseDownKeyCode = ii;
+
+        let mut rct = Rect::cdeflt();
+
+        if let Some(mut wgt) = find_at(ws, mouse.col, mouse.row, &mut rct) {
+            let ret = WGT_STATE.with(|wgtstate|{
+                let md_wgt_id = wgtstate.borrow().mouse_down_wgt;
+
+                if md_wgt_id != WIDGET_ID_NONE {
+                    if let Some(md_wgt) = find_by_id(ws.get_widgets(), md_wgt_id) {
+                        // apply only for Button widget
+                        if let Property::Button(_) = md_wgt.prop {
+                            // mouse button released over another widget - generate Up event for previously clicked button
+                            if mouse.evt == MouseEvent::ButtonReleased && md_wgt.id != wgt.id {
+                                process_mouse_button_release(ws, md_wgt, ii);
+                                return true;
+                            }
+                        }
+                    }
+                }
+                else {
+                    // remember clicked widget
+                    if mouse.evt >= MouseEvent::ButtonLeft && mouse.evt < MouseEvent::ButtonReleased {
+                        let mut stat = wgtstate.borrow_mut();
+                        stat.mouse_down_wgt = wgt.id;
+                        stat.mouse_down_ii = (*ii).clone();
+                    }
+                }
+
+                return false;
+            });
+
+
+            // TWINS_LOG_D("WidgetAt(%2d:%2d)=%s ID:%u", ii.mouse.col, ii.mouse.row, toString(wgt->type), wgt.id);
+
+            WGT_STATE.with(|wgtstate|{
+                let ddcombo_wgt_id = wgtstate.borrow().drop_down_combo;
+
+                if ddcombo_wgt_id != WIDGET_ID_NONE {
+                    // check if drop-down list clicked
+                    if let Some(ddcombo_wgt) = find_by_id(ws.get_widgets(), ddcombo_wgt_id) {
+                        if let Property::ComboBox(ref prop) = ddcombo_wgt.prop {
+                            let mut dropdownlist_rct = Rect::cdeflt();
+                            dropdownlist_rct.coord = get_screen_coord(ddcombo_wgt);
+                            dropdownlist_rct.coord.row += 1;
+                            dropdownlist_rct.size.width = ddcombo_wgt.size.width;
+                            dropdownlist_rct.size.height = prop.drop_down_size;
+
+                            if dropdownlist_rct.is_point_within(mouse.col, mouse.row) {
+                                // yes -> replace data for processing with g_ds.pDropDownCombo
+                                wgt = ddcombo_wgt;
+                                rct.coord = get_screen_coord(wgt);
+                                rct.size = wgt.size;
+                            }
+                            else {
+                                if mouse.evt == MouseEvent::ButtonLeft {
+                                    combo_box_hide_list(ws, ddcombo_wgt);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            if is_enabled(ws, wgt) {
+                match wgt.prop {
+                    Property::TextEdit(_) => process_mouse_text_edit(ws, wgt, &rct, ii),
+                    Property::CheckBox(_) => process_mouse_check_box(ws, wgt, &rct, ii),
+                    Property::Radio(_) => process_mouse_radio(ws, wgt, &rct, ii),
+                    Property::Button(_) => process_mouse_button(ws, wgt, &rct, ii),
+                    Property::PageCtrl(_) => process_mouse_page_ctrl(ws, wgt, &rct, ii),
+                    Property::ListBox(_) => process_mouse_list_box(ws, wgt, &rct, ii),
+                    Property::ComboBox(_) => process_mouse_combo_box(ws, wgt, &rct, ii),
+                    Property::CustomWgt(_) => process_mouse_custom_wgt(ws, wgt, &rct, ii),
+                    Property::TextBox(_) => process_mouse_text_box(ws, wgt, &rct, ii),
+                    _ => {
+                        if let Ok(mut term_lock) = crate::Term::try_lock_write() {
+                            let term = &mut *term_lock;
+                            term.move_to_home();
+                        }
+
+                        WGT_STATE.with(|wgtstate|{
+                            wgtstate.borrow_mut().mouse_down_wgt = WIDGET_ID_NONE;
+                        });
+
+                        return false;
+                    }
+                }
+            }
+
+            if mouse.evt == MouseEvent::ButtonReleased {
+                WGT_STATE.with(|wgtstate|{
+                    wgtstate.borrow_mut().mouse_down_wgt = WIDGET_ID_NONE;
+                });
+            }
         }
     }
-
-    if (!wgt)
-        return false;
-
-    // TWINS_LOG_D("WidgetAt(%2d:%2d)=%s ID:%u", ii.mouse.col, ii.mouse.row, toString(wgt->type), wgt.id);
-
-    if (g_ws.pDropDownCombo)
-    {
-        // check if drop-down list clicked
-        Rect dropdownlist_rct;
-        dropdownlist_rct.coord = getScreenCoord(g_ws.pDropDownCombo);
-        dropdownlist_rct.coord.row++;
-        dropdownlist_rct.size.width = g_ws.pDropDownCombo->size.width;
-        dropdownlist_rct.size.height = g_ws.pDropDownCombo->combobox.dropDownSize;
-
-        if (isPointWithin(ii.mouse.col, ii.mouse.row, dropdownlist_rct))
-        {
-            // yes -> replace data for processing with g_ds.pDropDownCombo
-            wgt = g_ws.pDropDownCombo;
-            rct.coord = getScreenCoord(g_ws.pDropDownCombo);
-            rct.size = g_ws.pDropDownCombo->size;
-        }
-        else
-        {
-            if (ii.mouse.btn == MouseBtn::ButtonLeft)
-                comboBoxHideList(ws, g_ws.pDropDownCombo);
-        }
-    }
-
-    if (isEnabled(ws, wgt))
-    {
-        switch (wgt->type)
-        {
-        Property::TextEdit:
-            processMouse_TextEdit(ws, wgt, rct, ii);
-            break;
-        Property::CheckBox:
-            processMouse_CheckBox(ws, wgt, rct, ii);
-            break;
-        Property::Radio:
-            processMouse_Radio(ws, wgt, rct, ii);
-            break;
-        Property::Button:
-            processMouse_Button(ws, wgt, rct, ii);
-            break;
-        Property::PageCtrl:
-            processMouse_PageCtrl(ws, wgt, rct, ii);
-            break;
-        Property::ListBox:
-            processMouse_ListBox(ws, wgt, rct, ii);
-            break;
-        Property::ComboBox:
-            processMouse_ComboBox(ws, wgt, rct, ii);
-            break;
-        Property::CustomWgt:
-            processMouse_CustomWgt(ws, wgt, rct, ii);
-            break;
-        Property::TextBox:
-            processMouse_TextBox(ws, wgt, rct, ii);
-            break;
-        default:
-            moveToHome();
-            g_ws.pMouseDownWgt = nullptr;
-            return false;
-        }
-    }
-
-    if (ii.mouse.btn == MouseBtn::ButtonReleased)
-        g_ws.pMouseDownWgt = nullptr;
 
     return true;
-*/
 }
 
-fn process_mouse_text_edit(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
-{
-    unimplemented!();
-/*
-    if (ii.mouse.btn == MouseBtn::ButtonLeft)
-    {
-        changeFocusTo(ws, wgt.id);
+fn process_mouse_text_edit(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+    if let InputEvent::Mouse(ref mouse) = ii.evnt {
+        if mouse.evt == MouseEvent::ButtonLeft {
+            change_focus_to(ws, wgt.id);
+        }
     }
-*/
 }
 
-fn process_mouse_check_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
-{
-    unimplemented!();
-/*
-    if (ii.mouse.btn == MouseBtn::ButtonLeft)
-    {
-        changeFocusTo(ws, wgt.id);
-        ws.onCheckboxToggle(wgt);
-        ws.invalidate(wgt.id);
-    }
-*/
-}
-
-fn process_mouse_radio(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
-{
-    unimplemented!();
-/*
-    if (ii.mouse.btn == MouseBtn::ButtonLeft)
-    {
-        changeFocusTo(ws, wgt.id);
-        ws.onRadioSelect(wgt);
-        invalidateRadioGroup(ws, wgt);
-    }
-*/
-}
-
-fn process_mouse_button(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
-{
-    unimplemented!();
-/*
-    // pointer may change between onButtonUp and onButtonClick, so remember it
-
-    if (ii.mouse.btn == MouseBtn::ButtonLeft)
-    {
-        changeFocusTo(ws, wgt.id);
-        ws.onButtonDown(wgt, ii);
-        ws.invalidate(wgt.id);
-    }
-    else if (ii.mouse.btn == MouseBtn::ButtonReleased && g_ws.pMouseDownWgt == wgt)
-    {
-        ws.onButtonUp(wgt, ii);
-        ws.onButtonClick(wgt, g_ws.mouseDownKeyCode);
-        g_ws.pMouseDownWgt = nullptr;
-        ws.invalidate(wgt.id);
-    }
-    else
-    {
-        g_ws.pMouseDownWgt = nullptr;
-    }
-*/
-}
-
-fn process_mouse_button_release(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
-{
-    unimplemented!();
-/*
-    ws.onButtonUp(wgt, ii);
-    g_ws.pMouseDownWgt = nullptr;
-    ws.invalidate(wgt.id);
-*/
-}
-
-fn process_mouse_page_ctrl(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
-{
-    unimplemented!();
-/*
-    if (ii.mouse.btn == MouseBtn::ButtonLeft)
-    {
-        changeFocusTo(ws, wgt.id);
-        int idx = ws.getPageCtrlPageIndex(wgt);
-        int new_idx = ii.mouse.row - wgtRect.coord.row - 1 - wgt->pagectrl.vertOffs;
-
-        if (new_idx != idx && new_idx >= 0 && new_idx < wgt->link.childrenCnt)
-        {
-            ws.onPageControlPageChange(wgt, new_idx);
+fn process_mouse_check_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+    if let InputEvent::Mouse(ref mouse) = ii.evnt {
+        if mouse.evt == MouseEvent::ButtonLeft {
+            change_focus_to(ws, wgt.id);
+            ws.on_checkbox_toggle(wgt);
             ws.invalidate(wgt.id);
         }
     }
-    else if (ii.mouse.btn == MouseBtn::WheelUp || ii.mouse.btn == MouseBtn::WheelDown)
-    {
-        pgControlChangePage(ws, wgt, ii.mouse.btn == MouseBtn::WheelDown);
-    }
-*/
 }
 
-fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
-{
-    unimplemented!();
-/*
-    const uint16_t items_visible = wgt->size.height-2;
-
-    if (ii.mouse.btn == MouseBtn::ButtonLeft || ii.mouse.btn == MouseBtn::ButtonMid)
-    {
-        bool focus_changed = changeFocusTo(ws, wgt.id);
-
-        int16_t idx = 0, selidx = 0, cnt = 0;
-        ws.getListBoxState(wgt, idx, selidx, cnt);
-
-        if (cnt <= 0)
-            return;
-
-        int page = selidx / items_visible;
-        unsigned new_selidx = page * items_visible;
-        new_selidx += (int)ii.mouse.row - wgtRect.coord.row - 1;
-
-        if (ii.mouse.btn == MouseBtn::ButtonLeft)
-        {
-            if (new_selidx < (unsigned)cnt && (((signed)new_selidx != selidx) || focus_changed))
-            {
-                selidx = new_selidx;
-                ws.onListBoxSelect(wgt, selidx);
-            }
+fn process_mouse_radio(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+    if let InputEvent::Mouse(ref mouse) = ii.evnt {
+        if mouse.evt == MouseEvent::ButtonLeft {
+            change_focus_to(ws, wgt.id);
+            ws.on_radio_select(wgt);
+            invalidate_radio_group(ws, wgt);
         }
-        else
-        {
-            if (new_selidx < (unsigned)cnt && new_selidx != (unsigned)idx)
-            {
-                selidx = new_selidx;
-                ws.onListBoxSelect(wgt, selidx);
-                ws.onListBoxChange(wgt, selidx);
-            }
-        }
-
-        ws.invalidate(wgt.id);
     }
-    else if (ii.mouse.btn == MouseBtn::WheelUp || ii.mouse.btn == MouseBtn::WheelDown)
-    {
-        changeFocusTo(ws, wgt.id);
-
-        int16_t idx = 0, selidx = 0, cnt = 0;
-        ws.getListBoxState(wgt, idx, selidx, cnt);
-
-        if (cnt <= 0)
-            return;
-
-        int delta = ii.mouse.btn == MouseBtn::WheelUp ? -1 : 1;
-        if (ii.m_ctrl) delta *= items_visible;
-        selidx += delta;
-
-        if (selidx < 0)
-            selidx = cnt - 1;
-
-        if (selidx >= cnt)
-            selidx = 0;
-
-        ws.onListBoxSelect(wgt, selidx);
-        ws.invalidate(wgt.id);
-    }
-
-*/
 }
 
-fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
-{
-    unimplemented!();
-/*
-    if (ii.mouse.btn == MouseBtn::ButtonLeft)
-    {
-        changeFocusTo(ws, wgt.id);
+fn process_mouse_button(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+    if let InputEvent::Mouse(ref mouse) = ii.evnt {
+        // pointer may change between onButtonUp and onButtonClick, so remember it
+        WGT_STATE.with(|wgtstate|{
+            if mouse.evt == MouseEvent::ButtonLeft {
+                change_focus_to(ws, wgt.id);
+                ws.on_button_down(wgt, ii);
+                ws.invalidate(wgt.id);
+            }
+            else if mouse.evt == MouseEvent::ButtonReleased && wgtstate.borrow().mouse_down_wgt == wgt.id {
+                ws.on_button_up(wgt, ii);
+                ws.on_button_click(wgt, &wgtstate.borrow().mouse_down_ii);
+                wgtstate.borrow_mut().mouse_down_wgt = WIDGET_ID_NONE;
+                ws.invalidate(wgt.id);
+            }
+            else {
+                wgtstate.borrow_mut().mouse_down_wgt = WIDGET_ID_NONE;
+            }
+        });
+    }
+}
 
-        auto col = ii.mouse.col - wgtRect.coord.col;
-        auto row = ii.mouse.row - wgtRect.coord.row - 1;
+fn process_mouse_button_release(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) {
+    if let InputEvent::Mouse(ref mouse) = ii.evnt {
+        ws.on_button_up(wgt, ii);
+        WGT_STATE.with(|wgtstate|{
+            wgtstate.borrow_mut().mouse_down_wgt = WIDGET_ID_NONE;
+        });
+        ws.invalidate(wgt.id);
+    }
+}
 
-        if (row >= 0 && row < wgt->combobox.dropDownSize)
-        {
-            int16_t idx = 0, selidx = 0, cnt = 0; bool drop_down = false;
-            ws.getComboBoxState(wgt, idx, selidx, cnt, drop_down);
-            selidx = (selidx / wgt->combobox.dropDownSize) * wgt->combobox.dropDownSize; // top item
-            selidx += row;
-            if (selidx < cnt)
-            {
-                ws.onComboBoxSelect(wgt, selidx);
+fn process_mouse_page_ctrl(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+    if let InputEvent::Mouse(ref mouse) = ii.evnt {
+        if mouse.evt == MouseEvent::ButtonLeft {
+            change_focus_to(ws, wgt.id);
+            let idx = ws.get_page_ctrl_page_index(wgt) as i16;
+            let vertoffs = if let Property::PageCtrl(ref prop) = wgt.prop {
+                prop.vert_offs as i16
+            }
+            else {
+                0
+            };
+
+            let new_idx = mouse.row as i16 - wgt_rect.coord.row as i16 - 1 - vertoffs;
+
+            if new_idx != idx && new_idx >= 0 && new_idx < wgt.link.children_cnt as i16 {
+                ws.on_page_control_page_change(wgt, new_idx as u8);
                 ws.invalidate(wgt.id);
             }
         }
-        else if (col >= wgtRect.size.width - 3 && col <= wgtRect.size.width - 1)
-        {
-            // drop down arrow clicked
-            int16_t _, cnt = 0; bool drop_down = false;
-            ws.getComboBoxState(wgt, _, _, cnt, drop_down);
+        else if mouse.evt == MouseEvent::WheelUp || mouse.evt == MouseEvent::WheelDown {
+            pagectrl_change_page(ws, wgt, mouse.evt == MouseEvent::WheelDown);
+        }
+    }
+}
 
-            if (cnt <= 0)
+fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+    if let InputEvent::Mouse(ref mouse) = ii.evnt {
+        let items_visible = wgt.size.height as i16 - 2;
+
+        if mouse.evt == MouseEvent::ButtonLeft || mouse.evt == MouseEvent::ButtonMid {
+            let focus_changed = change_focus_to(ws, wgt.id);
+            let mut idx = 0;
+            let mut selidx = 0;
+            let mut cnt = 0;
+            ws.get_list_box_state(wgt, &mut idx, &mut selidx, &mut cnt);
+
+            if cnt <= 0 || items_visible == 0 {
                 return;
-
-            drop_down = !drop_down;
-
-            if (drop_down)
-            {
-                ws.onComboBoxDrop(wgt, true);
-                ws.invalidate(wgt.id);
-                g_ws.pDropDownCombo = wgt;
             }
-            else
-            {
-                comboBoxHideList(ws, wgt);
+
+            let page = selidx / items_visible;
+            let mut new_selidx = page * items_visible;
+            new_selidx += mouse.row as i16 - wgt_rect.coord.row as i16 - 1;
+
+            if mouse.evt == MouseEvent::ButtonLeft {
+                if new_selidx < cnt && ((new_selidx != selidx) || focus_changed) {
+                    selidx = new_selidx;
+                    ws.on_list_box_select(wgt, selidx);
+                }
             }
+            else {
+                if new_selidx < cnt && new_selidx != idx {
+                    selidx = new_selidx;
+                    ws.on_list_box_select(wgt, selidx);
+                    ws.on_list_box_change(wgt, selidx);
+                }
+            }
+
+            ws.invalidate(wgt.id);
         }
-    }
-    else if (ii.mouse.btn == MouseBtn::WheelUp || ii.mouse.btn == MouseBtn::WheelDown)
-    {
-        changeFocusTo(ws, wgt.id);
+        else if mouse.evt == MouseEvent::WheelUp || mouse.evt == MouseEvent::WheelDown {
+            change_focus_to(ws, wgt.id);
+            let mut idx = 0;
+            let mut selidx = 0;
+            let mut cnt = 0;
+            ws.get_list_box_state(wgt, &mut idx, &mut selidx, &mut cnt);
 
-        int16_t idx = 0, selidx = 0, cnt = 0; bool drop_down = false;
-        ws.getComboBoxState(wgt, idx, selidx, cnt, drop_down);
+            if cnt <= 0 {
+                return;
+            }
 
-        if (!drop_down || cnt <= 0)
-            return;
+            let mut delta = if mouse.evt == MouseEvent::WheelUp {-1} else {1};
+            if ii.kmod.has_ctrl() {
+                delta *= items_visible;
+            }
+            selidx += delta;
 
-        int delta = ii.mouse.btn == MouseBtn::WheelUp ? -1 : 1;
-        if (ii.m_ctrl) delta *= wgt->combobox.dropDownSize;
-        selidx += delta;
+            if selidx < 0 {
+                selidx = cnt - 1;
+            }
 
-        if (selidx < 0)
-            selidx = cnt - 1;
+            if selidx >= cnt {
+                selidx = 0;
+            }
 
-        if (selidx >= cnt)
-            selidx = 0;
-
-        ws.onComboBoxSelect(wgt, selidx);
-        ws.invalidate(wgt.id);
-    }
-    else if (ii.mouse.btn == MouseBtn::ButtonMid)
-    {
-        twins::KeyCode key_left = ii;
-        key_left.mouse.btn = MouseBtn::ButtonLeft;
-        processMouse_ComboBox(ws, wgt, wgtRect, key_left);
-
-        int16_t _, selidx = 0; bool drop_down = false;
-        ws.getComboBoxState(wgt, _, selidx, _, drop_down);
-
-        if (!drop_down)
-            return;
-
-        ws.onComboBoxChange(wgt, selidx);
-        comboBoxHideList(ws, wgt);
-    }
-
-*/
-}
-
-fn process_mouse_custom_wgt(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
-{
-    unimplemented!();
-/*
-    ws.onCustomWidgetInputEvt(wgt, ii);
-*/
-}
-
-fn process_mouse_text_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo)
-{
-    unimplemented!();
-/*
-    changeFocusTo(ws, wgt.id);
-
-    if (ii.mouse.btn == MouseBtn::WheelUp || ii.mouse.btn == MouseBtn::WheelDown)
-    {
-        const twins::Vector<twins::CStrView> *p_lines = nullptr;
-        int16_t top_line = 0;
-
-        ws.getTextBoxState(wgt, &p_lines, top_line);
-
-        if (p_lines && p_lines->size())
-        {
-            int delta = ii.mouse.btn == MouseBtn::WheelUp ? -1 : 1;
-            const uint16_t lines_visible = wgt->size.height - 2;
-            if (ii.m_ctrl) delta *= lines_visible;
-
-            top_line += delta;
-
-            if (top_line > (int)p_lines->size() - lines_visible)
-                top_line = p_lines->size() - lines_visible;
-
-            if (top_line < 0)
-                top_line = 0;
-
-            changeFocusTo(ws, wgt.id);
-            ws.onTextBoxScroll(wgt, top_line);
+            ws.on_list_box_select(wgt, selidx);
             ws.invalidate(wgt.id);
         }
     }
+}
 
-*/
+fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+    if let InputEvent::Mouse(ref mouse) = ii.evnt {
+        let drop_down_size = if let Property::ComboBox(ref prop) = wgt.prop {
+            prop.drop_down_size as i16
+        }
+        else {
+            1
+        };
+
+        if mouse.evt == MouseEvent::ButtonLeft {
+            change_focus_to(ws, wgt.id);
+            let col = mouse.col as i16 - wgt_rect.coord.col as i16;
+            let row = mouse.row as i16 - wgt_rect.coord.row as i16 - 1;
+
+            if row < drop_down_size {
+                let mut idx = 0;
+                let mut selidx = 0;
+                let mut cnt = 0;
+                let mut drop_down = false;
+                ws.get_combo_box_state(wgt, &mut idx, &mut selidx, &mut cnt, &mut drop_down);
+
+                selidx = (selidx / drop_down_size) * drop_down_size; // top item
+                selidx += row as i16;
+                if selidx < cnt {
+                    ws.on_combo_box_select(wgt, selidx);
+                    ws.invalidate(wgt.id);
+                }
+            }
+            else if col >= wgt_rect.size.width as i16 - 3 && col <= wgt_rect.size.width as i16 - 1 {
+                let mut idx = 0;
+                let mut selidx = 0;
+                let mut cnt = 0;
+                let mut drop_down = false;
+                ws.get_combo_box_state(wgt, &mut idx, &mut selidx, &mut cnt, &mut drop_down);
+
+                // drop down arrow clicked
+                if cnt <= 0 {
+                    return;
+                }
+
+                drop_down = !drop_down;
+
+                if drop_down {
+                    ws.on_combo_box_drop(wgt, true);
+                    ws.invalidate(wgt.id);
+
+                    WGT_STATE.with(|wgtstate|{
+                        wgtstate.borrow_mut().drop_down_combo = wgt.id;
+                    });
+                }
+                else {
+                    combo_box_hide_list(ws, wgt);
+                }
+            }
+        }
+        else if mouse.evt == MouseEvent::WheelUp || mouse.evt == MouseEvent::WheelDown {
+            change_focus_to(ws, wgt.id);
+            let mut idx = 0;
+            let mut selidx = 0;
+            let mut cnt = 0;
+            let mut drop_down = false;
+            ws.get_combo_box_state(wgt, &mut idx, &mut selidx, &mut cnt, &mut drop_down);
+
+            if !drop_down || cnt <= 0 {
+                return;
+            }
+
+            let mut delta = if mouse.evt == MouseEvent::WheelUp {-1} else {1};
+
+            if ii.kmod.has_ctrl() {
+                delta *= drop_down_size;
+            }
+
+            selidx += delta;
+
+            if selidx < 0 {
+                selidx = cnt - 1;
+            }
+
+            if selidx >= cnt {
+                selidx = 0;
+            }
+
+            ws.on_combo_box_select(wgt, selidx);
+            ws.invalidate(wgt.id);
+        }
+        else if mouse.evt == MouseEvent::ButtonMid {
+            let btn_left = InputInfo {
+                evnt: InputEvent::Mouse(MouseInfo{evt: MouseEvent::ButtonLeft, col: mouse.col, row: mouse.row}),
+                kmod: ii.kmod, name: ""
+            };
+            process_mouse_combo_box(ws, wgt, &wgt_rect, &btn_left);
+
+            let mut idx = 0;
+            let mut selidx = 0;
+            let mut cnt = 0;
+            let mut drop_down = false;
+            ws.get_combo_box_state(wgt, &mut idx, &mut selidx, &mut cnt, &mut drop_down);
+
+            if !drop_down {
+                return;
+            }
+
+            ws.on_combo_box_change(wgt, selidx);
+            combo_box_hide_list(ws, wgt);
+        }
+    }
+}
+
+fn process_mouse_custom_wgt(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+    ws.on_custom_widget_input_evt(wgt, ii);
+}
+
+fn process_mouse_text_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+    if let InputEvent::Mouse(ref mouse) = ii.evnt {
+        change_focus_to(ws, wgt.id);
+
+        if mouse.evt == MouseEvent::WheelUp || mouse.evt == MouseEvent::WheelDown {
+            let mut lines = utils::StringListRc::default();
+            let mut top_line = 0;
+            ws.get_text_box_state(wgt, &mut lines, &mut top_line);
+
+            let lines = lines.borrow();
+
+            if !lines.is_empty() {
+                let mut delta = if mouse.evt == MouseEvent::WheelUp {-1} else {1};
+                let lines_visible = wgt.size.height as i16 - 2;
+                if ii.kmod.has_ctrl() {
+                    delta *= lines_visible;
+                }
+                top_line += delta;
+
+                if top_line > lines.len() as i16 - lines_visible {
+                    top_line = lines.len() as i16 - lines_visible;
+                }
+
+                if top_line < 0 {
+                    top_line = 0;
+                }
+
+                change_focus_to(ws, wgt.id);
+                ws.on_text_box_scroll(wgt, top_line);
+                ws.invalidate(wgt.id);
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------------------------- //
