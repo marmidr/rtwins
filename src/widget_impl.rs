@@ -295,14 +295,12 @@ pub fn set_cursor_at(term: &mut Term, ws: &mut dyn WindowState, wgt: &Widget) {
             coord.row += ws.get_page_ctrl_page_index(wgt) as u8
         },
         Property::ListBox(ref p) => {
-            let mut idx = 0i16;
-            let mut selidx = 0i16;
-            let mut cnt = 0i16;
+            let mut lbs = Default::default();
             let frame_size = p.no_frame as u8;
-            ws.get_list_box_state(wgt, &mut idx, &mut selidx, &mut cnt);
+            ws.get_list_box_state(wgt, &mut lbs);
 
             let page_size = wgt.size.height - (frame_size * 2);
-            let row = selidx % page_size as i16;
+            let row = lbs.sel_idx % page_size as i16;
 
             coord.col += frame_size;
             coord.row += frame_size + row as u8;
@@ -381,13 +379,13 @@ pub fn process_input(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
 // ---------------------------------------------------------------------------------------------- //
 
 /// Returns given page index on parent PageCtrl
-pub fn page_page_idx(page: &Widget) -> Option<u8> {
+pub fn page_page_idx(page: &Widget) -> Option<i16> {
     if let Property::Page(_) = page.prop {
         let pgctrl = get_parent(page);
 
         for (idx, pg) in pgctrl.iter_children().enumerate() {
             if page.id == pg.id {
-                return Some(idx as u8);
+                return Some(idx as i16);
             }
         }
     }
@@ -396,7 +394,7 @@ pub fn page_page_idx(page: &Widget) -> Option<u8> {
 }
 
 /// Returns WId of page at PageCtrl pages index
-pub fn pagectrl_page_wid(pgctrl: &Widget, page_idx: u8) -> WId {
+pub fn pagectrl_page_wid(pgctrl: &Widget, page_idx: i16) -> WId {
     if let Property::PageCtrl(_) = pgctrl.prop {
         if let Some(pg) = pgctrl.iter_children().skip(page_idx as usize).next() {
             return pg.id;
@@ -749,13 +747,11 @@ fn change_focus_to(ws: &mut dyn WindowState, new_id: WId) -> bool {
             tr_debug!("new_focused_wgt: {} id={}", new_focused_wgt.prop.to_string(), new_focused_wgt.id);
 
             if let Property::ListBox(_) = new_focused_wgt.prop {
-                let mut idx = 0;
-                let mut selidx = 0;
-                let mut cnt = 0;
-                ws.get_list_box_state(new_focused_wgt, &mut idx, &mut selidx, &mut cnt);
+                let mut lbs = Default::default();
+                ws.get_list_box_state(new_focused_wgt, &mut lbs);
 
-                if idx < 0 && cnt > 0 {
-                    ws.on_list_box_select(new_focused_wgt, selidx);
+                if lbs.item_idx < 0 && lbs.items_cnt > 0 {
+                    ws.on_list_box_select(new_focused_wgt, lbs.sel_idx);
                 }
             }
 
@@ -797,7 +793,7 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
         if idx >= pgctrl.link.children_cnt as i16 {
             idx = 0;
         }
-        idx as u8
+        idx
     };
 
     ws.on_page_control_page_change(pgctrl, pgidx);
@@ -1132,14 +1128,12 @@ fn process_key_list_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
 
         match *key {
             Key::Enter => {
-                let mut idx = 0;
-                let mut selidx = 0;
-                let mut cnt = 0;
-                ws.get_list_box_state(wgt, &mut idx, &mut selidx, &mut cnt);
+                let mut lbs = Default::default();
+                ws.get_list_box_state(wgt, &mut lbs);
 
-                if cnt > 0 {
-                    if selidx >= 0 && selidx != idx {
-                        ws.on_list_box_change(wgt, selidx);
+                if lbs.items_cnt > 0 {
+                    if lbs.sel_idx >= 0 && lbs.sel_idx != lbs.item_idx {
+                        ws.on_list_box_change(wgt, lbs.sel_idx);
                     }
                     ws.invalidate(wgt.id);
                 }
@@ -1163,23 +1157,21 @@ fn process_key_list_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
     }
 
     if delta != 0 {
-        let mut idx = 0;
-        let mut selidx = 0;
-        let mut cnt = 0;
-        ws.get_list_box_state(wgt, &mut idx, &mut selidx, &mut cnt);
+        let mut lbs = Default::default();
+        ws.get_list_box_state(wgt, &mut lbs);
 
-        if cnt > 0 {
-            selidx += delta;
+        if lbs.items_cnt > 0 {
+            lbs.sel_idx += delta;
 
-            if selidx < 0 {
-                selidx = cnt - 1;
+            if lbs.sel_idx < 0 {
+                lbs.sel_idx = lbs.items_cnt - 1;
             }
 
-            if selidx >= cnt {
-                selidx = 0;
+            if lbs.sel_idx >= lbs.items_cnt {
+                lbs.sel_idx = 0;
             }
 
-            ws.on_list_box_select(wgt, selidx);
+            ws.on_list_box_select(wgt, lbs.sel_idx);
             ws.invalidate(wgt.id);
         }
 
@@ -1190,18 +1182,15 @@ fn process_key_list_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
 }
 
 fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
-    let mut idx = 0;
-    let mut selidx = 0;
-    let mut cnt = 0;
-    let mut drop_down = false;
-    ws.get_combo_box_state(wgt, &mut idx, &mut selidx, &mut cnt, &mut drop_down);
+    let mut cbs = Default::default();
+    ws.get_combo_box_state(wgt, &mut cbs);
 
     if let InputEvent::Char(ref ch) = ii.evnt {
         if ch.utf8seq[0] == b' ' {
-            if cnt > 0 {
-                drop_down = !drop_down;
+            if cbs.items_cnt > 0 {
+                cbs.drop_down = !cbs.drop_down;
 
-                if drop_down {
+                if cbs.drop_down {
                     ws.on_combo_box_drop(wgt, true);
 
                     WGT_STATE.with(|wgtstate|{
@@ -1218,42 +1207,42 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
         if *key == Key::Esc {
             combo_box_hide_list(ws, wgt);
         }
-        else if drop_down {
+        else if cbs.drop_down {
             if *key == Key::Up {
-                if --selidx < 0 {
-                    selidx = cnt-1;
+                if --cbs.sel_idx < 0 {
+                    cbs.sel_idx = cbs.items_cnt-1;
                 }
-                ws.on_combo_box_select(wgt, selidx);
+                ws.on_combo_box_select(wgt, cbs.sel_idx);
             }
             else if *key == Key::Down {
-                selidx += 1;
-                if selidx >= cnt {
-                    selidx = 0;
+                cbs.sel_idx += 1;
+                if cbs.sel_idx >= cbs.items_cnt {
+                    cbs.sel_idx = 0;
                 }
-                ws.on_combo_box_select(wgt, selidx);
+                ws.on_combo_box_select(wgt, cbs.sel_idx);
             }
             else if *key == Key::PgUp && ii.kmod.mask == KEY_MOD_SPECIAL {
                 if let Property::ComboBox(ref prop) = wgt.prop {
-                    selidx -= prop.drop_down_size as i16;
+                    cbs.sel_idx -= prop.drop_down_size as i16;
                 }
 
-                if selidx < 0 {
-                    selidx = cnt-1;
+                if cbs.sel_idx < 0 {
+                    cbs.sel_idx = cbs.items_cnt-1;
                 }
-                ws.on_combo_box_select(wgt, selidx);
+                ws.on_combo_box_select(wgt, cbs.sel_idx);
             }
             else if *key == Key::PgDown && ii.kmod.mask == KEY_MOD_SPECIAL {
                 if let Property::ComboBox(ref prop) = wgt.prop {
-                    selidx += prop.drop_down_size as i16;
+                    cbs.sel_idx += prop.drop_down_size as i16;
                 }
 
-                if selidx >= cnt {
-                    selidx = 0;
+                if cbs.sel_idx >= cbs.items_cnt {
+                    cbs.sel_idx = 0;
                 }
-                ws.on_combo_box_select(wgt, selidx);
+                ws.on_combo_box_select(wgt, cbs.sel_idx);
             }
             else if *key == Key::Enter {
-                ws.on_combo_box_change(wgt, selidx);
+                ws.on_combo_box_change(wgt, cbs.sel_idx);
                 combo_box_hide_list(ws, wgt);
             }
             else {
@@ -1283,22 +1272,21 @@ fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
         }
 
         if delta != 0 {
-            let mut top_line = 0;
-            let mut lines_rc = crate::utils::StringListRc::default();
-            ws.get_text_box_state(wgt, &mut lines_rc, &mut top_line);
+            let mut tbs = Default::default();
+            ws.get_text_box_state(wgt, &mut tbs);
 
-            let lines_len = lines_rc.borrow().len() as i16;
-            top_line += delta;
+            let lines_len = tbs.lines.borrow().len() as i16;
+            tbs.top_line += delta;
 
-            if top_line > lines_len - lines_visible {
-                top_line = lines_len - lines_visible;
+            if tbs.top_line > lines_len - lines_visible {
+                tbs.top_line = lines_len - lines_visible;
             }
 
-            if top_line < 0 {
-                top_line = 0;
+            if tbs.top_line < 0 {
+                tbs.top_line = 0;
             }
 
-            ws.on_text_box_scroll(wgt, top_line);
+            ws.on_text_box_scroll(wgt, tbs.top_line);
             ws.invalidate(wgt.id);
 
             return true;
@@ -1497,7 +1485,7 @@ fn process_mouse_page_ctrl(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
             let new_idx = mouse.row as i16 - wgt_rect.coord.row as i16 - 1 - vertoffs;
 
             if new_idx != idx && new_idx >= 0 && new_idx < wgt.link.children_cnt as i16 {
-                ws.on_page_control_page_change(wgt, new_idx as u8);
+                ws.on_page_control_page_change(wgt, new_idx);
                 ws.invalidate(wgt.id);
             }
         }
@@ -1513,30 +1501,28 @@ fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
 
         if mouse.evt == MouseEvent::ButtonLeft || mouse.evt == MouseEvent::ButtonMid {
             let focus_changed = change_focus_to(ws, wgt.id);
-            let mut idx = 0;
-            let mut selidx = 0;
-            let mut cnt = 0;
-            ws.get_list_box_state(wgt, &mut idx, &mut selidx, &mut cnt);
+            let mut lbs = Default::default();
+            ws.get_list_box_state(wgt, &mut lbs);
 
-            if cnt <= 0 || items_visible == 0 {
+            if lbs.items_cnt <= 0 || items_visible == 0 {
                 return;
             }
 
-            let page = selidx / items_visible;
+            let page = lbs.sel_idx / items_visible;
             let mut new_selidx = page * items_visible;
             new_selidx += mouse.row as i16 - wgt_rect.coord.row as i16 - 1;
 
             if mouse.evt == MouseEvent::ButtonLeft {
-                if new_selidx < cnt && ((new_selidx != selidx) || focus_changed) {
-                    selidx = new_selidx;
-                    ws.on_list_box_select(wgt, selidx);
+                if new_selidx < lbs.items_cnt && ((new_selidx != lbs.sel_idx) || focus_changed) {
+                    lbs.sel_idx = new_selidx;
+                    ws.on_list_box_select(wgt, lbs.sel_idx);
                 }
             }
             else {
-                if new_selidx < cnt && new_selidx != idx {
-                    selidx = new_selidx;
-                    ws.on_list_box_select(wgt, selidx);
-                    ws.on_list_box_change(wgt, selidx);
+                if new_selidx < lbs.items_cnt && new_selidx != lbs.sel_idx {
+                    lbs.sel_idx = new_selidx;
+                    ws.on_list_box_select(wgt, lbs.sel_idx);
+                    ws.on_list_box_change(wgt, lbs.sel_idx);
                 }
             }
 
@@ -1544,12 +1530,10 @@ fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
         }
         else if mouse.evt == MouseEvent::WheelUp || mouse.evt == MouseEvent::WheelDown {
             change_focus_to(ws, wgt.id);
-            let mut idx = 0;
-            let mut selidx = 0;
-            let mut cnt = 0;
-            ws.get_list_box_state(wgt, &mut idx, &mut selidx, &mut cnt);
+            let mut lbs = Default::default();
+            ws.get_list_box_state(wgt, &mut lbs);
 
-            if cnt <= 0 {
+            if lbs.items_cnt <= 0 {
                 return;
             }
 
@@ -1557,17 +1541,17 @@ fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
             if ii.kmod.has_ctrl() {
                 delta *= items_visible;
             }
-            selidx += delta;
+            lbs.sel_idx += delta;
 
-            if selidx < 0 {
-                selidx = cnt - 1;
+            if lbs.sel_idx < 0 {
+                lbs.sel_idx = lbs.items_cnt - 1;
             }
 
-            if selidx >= cnt {
-                selidx = 0;
+            if lbs.sel_idx >= lbs.items_cnt {
+                lbs.sel_idx = 0;
             }
 
-            ws.on_list_box_select(wgt, selidx);
+            ws.on_list_box_select(wgt, lbs.sel_idx);
             ws.invalidate(wgt.id);
         }
     }
@@ -1588,34 +1572,28 @@ fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
             let row = mouse.row as i16 - wgt_rect.coord.row as i16 - 1;
 
             if row < drop_down_size {
-                let mut idx = 0;
-                let mut selidx = 0;
-                let mut cnt = 0;
-                let mut drop_down = false;
-                ws.get_combo_box_state(wgt, &mut idx, &mut selidx, &mut cnt, &mut drop_down);
+                let mut cbs = Default::default();
+                ws.get_combo_box_state(wgt, &mut cbs);
 
-                selidx = (selidx / drop_down_size) * drop_down_size; // top item
-                selidx += row as i16;
-                if selidx < cnt {
-                    ws.on_combo_box_select(wgt, selidx);
+                cbs.sel_idx = (cbs.sel_idx / drop_down_size) * drop_down_size; // top item
+                cbs.sel_idx += row as i16;
+                if cbs.sel_idx < cbs.items_cnt {
+                    ws.on_combo_box_select(wgt, cbs.sel_idx);
                     ws.invalidate(wgt.id);
                 }
             }
             else if col >= wgt_rect.size.width as i16 - 3 && col <= wgt_rect.size.width as i16 - 1 {
-                let mut idx = 0;
-                let mut selidx = 0;
-                let mut cnt = 0;
-                let mut drop_down = false;
-                ws.get_combo_box_state(wgt, &mut idx, &mut selidx, &mut cnt, &mut drop_down);
+                let mut cbs = Default::default();
+                ws.get_combo_box_state(wgt, &mut cbs);
 
                 // drop down arrow clicked
-                if cnt <= 0 {
+                if cbs.items_cnt <= 0 {
                     return;
                 }
 
-                drop_down = !drop_down;
+                cbs.drop_down = !cbs.drop_down;
 
-                if drop_down {
+                if cbs.drop_down {
                     ws.on_combo_box_drop(wgt, true);
                     ws.invalidate(wgt.id);
 
@@ -1630,13 +1608,11 @@ fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
         }
         else if mouse.evt == MouseEvent::WheelUp || mouse.evt == MouseEvent::WheelDown {
             change_focus_to(ws, wgt.id);
-            let mut idx = 0;
-            let mut selidx = 0;
-            let mut cnt = 0;
-            let mut drop_down = false;
-            ws.get_combo_box_state(wgt, &mut idx, &mut selidx, &mut cnt, &mut drop_down);
+            let mut cbs = Default::default();
+            ws.get_combo_box_state(wgt, &mut cbs);
 
-            if !drop_down || cnt <= 0 {
+
+            if !cbs.drop_down || cbs.items_cnt <= 0 {
                 return;
             }
 
@@ -1646,17 +1622,17 @@ fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
                 delta *= drop_down_size;
             }
 
-            selidx += delta;
+            cbs.sel_idx += delta;
 
-            if selidx < 0 {
-                selidx = cnt - 1;
+            if cbs.sel_idx < 0 {
+                cbs.sel_idx = cbs.items_cnt - 1;
             }
 
-            if selidx >= cnt {
-                selidx = 0;
+            if cbs.sel_idx >= cbs.items_cnt {
+                cbs.sel_idx = 0;
             }
 
-            ws.on_combo_box_select(wgt, selidx);
+            ws.on_combo_box_select(wgt, cbs.sel_idx);
             ws.invalidate(wgt.id);
         }
         else if mouse.evt == MouseEvent::ButtonMid {
@@ -1666,17 +1642,14 @@ fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
             };
             process_mouse_combo_box(ws, wgt, &wgt_rect, &btn_left);
 
-            let mut idx = 0;
-            let mut selidx = 0;
-            let mut cnt = 0;
-            let mut drop_down = false;
-            ws.get_combo_box_state(wgt, &mut idx, &mut selidx, &mut cnt, &mut drop_down);
+            let mut cbs = Default::default();
+            ws.get_combo_box_state(wgt, &mut cbs);
 
-            if !drop_down {
+            if !cbs.drop_down {
                 return;
             }
 
-            ws.on_combo_box_change(wgt, selidx);
+            ws.on_combo_box_change(wgt, cbs.sel_idx);
             combo_box_hide_list(ws, wgt);
         }
     }
@@ -1691,11 +1664,10 @@ fn process_mouse_text_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
         change_focus_to(ws, wgt.id);
 
         if mouse.evt == MouseEvent::WheelUp || mouse.evt == MouseEvent::WheelDown {
-            let mut lines = utils::StringListRc::default();
-            let mut top_line = 0;
-            ws.get_text_box_state(wgt, &mut lines, &mut top_line);
+            let mut tbs = Default::default();
+            ws.get_text_box_state(wgt, &mut tbs);
 
-            let lines = lines.borrow();
+            let lines = tbs.lines.borrow();
 
             if !lines.is_empty() {
                 let mut delta = if mouse.evt == MouseEvent::WheelUp {-1} else {1};
@@ -1703,18 +1675,18 @@ fn process_mouse_text_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
                 if ii.kmod.has_ctrl() {
                     delta *= lines_visible;
                 }
-                top_line += delta;
+                tbs.top_line += delta;
 
-                if top_line > lines.len() as i16 - lines_visible {
-                    top_line = lines.len() as i16 - lines_visible;
+                if tbs.top_line > lines.len() as i16 - lines_visible {
+                    tbs.top_line = lines.len() as i16 - lines_visible;
                 }
 
-                if top_line < 0 {
-                    top_line = 0;
+                if tbs.top_line < 0 {
+                    tbs.top_line = 0;
                 }
 
                 change_focus_to(ws, wgt.id);
-                ws.on_text_box_scroll(wgt, top_line);
+                ws.on_text_box_scroll(wgt, tbs.top_line);
                 ws.invalidate(wgt.id);
             }
         }

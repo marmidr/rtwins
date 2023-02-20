@@ -17,7 +17,7 @@ pub struct DemoWndState {
     /// all window widgets, starting with the window widget itself
     widgets: &'static [Widget],
     /// widgets runtime state
-    pub rs: RuntimeState,
+    pub rs: RuntimeStates,
     /// currently focused widget
     focused_id: WId,
     /// text of focused text edit widget
@@ -37,7 +37,7 @@ pub struct DemoWndState {
 impl DemoWndState {
     pub fn new(widgets: &'static [Widget]) -> Self {
         let mut wnd_state = DemoWndState{widgets,
-            rs: RuntimeState::new(),
+            rs: RuntimeStates::new(),
             focused_id: WIDGET_ID_NONE,
             text_edit_txt: String::new(),
             invalidated: vec![],
@@ -86,17 +86,17 @@ impl DemoWndState {
 
         // setup some widgets initial properties
         use tui_def::Id;
-        use prop_rt::*;
+        use state_rt::*;
 
         wnd_state.rs.set_enabled(Id::LabelFwVersion.into(), false);
 
-        wnd_state.rs.insert_state(Id::Prgbar1.into(),   Pgbar{ pos:5, max: 10 }.into());
-        wnd_state.rs.insert_state(Id::Prgbar2.into(),   Pgbar{ pos:2, max: 10 }.into());
-        wnd_state.rs.insert_state(Id::Prgbar3.into(),   Pgbar{ pos:8, max: 10 }.into());
-        wnd_state.rs.insert_state(Id::LedLock.into(),   Led{ lit: true }.into());
-        wnd_state.rs.insert_state(Id::ChbxEnbl.into(),  Chbx{ checked: true }.into());
-        wnd_state.rs.insert_state(Id::PgControl.into(), Pgctrl{ page: 0 }.into());
-        wnd_state.rs.insert_state(Id::TbxWide.into(),   Txtbx{ top_line: 9 }.into());
+        wnd_state.rs.insert_state(Id::Prgbar1.into(),   PgbarState{ pos:5, max: 10 }.into());
+        wnd_state.rs.insert_state(Id::Prgbar2.into(),   PgbarState{ pos:2, max: 10 }.into());
+        wnd_state.rs.insert_state(Id::Prgbar3.into(),   PgbarState{ pos:8, max: 10 }.into());
+        wnd_state.rs.insert_state(Id::LedLock.into(),   LedState{ lit: true }.into());
+        wnd_state.rs.insert_state(Id::ChbxEnbl.into(),  ChbxState{ checked: true }.into());
+        wnd_state.rs.insert_state(Id::PgControl.into(), PgctrlState{ page: 0 }.into());
+        wnd_state.rs.insert_state(Id::TbxWide.into(),   TxtbxState{ top_line: 9, lines: Default::default() }.into());
         return wnd_state;
     }
 }
@@ -135,7 +135,7 @@ impl rtwins::WindowState for DemoWndState {
         rs.checked = !rs.checked;
     }
 
-    fn on_page_control_page_change(&mut self, wgt: &Widget, new_page_idx: u8) {
+    fn on_page_control_page_change(&mut self, wgt: &Widget, new_page_idx: i16) {
         let rs = self.rs.as_pgctrl(wgt.id);
         rs.page = new_page_idx;
     }
@@ -204,7 +204,7 @@ impl rtwins::WindowState for DemoWndState {
 
             if let Some(stat) = self.rs.get_state(pgctrl.id) {
                 if let Some(pg_idx) = page_page_idx(wgt) {
-                    if let prop_rt::State::Pgctrl(ref pgctrl) = stat {
+                    if let state_rt::State::Pgctrl(ref pgctrl) = stat {
                         return pg_idx == pgctrl.page;
                     }
                 }
@@ -316,10 +316,9 @@ impl rtwins::WindowState for DemoWndState {
         *txt = "led-text".to_string();
     }
 
-    fn get_progress_bar_state(&mut self, wgt: &Widget, pos: &mut i32, max: &mut i32) {
+    fn get_progress_bar_state(&mut self, wgt: &Widget, state: &mut state_rt::PgbarState) {
         let rs = self.rs.as_pgbar(wgt.id);
-        *max = rs.max;
-        *pos = rs.pos
+        *state = *rs;
     }
 
     fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u16 {
@@ -327,23 +326,20 @@ impl rtwins::WindowState for DemoWndState {
         rs.page as u16
     }
 
-    fn get_list_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16) {
+    fn get_list_box_state(&mut self, wgt: &Widget, state: &mut state_rt::LbxState) {
         let rs = self.rs.as_lbx(wgt.id);
-        *item_idx = rs.item_idx;
-        *sel_idx = rs.sel_idx;
-        *items_count = self.lbx_items.len() as i16;
+        *state = *rs;
+        state.items_cnt = self.lbx_items.len() as i16
     }
 
     fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {
         txt.push_str(format!("{:2}. {}", item_idx, self.lbx_items[item_idx as usize]).as_str());
     }
 
-    fn get_combo_box_state(&mut self, wgt: &Widget, item_idx: &mut i16, sel_idx: &mut i16, items_count: &mut i16, drop_down: &mut bool) {
+    fn get_combo_box_state(&mut self, wgt: &Widget, state: &mut state_rt::CbbxState) {
         let rs = self.rs.as_cbbx(wgt.id);
-        *item_idx = rs.item_idx;
-        *sel_idx = rs.sel_idx;
-        *items_count = self.lbx_items.len() as i16;
-        *drop_down = rs.drop_down;
+        *state = *rs;
+        state.items_cnt = self.lbx_items.len() as i16;
     }
 
     fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {
@@ -354,21 +350,21 @@ impl rtwins::WindowState for DemoWndState {
         return self.radiogrp1_idx;
     }
 
-    fn get_text_box_state(&mut self, wgt: &Widget, lines: &mut utils::StringListRc, top_line: &mut i16) {
+    fn get_text_box_state(&mut self, wgt: &Widget, state: &mut state_rt::TxtbxState) {
         let rs = self.rs.as_txtbx(wgt.id);
-        *top_line = rs.top_line;
+        state.top_line = rs.top_line;
 
         if wgt.id == tui_def::Id::TbxWide.into() {
             if self.tbx_wide_lines.borrow().len() == 0 {
                 self.tbx_wide_lines = utils::word_wrap(wgt.size.width as usize-2, &self.tbx_text);
             }
-            *lines = Rc::clone(&self.tbx_wide_lines);
+            state.lines = Rc::clone(&self.tbx_wide_lines);
         }
         else if wgt.id == tui_def::Id::TbxNarrow.into() {
             if self.tbx_narrow_lines.borrow().len() == 0 {
                 self.tbx_narrow_lines = utils::word_wrap(wgt.size.width as usize-2, &self.tbx_text);
             }
-            *lines = Rc::clone(&self.tbx_narrow_lines);
+            state.lines = Rc::clone(&self.tbx_narrow_lines);
         }
     }
 

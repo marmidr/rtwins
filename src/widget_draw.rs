@@ -691,20 +691,19 @@ fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar) {
         ['■', '□']
     ];
 
-    let mut pos = 0i32;
-    let mut max = 1i32;
+    let mut pbs = Default::default();
+    dctx.wnd_state.get_progress_bar_state(dctx.wgt, &mut pbs);
+
+    if pbs.max <= 0 { pbs.max = 1; }
+    if pbs.pos > pbs.max { pbs.pos = pbs.max; }
+
     let style = prp.style as usize;
-    dctx.wnd_state.get_progress_bar_state(dctx.wgt, &mut pos, &mut max);
-
-    if max <= 0 { max = 1; }
-    if pos > max { pos = max; }
-
     let mut term = dctx.term_cell.borrow_mut();
     term.move_to(
         dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
         dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16);
 
-    let fill_len = (pos * dctx.wgt.size.width as i32 / max) as i16;
+    let fill_len = (pbs.pos * dctx.wgt.size.width as i32 / pbs.max) as i16;
     dctx.strbuff.push_n(STYLE_DATA[style][0], fill_len);
     dctx.strbuff.push_n(STYLE_DATA[style][1], dctx.wgt.size.width as i16 - fill_len);
 
@@ -734,8 +733,11 @@ fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox) {
     }
 
     let mut dlp = DrawListParams { coord: my_coord, ..Default::default() };
-    dctx.wnd_state.get_list_box_state(dctx.wgt,
-        &mut dlp.item_idx, &mut dlp.sel_idx, &mut dlp.items_cnt);
+    let mut lbs = Default::default();
+    dctx.wnd_state.get_list_box_state(dctx.wgt, &mut lbs);
+    dlp.item_idx = lbs.item_idx;
+    dlp.sel_idx = lbs.sel_idx;
+    dlp.items_cnt = lbs.items_cnt;
     dlp.frame_size = !prp.no_frame as u8;
     dlp.items_visible = dctx.wgt.size.height as i16 - (dlp.frame_size as i16 * 2);
     dlp.top_item = (dlp.sel_idx / dlp.items_visible) * dlp.items_visible;
@@ -760,15 +762,12 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox) {
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
     let focused = dctx.wnd_state.is_focused(dctx.wgt);
 
-    let mut item_idx = 0i16;
-    let mut sel_idx = 0i16;
-    let mut items_count = 0i16;
-    let mut drop_down = false;
-    dctx.wnd_state.get_combo_box_state(dctx.wgt, &mut item_idx, &mut sel_idx, &mut items_count, &mut drop_down);
+    let mut cbs = Default::default();
+    dctx.wnd_state.get_combo_box_state(dctx.wgt, &mut cbs);
 
     {
         dctx.strbuff.clear();
-        dctx.wnd_state.get_combo_box_item(dctx.wgt, item_idx, &mut dctx.strbuff);
+        dctx.wnd_state.get_combo_box_item(dctx.wgt, cbs.item_idx, &mut dctx.strbuff);
         dctx.strbuff.insert(0, ' ');
         dctx.strbuff.set_displayed_width(dctx.wgt.size.width as i16 - 4);//, true);
         dctx.strbuff.push_str(" [▼]");
@@ -777,24 +776,24 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox) {
         term.move_to(my_coord.col as u16, my_coord.row as u16);
         term.push_cl_fg(get_widget_fg_color(dctx.wgt));
         term.push_cl_bg(get_widget_bg_color(dctx.wgt));
-        if focused && !drop_down { term.push_attr(FontAttrib::Inverse); }
-        if drop_down { term.push_attr(FontAttrib::Underline); }
+        if focused && !cbs.drop_down { term.push_attr(FontAttrib::Inverse); }
+        if cbs.drop_down { term.push_attr(FontAttrib::Underline); }
         if focused { term.push_attr(FontAttrib::Bold); }
         term.write_str(dctx.strbuff.as_str());
         if focused { term.pop_attr(); }
-        if drop_down { term.pop_attr(); }
+        if cbs.drop_down { term.pop_attr(); }
     }
 
     #[allow(clippy::field_reassign_with_default)]
-    if drop_down {
+    if cbs.drop_down {
         let mut dlp = DrawListParams::default();
         dlp.coord = my_coord;
         dlp.coord.row += 1;
-        dlp.item_idx = item_idx;
-        dlp.sel_idx = sel_idx;
-        dlp.item_idx = items_count;
+        dlp.item_idx = cbs.item_idx;
+        dlp.sel_idx = cbs.sel_idx;
+        dlp.item_idx = cbs.items_cnt;
         dlp.frame_size = 0;
-        dlp.items_cnt = items_count;
+        dlp.items_cnt = cbs.items_cnt;
         dlp.items_visible = prp.drop_down_size as i16;
         dlp.top_item = (dlp.sel_idx / dlp.items_visible) * dlp.items_visible;
         dlp.focused = focused;
@@ -828,33 +827,32 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
     }
 
     let lines_visible = dctx.wgt.size.height as i16 - 2;
-    let mut top_line = 0i16;
-    let mut lines_rc: std::rc::Rc<std::cell::RefCell<Vec<String>>> = Default::default();
-    dctx.wnd_state.get_text_box_state(dctx.wgt, &mut lines_rc, &mut top_line);
+    let mut tbs = Default::default();
+    dctx.wnd_state.get_text_box_state(dctx.wgt, &mut tbs);
 
-    if std::rc::Rc::strong_count(&lines_rc) > 0 {
-        let lines = lines_rc.borrow();
-        if top_line > lines.len() as i16 {
-            top_line = lines.len() as i16 - lines_visible;
-            dctx.wnd_state.on_text_box_scroll(dctx.wgt, top_line);
+    if std::rc::Rc::strong_count(&tbs.lines) > 0 {
+        let lines = tbs.lines.borrow();
+        if tbs.top_line > lines.len() as i16 {
+            tbs.top_line = lines.len() as i16 - lines_visible;
+            dctx.wnd_state.on_text_box_scroll(dctx.wgt, tbs.top_line);
         }
 
-        if top_line < 0 {
-            dctx.wnd_state.on_text_box_scroll(dctx.wgt, top_line);
-            top_line = 0;
+        if tbs.top_line < 0 {
+            dctx.wnd_state.on_text_box_scroll(dctx.wgt, tbs.top_line);
+            tbs.top_line = 0;
         }
 
         let mut term = dctx.term_cell.borrow_mut();
 
         draw_list_scroll_bar_v(&mut term,
             my_coord + Coord::new(dctx.wgt.size.width-1, 1),
-            lines_visible, lines.len() as i16 - lines_visible, top_line);
+            lines_visible, lines.len() as i16 - lines_visible, tbs.top_line);
 
         term.flush_buff();
         dctx.strbuff.clear();
 
         // scan invisible lines (because scrooled down) for ESC sequences: colors, font attributes
-        for i in 0..top_line as usize {
+        for i in 0..tbs.top_line as usize {
             if let Some(line) = lines.get(i) {
                 // iterate over all ESC sequences in the line
                 for it in line.bytes().enumerate() {
@@ -876,8 +874,8 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
         for i in 0..lines_visible as usize {
             dctx.strbuff.clear();
 
-            if top_line as usize + i < lines.len() {
-                if let Some(line) = lines.get(top_line as usize + i) {
+            if tbs.top_line as usize + i < lines.len() {
+                if let Some(line) = lines.get(tbs.top_line as usize + i) {
                     dctx.strbuff.push_str(line);
                 }
             }

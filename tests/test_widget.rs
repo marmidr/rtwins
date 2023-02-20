@@ -177,7 +177,7 @@ struct WndTestState {
     pub wnd_enabled: bool,
     pub lbl_about_visible: bool,
     pub lbl_about_enabled: bool,
-    pub pgctrl_page_idx: u8,
+    pub pgctrl_page_idx: i16,
 }
 
 impl WndTestState {
@@ -224,7 +224,7 @@ impl WindowState for WndTestState {
         }
     }
 
-    fn on_page_control_page_change(&mut self, _wgt: &Widget, new_page_idx: u8) {
+    fn on_page_control_page_change(&mut self, _wgt: &Widget, new_page_idx: i16) {
         self.pgctrl_page_idx = new_page_idx;
     }
 
