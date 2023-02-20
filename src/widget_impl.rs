@@ -371,7 +371,7 @@ pub fn process_input(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
         }
     }
 
-    return key_processed;
+    key_processed
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -536,7 +536,7 @@ fn is_focusable(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
         return is_enabled(ws, wgt)
     }
 
-    return false;
+    false
 }
 
 fn is_focusable_by_id(ws: &mut dyn WindowState, widget_id: WId) -> bool {
@@ -579,7 +579,7 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
             // get selected page childrens
             let idx = ws.get_page_ctrl_page_index(parent);
 
-            if idx < parent.link.children_cnt {
+            if idx < parent.link.children_cnt as i16 {
                 let wgts = ws.get_widgets();
                 let idx = parent.link.children_idx as usize + idx as usize;
                 parent = &wgts[idx];
@@ -695,7 +695,7 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
         }
     }
 
-    return None;
+    None
 }
 
 fn get_next_to_focus(ws: &mut dyn WindowState, focused_id: WId, forward: bool) -> WId {
@@ -718,7 +718,7 @@ fn get_next_to_focus(ws: &mut dyn WindowState, focused_id: WId, forward: bool) -
         }
     }
 
-    return WIDGET_ID_NONE;
+    WIDGET_ID_NONE
 }
 
 fn get_parent_to_focus(ws: &mut dyn WindowState, focused_id: WId) -> WId {
@@ -776,7 +776,7 @@ fn change_focus_to(ws: &mut dyn WindowState, new_id: WId) -> bool {
         return true;
     }
 
-    return false;
+    false
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -840,7 +840,7 @@ fn find_main_pg_control(ws: &mut dyn WindowState) -> Option<&'static Widget> {
         }
     }
 
-    return None;
+    None
 }
 
 fn combo_box_hide_list(ws: &mut dyn WindowState, wgt: &Widget) {
@@ -898,7 +898,7 @@ fn process_key(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
         };
     }
 
-    return key_handled;
+    key_handled
 }
 
 
@@ -1033,7 +1033,7 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
         wgtstate.borrow_mut().text_edit_state = text_edit_state;
     });
 
-    return key_handled;
+    key_handled
 }
 
 fn process_key_check_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
@@ -1053,7 +1053,7 @@ fn process_key_check_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
         }
     }
 
-    return false;
+    false
 }
 
 fn process_key_radio(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
@@ -1073,7 +1073,7 @@ fn process_key_radio(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> 
         }
     }
 
-    return false;
+    false
 }
 
 fn process_key_button(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
@@ -1103,7 +1103,7 @@ fn process_key_button(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) ->
         }
     }
 
-    return false;
+    false
 }
 
 fn process_key_page_ctrl(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
@@ -1117,7 +1117,7 @@ fn process_key_page_ctrl(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
         }
     }
 
-    return false;
+    false
 }
 
 fn process_key_list_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
@@ -1178,7 +1178,7 @@ fn process_key_list_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
         return true;
     }
 
-    return false;
+    false
 }
 
 fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
@@ -1186,20 +1186,18 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
     ws.get_combo_box_state(wgt, &mut cbs);
 
     if let InputEvent::Char(ref ch) = ii.evnt {
-        if ch.utf8seq[0] == b' ' {
-            if cbs.items_cnt > 0 {
-                cbs.drop_down = !cbs.drop_down;
+        if ch.utf8seq[0] == b' ' && cbs.items_cnt > 0 {
+            cbs.drop_down = !cbs.drop_down;
 
-                if cbs.drop_down {
-                    ws.on_combo_box_drop(wgt, true);
+            if cbs.drop_down {
+                ws.on_combo_box_drop(wgt, true);
 
-                    WGT_STATE.with(|wgtstate|{
-                        wgtstate.borrow_mut().drop_down_combo = wgt.id;
-                    });
-                }
-                else {
-                    combo_box_hide_list(ws, wgt);
-                }
+                WGT_STATE.with(|wgtstate|{
+                    wgtstate.borrow_mut().drop_down_combo = wgt.id;
+                });
+            }
+            else {
+                combo_box_hide_list(ws, wgt);
             }
         }
     }
@@ -1209,7 +1207,8 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
         }
         else if cbs.drop_down {
             if *key == Key::Up {
-                if --cbs.sel_idx < 0 {
+                cbs.sel_idx -= 1;
+                if cbs.sel_idx < 0 {
                     cbs.sel_idx = cbs.items_cnt-1;
                 }
                 ws.on_combo_box_select(wgt, cbs.sel_idx);
@@ -1255,7 +1254,7 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
     }
 
     ws.invalidate(wgt.id);
-    return true;
+    true
 }
 
 fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
@@ -1293,7 +1292,7 @@ fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
         }
     }
 
-    return false;
+    false
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -1338,7 +1337,7 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
                     }
                 }
 
-                return false;
+                false
             });
 
 
@@ -1363,10 +1362,8 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
                                 rct.coord = get_screen_coord(wgt);
                                 rct.size = wgt.size;
                             }
-                            else {
-                                if mouse.evt == MouseEvent::ButtonLeft {
-                                    combo_box_hide_list(ws, ddcombo_wgt);
-                                }
+                            else if mouse.evt == MouseEvent::ButtonLeft {
+                                combo_box_hide_list(ws, ddcombo_wgt);
                             }
                         }
                     }
@@ -1407,7 +1404,7 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
         }
     }
 
-    return true;
+    true
 }
 
 fn process_mouse_text_edit(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
@@ -1518,12 +1515,10 @@ fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
                     ws.on_list_box_select(wgt, lbs.sel_idx);
                 }
             }
-            else {
-                if new_selidx < lbs.items_cnt && new_selidx != lbs.sel_idx {
-                    lbs.sel_idx = new_selidx;
-                    ws.on_list_box_select(wgt, lbs.sel_idx);
-                    ws.on_list_box_change(wgt, lbs.sel_idx);
-                }
+            else if new_selidx < lbs.items_cnt && new_selidx != lbs.sel_idx {
+                lbs.sel_idx = new_selidx;
+                ws.on_list_box_select(wgt, lbs.sel_idx);
+                ws.on_list_box_change(wgt, lbs.sel_idx);
             }
 
             ws.invalidate(wgt.id);
@@ -1582,7 +1577,7 @@ fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
                     ws.invalidate(wgt.id);
                 }
             }
-            else if col >= wgt_rect.size.width as i16 - 3 && col <= wgt_rect.size.width as i16 - 1 {
+            else if col >= wgt_rect.size.width as i16 - 3 && col < wgt_rect.size.width as i16 {
                 let mut cbs = Default::default();
                 ws.get_combo_box_state(wgt, &mut cbs);
 
@@ -1640,7 +1635,7 @@ fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
                 evnt: InputEvent::Mouse(MouseInfo{evt: MouseEvent::ButtonLeft, col: mouse.col, row: mouse.row}),
                 kmod: ii.kmod, name: ""
             };
-            process_mouse_combo_box(ws, wgt, &wgt_rect, &btn_left);
+            process_mouse_combo_box(ws, wgt, wgt_rect, &btn_left);
 
             let mut cbs = Default::default();
             ws.get_combo_box_state(wgt, &mut cbs);

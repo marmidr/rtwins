@@ -141,10 +141,10 @@ impl StrExt for str {
                         };
                     },
                     _ => {
-                        if c >= 'A' && c <= 'Z' && c != 'O' {
+                        if ('A'..='Z').contains(&c) && c != 'O' {
                             return seq_idx + 1;
                         }
-                        if c >= 'a' && c <= 'z' {
+                        if ('a'..='z').contains(&c) {
                             return seq_idx + 1;
                         }
                     },

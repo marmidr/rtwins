@@ -140,7 +140,7 @@ fn tui_demo() {
             rtwins::tr_warn!("Exit requested");
             break;
         }
-        else if inp_seq.len() > 0 {
+        else if !inp_seq.is_empty() {
             for b in inp_seq {
                 ique.push_back(*b);
             }

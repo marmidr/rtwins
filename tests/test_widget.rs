@@ -228,8 +228,8 @@ impl WindowState for WndTestState {
         self.pgctrl_page_idx = new_page_idx;
     }
 
-    fn get_page_ctrl_page_index(&mut self, _wgt: &Widget) -> u16 {
-        self.pgctrl_page_idx as u16
+    fn get_page_ctrl_page_index(&mut self, _wgt: &Widget) -> i16 {
+        self.pgctrl_page_idx
     }
 }
 

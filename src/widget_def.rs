@@ -596,7 +596,7 @@ pub trait WindowState {
     fn get_led_lit(&mut self, wgt: &Widget) -> bool { false }
     fn get_led_text(&mut self, wgt: &Widget, txt: &mut String) {}
     fn get_progress_bar_state(&mut self, wgt: &Widget, state: &mut state_rt::PgbarState) {}
-    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u16 { 0 }
+    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> i16 { 0 }
     fn get_list_box_state(&mut self, wgt: &Widget, state: &mut state_rt::LbxState) {}
     fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
     fn get_combo_box_state(&mut self, wgt: &Widget, state: &mut state_rt::CbbxState) {}

@@ -175,7 +175,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
             bg_color: ColorBG::White,
             no_frame: false,
         }.into(),
-        children: &PNL_STATE_CHILDREN
+        children: PNL_STATE_CHILDREN
     },
     Widget {
         id: Id::PanelKey.into(),
@@ -686,7 +686,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Version",
                         fg_color: ColorFG::Yellow,
                     }.into(),
-                    children: &PAGE_VER_CHILDREN,
+                    children: PAGE_VER_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -695,7 +695,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Service ∑",
                         fg_color: ColorFG::White,
                     }.into(),
-                    children: &PAGE_SERV_CHILDREN,
+                    children: PAGE_SERV_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -704,7 +704,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Diagnostics",
                         fg_color: ColorFG::Yellow,
                     }.into(),
-                    children: &PAGE_DIAG_CHILDREN,
+                    children: PAGE_DIAG_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -713,7 +713,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Inactiv 🍀",
                         fg_color: ColorFG::White,
                     }.into(),
-                    children: &PAGE_INACT_CHILDREN,
+                    children: PAGE_INACT_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -722,7 +722,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Text Box",
                         fg_color: ColorFG::White,
                     }.into(),
-                    children: &PAGE_TXTBOX_CHILDREN,
+                    children: PAGE_TXTBOX_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -731,7 +731,7 @@ const WINDOW_MAIN: Widget = Widget {
                         title: "Combo Box",
                         fg_color: ColorFG::White,
                     }.into(),
-                    children: &PAGE_CMBBOX_CHILDREN,
+                    children: PAGE_CMBBOX_CHILDREN,
                     ..Widget::cdeflt()
                 },
             ],

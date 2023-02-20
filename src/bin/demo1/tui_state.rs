@@ -97,7 +97,7 @@ impl DemoWndState {
         wnd_state.rs.insert_state(Id::ChbxEnbl.into(),  ChbxState{ checked: true }.into());
         wnd_state.rs.insert_state(Id::PgControl.into(), PgctrlState{ page: 0 }.into());
         wnd_state.rs.insert_state(Id::TbxWide.into(),   TxtbxState{ top_line: 9, lines: Default::default() }.into());
-        return wnd_state;
+        wnd_state
     }
 }
 
@@ -127,7 +127,7 @@ impl rtwins::WindowState for DemoWndState {
     }
 
     fn on_text_edit_input_evt(&mut self, wgt: &Widget, ii: &InputInfo, txt: &mut String, cursor_pos: &mut i16) -> bool {
-        return false;
+        false
     }
 
     fn on_checkbox_toggle(&mut self, wgt: &Widget) {
@@ -181,11 +181,11 @@ impl rtwins::WindowState for DemoWndState {
     }
 
     fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
-        return false;
+        false
     }
 
     fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
-        return false;
+        false
     }
 
     /** common state queries **/
@@ -233,7 +233,7 @@ impl rtwins::WindowState for DemoWndState {
     /** widget-specific queries; all mutable params are outputs **/
 
     fn get_window_coord(&mut self) -> Coord {
-        if let Some(ref w) = self.widgets.first() {
+        if let Some(w) = self.widgets.first() {
             w.coord
         }
         else {
@@ -242,7 +242,7 @@ impl rtwins::WindowState for DemoWndState {
     }
 
     fn get_window_size(&mut self) -> Size {
-        if let Some(ref w) = self.widgets.first() {
+        if let Some(w) = self.widgets.first() {
             w.size
         }
         else {
@@ -321,9 +321,9 @@ impl rtwins::WindowState for DemoWndState {
         *state = *rs;
     }
 
-    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> u16 {
+    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> i16 {
         let rs = self.rs.as_pgctrl(wgt.id);
-        rs.page as u16
+        rs.page
     }
 
     fn get_list_box_state(&mut self, wgt: &Widget, state: &mut state_rt::LbxState) {
@@ -347,7 +347,7 @@ impl rtwins::WindowState for DemoWndState {
     }
 
     fn get_radio_index(&mut self, wgt: &Widget) -> i16 {
-        return self.radiogrp1_idx;
+        self.radiogrp1_idx
     }
 
     fn get_text_box_state(&mut self, wgt: &Widget, state: &mut state_rt::TxtbxState) {
