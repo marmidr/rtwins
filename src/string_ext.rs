@@ -17,9 +17,11 @@ pub trait StringExt {
     /// Returns stream operator wrapper
     fn stream(&mut self) -> StrStreamOp;
     /// Erase characters (not byte, like `remove()`) range; Never panics
-    fn erase_range(&mut self, ch_from: usize, len: usize);
+    fn erase_char_range(&mut self, ch_idx: usize, len: usize);
     /// Remove trailing text, starting at given char (not byte) index
-    fn trim_at(&mut self, ch_idx: usize);
+    fn trim_at_char_idx(&mut self, ch_idx: usize);
+    /// Return string slice after given char (not byte) index
+    fn split_at_char_idx(&self, ch_idx: usize) -> &str;
 }
 
 impl StringExt for String {
@@ -75,11 +77,11 @@ impl StringExt for String {
         StrStreamOp::new(self)
     }
 
-    fn erase_range(&mut self, ch_from: usize, len: usize) {
-        let mut ch_idx = 0;
+    fn erase_char_range(&mut self, ch_from: usize, len: usize) {
+        let mut char_idx = 0;
 
         for (byte_idx, _) in self.char_indices() {
-            if ch_idx == ch_from {
+            if char_idx == ch_from {
                 (0..len).for_each(|_| {
                     if byte_idx < self.len() {
                         self.remove(byte_idx);
@@ -87,20 +89,34 @@ impl StringExt for String {
                 });
                 break;
             }
-            ch_idx += 1;
+            char_idx += 1;
         }
     }
 
-    fn trim_at(&mut self, ch_from: usize) {
-        let mut ch_idx = 0;
+    fn trim_at_char_idx(&mut self, ch_idx: usize) {
+        let mut char_idx = 0;
 
         for (byte_idx, _) in self.char_indices() {
-            if ch_idx == ch_from {
+            if char_idx == ch_idx {
                 self.truncate(byte_idx);
                 break;
             }
-            ch_idx += 1;
+            char_idx += 1;
         }
+    }
+
+    fn split_at_char_idx(&self, ch_idx: usize) -> &str {
+        let mut char_idx = 0;
+
+        for (byte_idx, _) in self.char_indices() {
+            if char_idx == ch_idx {
+                let (_, trailing) = self.split_at(byte_idx);
+                return trailing;
+            }
+            char_idx += 1;
+        }
+
+        ""
     }
 }
 

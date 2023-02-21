@@ -26,11 +26,13 @@ opt-level = 'z'  # Optimize for size.
 lto = true
 codegen-units = 1
 #panic = 'abort'
+strip = "debuginfo"
 
 [profile.dev]
 debug = true
 lto = false
 codegen-units = 2
+opt-level = 0
 
 [features]
 # enable fast line drawing on terminals supporting code ESC-b

@@ -15,12 +15,12 @@ use crate::*;
 /// State object for current top window.
 // using WId instead of references will solve lifetime problems
 #[derive(Default)]
-struct WidgetState {
-    focused_wgt: WId,
-    mouse_down_wgt: WId,
-    drop_down_combo: WId,
-    text_edit_state: TextEditState,
-    mouse_down_ii: InputInfo,
+pub(crate) struct WidgetState {
+    pub focused_wgt: WId,
+    pub mouse_down_wgt: WId,
+    pub drop_down_combo: WId,
+    pub text_edit_state: TextEditState,
+    pub mouse_down_ii: InputInfo,
 }
 
 impl WidgetState {
@@ -31,10 +31,10 @@ impl WidgetState {
 
 #[allow(dead_code)]
 #[derive(Default, Clone)]
-struct TextEditState {
-    wgt_id: WId,
-    cursor_pos: i16,
-    txt: String,
+pub(crate) struct TextEditState {
+    pub wgt_id: WId,
+    pub cursor_pos: i16,
+    pub txt: String,
 }
 
 // https://www.sitepoint.com/rust-global-variables/
@@ -42,6 +42,28 @@ thread_local!(
     static WGT_STATE: std::cell::RefCell<WidgetState> =
         std::cell::RefCell::new(WidgetState::default());
 );
+
+/// Crate-wide accessor for global widgets state
+pub(crate) fn wgt_state_with<F, R>(do_with: F) -> R
+where
+    F: Fn(&WidgetState) -> R,
+{
+    WGT_STATE.with(|wgtstate| {
+        let wgs = wgtstate.borrow();
+        do_with(&*wgs)
+    })
+}
+
+/// Crate-wide mutable accessor for global widgets state
+pub(crate) fn wgt_state_with_mut<F, R>(mut do_with: F) -> R
+where
+    F: FnMut(&mut WidgetState) -> R,
+{
+    WGT_STATE.with(|wgtstate| {
+        let mut wgs = wgtstate.borrow_mut();
+        do_with(&mut *wgs)
+    })
+}
 
 // ---------------------------------------------------------------------------------------------- //
 // ---- UI TRANSFORMATION ----------------------------------------------------------------------- //
@@ -258,12 +280,12 @@ pub fn set_cursor_at(term: &mut Term, ws: &mut dyn WindowState, wgt: &Widget) {
     match wgt.prop {
         Property::TextEdit(ref _p) => {
             WGT_STATE.with(|wgtstate| {
-                let text_edit_state = &wgtstate.borrow().text_edit_state;
+                let te_state = &wgtstate.borrow().text_edit_state;
 
-                if wgt.id == text_edit_state.wgt_id {
+                if wgt.id == te_state.wgt_id {
                     let max_w = wgt.size.width - 3;
-                    coord.col += text_edit_state.cursor_pos as u8;
-                    let mut cursor_pos = text_edit_state.cursor_pos;
+                    coord.col += te_state.cursor_pos as u8;
+                    let mut cursor_pos = te_state.cursor_pos;
                     let delta = max_w / 2;
 
                     while cursor_pos >= max_w as i16 - 1 {
@@ -957,21 +979,22 @@ fn process_key(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
 }
 
 fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
-    let mut text_edit_state = TextEditState::default();
+    let mut te_state = TextEditState::default();
 
     let user_handled = WGT_STATE.with(|wgtstate| {
-        let te_state = &mut wgtstate.borrow_mut().text_edit_state;
+        let tes = &mut wgtstate.borrow_mut().text_edit_state;
 
-        if wgt.id == te_state.wgt_id {
+        if wgt.id == tes.wgt_id {
             // if in edit state, allow user to handle key
-            if ws.on_text_edit_input_evt(wgt, ii, &mut te_state.txt, &mut te_state.cursor_pos) {
+            if ws.on_text_edit_input_evt(wgt, ii, &mut tes.txt, &mut tes.cursor_pos) {
                 ws.invalidate(wgt.id);
                 return true;
             }
             // user let us continue checking the key
         }
 
-        text_edit_state = te_state.clone();
+        // TODO: std::mem::swap(x, y)
+        te_state = tes.clone();
         false
     });
 
@@ -981,21 +1004,21 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
 
     let mut key_handled = false;
 
-    if text_edit_state.wgt_id != WIDGET_ID_NONE {
-        let mut cursor_pos = text_edit_state.cursor_pos as isize;
+    if te_state.wgt_id != WIDGET_ID_NONE {
+        let mut cursor_pos = te_state.cursor_pos as isize;
 
         if ii.kmod.has_special() {
             if let InputEvent::Key(ref key) = ii.evnt {
                 match *key {
                     Key::Esc => {
                         // cancel editing
-                        text_edit_state.wgt_id = WIDGET_ID_NONE;
+                        te_state.wgt_id = WIDGET_ID_NONE;
                         ws.invalidate(wgt.id);
                         key_handled = true;
                     }
                     Key::Tab => {
                         // real TAB may have different widths and require extra processing
-                        text_edit_state
+                        te_state
                             .txt
                             .insert_str(cursor_pos.max(0) as usize, "    ");
                         cursor_pos += 4;
@@ -1004,21 +1027,21 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                     }
                     Key::Enter => {
                         // finish editing
-                        ws.on_text_edit_change(wgt, &mut text_edit_state.txt);
-                        text_edit_state.wgt_id = WIDGET_ID_NONE;
+                        ws.on_text_edit_change(wgt, &mut te_state.txt);
+                        te_state.wgt_id = WIDGET_ID_NONE;
                         ws.invalidate(wgt.id);
                         key_handled = true;
                     }
                     Key::Backspace => {
                         if cursor_pos > 0 {
                             if ii.kmod.has_ctrl() {
-                                text_edit_state.txt.erase_range(0, cursor_pos as usize);
+                                te_state.txt.erase_char_range(0, cursor_pos as usize);
                                 cursor_pos = 0;
                             }
                             else {
-                                text_edit_state
+                                te_state
                                     .txt
-                                    .erase_range((cursor_pos - 1).max(0) as usize, 1);
+                                    .erase_char_range((cursor_pos - 1).max(0) as usize, 1);
                                 cursor_pos -= 1;
                             }
                             ws.invalidate(wgt.id);
@@ -1027,10 +1050,10 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                     }
                     Key::Delete => {
                         if ii.kmod.has_ctrl() {
-                            text_edit_state.txt.trim_at(cursor_pos as usize);
+                            te_state.txt.trim_at_char_idx(cursor_pos as usize);
                         }
                         else {
-                            text_edit_state.txt.erase_range(cursor_pos as usize, 1);
+                            te_state.txt.erase_char_range(cursor_pos as usize, 1);
                         }
 
                         key_handled = true;
@@ -1045,7 +1068,7 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                         key_handled = true;
                     }
                     Key::Right => {
-                        if cursor_pos < text_edit_state.txt.chars().count() as isize {
+                        if cursor_pos < te_state.txt.chars().count() as isize {
                             cursor_pos += 1;
                             ws.invalidate(wgt.id);
                         }
@@ -1057,7 +1080,7 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                         key_handled = true;
                     }
                     Key::End => {
-                        cursor_pos = text_edit_state.txt.chars().count() as isize;
+                        cursor_pos = te_state.txt.chars().count() as isize;
                         ws.invalidate(wgt.id);
                         key_handled = true;
                     }
@@ -1067,28 +1090,28 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
         }
         else if let InputEvent::Char(ref ch) = ii.evnt {
             let ch = ch.utf8seq[0] as char;
-            text_edit_state.txt.insert(cursor_pos as usize, ch);
+            te_state.txt.insert(cursor_pos as usize, ch);
             cursor_pos += 1;
             ws.invalidate(wgt.id);
             key_handled = true;
         }
 
-        text_edit_state.cursor_pos = cursor_pos as i16;
+        te_state.cursor_pos = cursor_pos as i16;
     }
     else if let InputEvent::Key(ref key) = ii.evnt {
         if *key == Key::Enter {
             // enter edit mode
-            text_edit_state.wgt_id = wgt.id;
-            text_edit_state.txt.clear();
-            ws.get_text_edit_text(wgt, &mut text_edit_state.txt, true);
-            text_edit_state.cursor_pos = text_edit_state.txt.chars().count() as i16;
+            te_state.wgt_id = wgt.id;
+            te_state.txt.clear();
+            ws.get_text_edit_text(wgt, &mut te_state.txt, true);
+            te_state.cursor_pos = te_state.txt.chars().count() as i16;
             ws.invalidate(wgt.id);
             key_handled = true;
         }
     }
 
     WGT_STATE.with(|wgtstate| {
-        wgtstate.borrow_mut().text_edit_state = text_edit_state;
+        wgtstate.borrow_mut().text_edit_state = te_state;
     });
 
     key_handled

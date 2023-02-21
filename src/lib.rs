@@ -8,9 +8,6 @@
 /// Library version from Cargo.toml
 pub const VER: &str = env!("CARGO_PKG_VERSION");
 
-#[macro_use]
-extern crate lazy_static;
-
 // public modules
 pub mod colors;
 pub mod common;

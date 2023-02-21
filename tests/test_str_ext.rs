@@ -148,86 +148,94 @@ fn set_displayed_width() {
 }
 
 #[test]
-fn erase_range() {
+fn erase_char_range() {
     // empty str
     {
         let mut s = String::from("");
-        s.erase_range(0, 0);
+        s.erase_char_range(0, 0);
         assert_eq!("", s);
 
-        s.erase_range(0, 1);
+        s.erase_char_range(0, 1);
         assert_eq!("", s);
 
-        s.erase_range(1, 1);
+        s.erase_char_range(1, 1);
         assert_eq!("", s);
     }
 
     // idx out of range
     {
         let mut s = String::from("😎");
-        s.erase_range(10, 1);
+        s.erase_char_range(10, 1);
         assert_eq!("😎", s);
 
-        s.erase_range(10, 1);
+        s.erase_char_range(10, 1);
         assert_eq!("😎", s);
     }
 
     // idx in range
     {
         let mut s = String::from("*Good-morning 🌄 star!");
-        s.erase_range(0, 0);
+        s.erase_char_range(0, 0);
         assert_eq!("*Good-morning 🌄 star!", s);
 
-        s.erase_range(0, 1);
+        s.erase_char_range(0, 1);
         assert_eq!("Good-morning 🌄 star!", s);
 
-        s.erase_range(4, 1);
+        s.erase_char_range(4, 1);
         assert_eq!("Goodmorning 🌄 star!", s);
 
-        s.erase_range(4, 7);
+        s.erase_char_range(4, 7);
         assert_eq!("Good 🌄 star!", s);
 
-        s.erase_range(7, 4);
+        s.erase_char_range(7, 4);
         assert_eq!("Good 🌄 !", s);
 
         // len out of range
-        s.erase_range(1, 10);
+        s.erase_char_range(1, 10);
         assert_eq!("G", s);
     }
 }
 
 #[test]
-fn trim_at() {
+fn trim_at_char_idx() {
     // empty str
     {
         let mut s = String::from("");
-        s.trim_at(0);
+        s.trim_at_char_idx(0);
         assert_eq!("", s);
 
-        s.trim_at(3);
+        s.trim_at_char_idx(3);
         assert_eq!("", s);
     }
 
     // idx out of range
     {
         let mut s = String::from("🌄!");
-        s.trim_at(2);
+        s.trim_at_char_idx(2);
         assert_eq!("🌄!", s);
 
-        s.trim_at(20);
+        s.trim_at_char_idx(20);
         assert_eq!("🌄!", s);
     }
 
     // idx in range
     {
         let mut s = String::from("Hello 🌄!!!");
-        s.trim_at(8);
+        s.trim_at_char_idx(8);
         assert_eq!("Hello 🌄!", s);
 
-        s.trim_at(6);
+        s.trim_at_char_idx(6);
         assert_eq!("Hello ", s);
 
-        s.trim_at(0);
+        s.trim_at_char_idx(0);
         assert_eq!("", s);
     }
+}
+
+#[test]
+fn split_at_char() {
+    let s = String::from("Łódź 🌄 wita!");
+    assert_eq!("", s.split_at_char_idx(100));
+    assert_eq!("Łódź 🌄 wita!", s.split_at_char_idx(0));
+    assert_eq!("🌄 wita!", s.split_at_char_idx(5));
 }

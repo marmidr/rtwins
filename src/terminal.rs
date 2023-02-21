@@ -6,6 +6,7 @@ use crate::esc;
 use crate::wgt;
 use crate::widget_def::*;
 
+use lazy_static::lazy_static;
 use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard, TryLockResult};
 
 // ---------------------------------------------------------------------------------------------- //

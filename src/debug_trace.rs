@@ -3,6 +3,7 @@
 
 use crate::esc;
 
+use lazy_static::lazy_static;
 use std::collections::vec_deque::VecDeque;
 use std::sync::Mutex;
 

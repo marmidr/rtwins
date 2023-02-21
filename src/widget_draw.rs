@@ -3,6 +3,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use std::borrow::Borrow;
 use std::cell::RefCell;
 
 use crate::colors::*;
@@ -302,60 +303,64 @@ fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label) {
 }
 
 fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit) {
-    /*
-    g_w s.str.clear();
-    int16_t display_pos = 0;
-    const int16_t max_w = dctx.wgt->size.width-3;
+    dctx.strbuff.clear();
+    let mut display_pos = 0;
+    let max_w = dctx.wgt.size.width as i16 - 3;
 
-    if (dctx.wgt == g_ws.textEditState.dctx.wgt)
-    {
-        // in edit mode; similar calculation in setCursorAt()
-        g_ws.str = g_ws.textEditState.str;
-        auto cursor_pos = g_ws.textEditState.cursorPos;
-        auto delta = (max_w/2);
+    wgt::wgt_state_with_mut(|wgtstate| {
+        let te_state = &wgtstate.text_edit_state;
 
-        while (cursor_pos >= max_w-1)
-        {
-            cursor_pos -= delta;
-            display_pos += delta;
+        if dctx.wgt.id == te_state.wgt_id {
+            // in edit mode; similar calculation in setCursorAt()
+            dctx.strbuff = te_state.txt.clone();
+            let mut cursor_pos = te_state.cursor_pos;
+            let delta = max_w / 2;
+
+            while cursor_pos >= max_w - 1 {
+                cursor_pos -= delta;
+                display_pos += delta;
+            }
         }
-    }
-    else
-    {
-        dctx.pState->getTextEditText(dctx.wgt, g_ws.str);
+        else {
+            dctx.wnd_state
+                .get_text_edit_text(dctx.wgt, &mut dctx.strbuff, false);
+        }
+    });
+
+    let txt_width = dctx.strbuff.displayed_width() as i16;
+
+    if display_pos > 0 {
+        let txt_to_display = dctx.strbuff.split_at_char_idx(display_pos as usize + 1);
+        let mut s = String::with_capacity(txt_to_display.len() + 4);
+        s.append("◁");
+        s.append(txt_to_display);
+        dctx.strbuff = s;
     }
 
-    const int txt_width = g_ws.str.width();
-
-    if (display_pos > 0)
-    {
-        auto *str_beg = String::u8skip(g_ws.str.cstr(), display_pos + 1);
-        String s("◁");
-        s << str_beg;
-        g_ws.str = std::move(s);
+    if display_pos + max_w <= txt_width {
+        dctx.strbuff
+            .set_displayed_width(dctx.wgt.size.width as i16 - 3 - 1);
+        dctx.strbuff.append("▷");
     }
-
-    if (display_pos + max_w <= txt_width)
-    {
-        g_ws.str.setWidth(dctx.wgt->size.width-3-1);
-        g_ws.str.append("▷");
+    else {
+        dctx.strbuff
+            .set_displayed_width(dctx.wgt.size.width as i16 - 3);
     }
-    else
-    {
-        g_ws.str.setWidth(dctx.wgt->size.width-3);
-    }
-    g_ws.str.append("[^]");
+    dctx.strbuff.append("[^]");
 
-    bool focused = dctx.pState->isFocused(dctx.wgt);
-    auto clbg = getWidgetBgColor(dctx.wgt);
-    intensifyClIf(focused, clbg);
+    let focused = dctx.wnd_state.is_focused(dctx.wgt);
+    let clbg = get_widget_bg_color(dctx.wgt);
+    //TODO: intensifyClIf(focused, clbg);
 
-    let _fm = FontMemento::new(&dctx.term);
-    moveTo(dctx.parentCoord.col + dctx.wgt->coord.col, dctx.parentCoord.row + dctx.wgt->coord.row);
-    pushClBg(clbg);
-    pushClFg(getWidgetFgColor(dctx.wgt));
+    let _fm = FontMemento::new(&dctx.term_cell);
+    let mut term = dctx.term_cell.borrow_mut();
+    term.move_to(
+        dctx.parent_coord.col as u16 + dctx.wgt.coord.col as u16,
+        dctx.parent_coord.row as u16 + dctx.wgt.coord.row as u16,
+    );
+    term.push_cl_bg(clbg);
+    term.push_cl_fg(get_widget_fg_color(dctx.wgt));
     term.write_str(dctx.strbuff.as_str());
-    */
 }
 
 fn draw_led(dctx: &mut DrawCtx, prp: &prop::Led) {
@@ -456,7 +461,10 @@ fn draw_radio(dctx: &mut DrawCtx, prp: &prop::Radio) {
 
 fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button) {
     let focused = dctx.wnd_state.is_focused(dctx.wgt);
-    let pressed = false; // TODO:dctx.wgt == g_ws.pMouseDownWgt;
+    let pressed = wgt::wgt_state_with(|wgtstate| {
+        return dctx.wgt.id == wgtstate.borrow().mouse_down_wgt;
+    });
+
     let clfg = {
         let cl = get_widget_fg_color(dctx.wgt);
         if focused {
@@ -861,6 +869,7 @@ fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox) {
         coord: my_coord,
         ..Default::default()
     };
+
     let mut lbs = Default::default();
     dctx.wnd_state.get_list_box_state(dctx.wgt, &mut lbs);
     dlp.item_idx = lbs.item_idx;
@@ -978,7 +987,7 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
     dctx.wnd_state.get_text_box_state(dctx.wgt, &mut tbs);
 
     if std::rc::Rc::strong_count(&tbs.lines) > 0 {
-        let lines = tbs.lines.borrow();
+        let lines = tbs.lines.as_ref().borrow();
         if tbs.top_line > lines.len() as i16 {
             tbs.top_line = lines.len() as i16 - lines_visible;
             dctx.wnd_state.on_text_box_scroll(dctx.wgt, tbs.top_line);
