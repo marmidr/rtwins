@@ -4,7 +4,7 @@ extern crate rtwins;
 use rtwins::esc;
 use rtwins::string_ext::*;
 
-use pretty_assertions::{assert_eq};
+use pretty_assertions::assert_eq;
 
 #[test]
 fn esc_len() {
@@ -35,7 +35,12 @@ fn esc_len() {
 fn displayed_width() {
     assert_eq!(0, "".displayed_width());
     assert_eq!(5, "Title".displayed_width());
-    assert_eq!(5, format!("{}Title{}", esc::BOLD, esc::NORMAL).as_str().displayed_width());
+    assert_eq!(
+        5,
+        format!("{}Title{}", esc::BOLD, esc::NORMAL)
+            .as_str()
+            .displayed_width()
+    );
     assert_eq!(7, "-😉-🍺-".displayed_width());
 }
 
@@ -43,11 +48,7 @@ fn displayed_width() {
 fn str_stream() {
     let mut s = String::from("Hello");
 
-    let _ = s.stream()
-        << " darkness"
-        << ',' << ' '
-        << "my old friend. "
-        << ('*', 3);
+    let _ = s.stream() << " darkness" << ',' << ' ' << "my old friend. " << ('*', 3);
 
     assert_eq!("Hello darkness, my old friend. ***", s.as_str());
 }

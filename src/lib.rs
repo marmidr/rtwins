@@ -13,33 +13,33 @@ extern crate lazy_static;
 
 // public modules
 pub mod colors;
-pub mod esc;
-pub mod pal;
-pub mod input;
-#[cfg(target_os = "linux")]
-pub mod input_tty;
-pub mod input_decoder;
-pub mod string_ext;
-pub mod utils;
 pub mod common;
 pub mod debug_trace;
+pub mod esc;
+pub mod input;
+pub mod input_decoder;
+#[cfg(target_os = "linux")]
+pub mod input_tty;
+pub mod pal;
+pub mod string_ext;
+pub mod utils;
 
 // private modules
-mod widget_def;
-mod widget_impl;
-mod widget_draw;
 mod terminal;
+mod widget_def;
+mod widget_draw;
+mod widget_impl;
 
 // import common definition into library's namespace
 pub use crate::common::*;
+pub use crate::debug_trace::*;
 pub use crate::terminal::*;
 pub use crate::widget_def::*;
-pub use crate::debug_trace::*;
 
 // group widget public code under single namespace
 pub mod wgt {
-    pub use crate::widget_impl::*;
     pub use crate::widget_draw::*;
+    pub use crate::widget_impl::*;
 }
 
 // ---------------------------------------------------------------------------------------------- //

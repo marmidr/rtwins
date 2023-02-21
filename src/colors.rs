@@ -1,8 +1,8 @@
 //! Color definitions
 
+use crate::esc::*;
 use num_enum::TryFromPrimitive;
 use std::convert::TryFrom;
-use crate::esc::*;
 
 /// Foreground colors
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, TryFromPrimitive)]
@@ -54,9 +54,7 @@ pub enum ColorBG {
     // Theme,
 }
 
-
-const MAP_CL_FG: [&str; 18] =
-[
+const MAP_CL_FG: [&str; 18] = [
     "",
     FG_DEFAULT,
     FG_BLACK,
@@ -74,11 +72,10 @@ const MAP_CL_FG: [&str; 18] =
     FG_CYAN,
     FG_CYAN_INTENSE,
     FG_WHITE,
-    FG_WHITE_INTENSE
+    FG_WHITE_INTENSE,
 ];
 
-const MAP_CL_BG: [&str; 18] =
-[
+const MAP_CL_BG: [&str; 18] = [
     "",
     BG_DEFAULT,
     BG_BLACK,
@@ -96,7 +93,7 @@ const MAP_CL_BG: [&str; 18] =
     BG_CYAN,
     BG_CYAN_INTENSE,
     BG_WHITE,
-    BG_WHITE_INTENSE
+    BG_WHITE_INTENSE,
 ];
 
 // -----------------------------------------------------------------------------
@@ -141,8 +138,7 @@ pub fn transcode_cl_bg_2_fg(bg_color_code: &str) -> String {
 
     let mut out = String::from(bg_color_code);
 
-    unsafe
-    {
+    unsafe {
         // `out` length is known, so we can safely use unchecked versions of `get`
         let c3 = *out.as_bytes().get_unchecked(3);
         let c2 = out.as_bytes_mut().get_unchecked_mut(2);
@@ -174,10 +170,10 @@ pub fn intensify_cl_fg(cl: ColorFG) -> ColorFG {
         return ColorFG::WhiteIntense;
     }
 
-/*
-    if (INRANGE(cl, ColorFG::ThemeBegin, ColorFG::ThemeEnd))
-        return intensifyClTheme(cl);
-*/
+    /*
+        if (INRANGE(cl, ColorFG::ThemeBegin, ColorFG::ThemeEnd))
+            return intensifyClTheme(cl);
+    */
     cl
 }
 
@@ -196,10 +192,9 @@ pub fn intensify_cl_bg(cl: ColorBG) -> ColorBG {
         return ColorBG::WhiteIntense;
     }
 
-/*
-    if (INRANGE(cl, ColorBG::ThemeBegin, ColorBG::ThemeEnd))
-        return intensifyClTheme(cl);
-*/
+    /*
+        if (INRANGE(cl, ColorBG::ThemeBegin, ColorBG::ThemeEnd))
+            return intensifyClTheme(cl);
+    */
     cl
 }
-

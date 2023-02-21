@@ -1,10 +1,10 @@
 //! Demo - window state
 
-use rtwins::utils;
 use rtwins::esc;
-use rtwins::wgt::*;
-use rtwins::string_ext::*;
 use rtwins::input::*;
+use rtwins::string_ext::*;
+use rtwins::utils;
+use rtwins::wgt::*;
 use rtwins::*;
 
 use std::cell::RefCell;
@@ -31,12 +31,13 @@ pub struct DemoWndState {
     // text box raw source string and source splitted into rows
     tbx_text: String,
     tbx_wide_lines: Rc<RefCell<Vec<String>>>,
-    tbx_narrow_lines: Rc<RefCell<Vec<String>>>
+    tbx_narrow_lines: Rc<RefCell<Vec<String>>>,
 }
 
 impl DemoWndState {
     pub fn new(widgets: &'static [Widget]) -> Self {
-        let mut wnd_state = DemoWndState{widgets,
+        let mut wnd_state = DemoWndState {
+            widgets,
             rs: RuntimeStates::new(),
             focused_id: WIDGET_ID_NONE,
             text_edit_txt: String::new(),
@@ -79,24 +80,43 @@ impl DemoWndState {
             << "🔷 Interdum et malesuada fames ac ante ipsum primis in faucibus. Aenean malesuada lacus leo, a eleifend lorem suscipit sed.\n"
             << "▄";
 
-            // << esc::BOLD
-            // << "🔶 Lorem ipsum \ndolor sit\n amet, consectetur adipiscing elit. Nam arcu magna, placerat sit amet libero at, aliquam fermentum augue. \n"
-            // << esc::NORMAL
-            // << "▄";
+        // << esc::BOLD
+        // << "🔶 Lorem ipsum \ndolor sit\n amet, consectetur adipiscing elit. Nam arcu magna, placerat sit amet libero at, aliquam fermentum augue. \n"
+        // << esc::NORMAL
+        // << "▄";
 
         // setup some widgets initial properties
-        use tui_def::Id;
         use state_rt::*;
+        use tui_def::Id;
 
         wnd_state.rs.set_enabled(Id::LabelFwVersion.into(), false);
 
-        wnd_state.rs.insert_state(Id::Prgbar1.into(),   PgbarState{ pos:5, max: 10 }.into());
-        wnd_state.rs.insert_state(Id::Prgbar2.into(),   PgbarState{ pos:2, max: 10 }.into());
-        wnd_state.rs.insert_state(Id::Prgbar3.into(),   PgbarState{ pos:8, max: 10 }.into());
-        wnd_state.rs.insert_state(Id::LedLock.into(),   LedState{ lit: true }.into());
-        wnd_state.rs.insert_state(Id::ChbxEnbl.into(),  ChbxState{ checked: true }.into());
-        wnd_state.rs.insert_state(Id::PgControl.into(), PgctrlState{ page: 0 }.into());
-        wnd_state.rs.insert_state(Id::TbxWide.into(),   TxtbxState{ top_line: 9, lines: Default::default() }.into());
+        wnd_state
+            .rs
+            .insert_state(Id::Prgbar1.into(), PgbarState { pos: 5, max: 10 }.into());
+        wnd_state
+            .rs
+            .insert_state(Id::Prgbar2.into(), PgbarState { pos: 2, max: 10 }.into());
+        wnd_state
+            .rs
+            .insert_state(Id::Prgbar3.into(), PgbarState { pos: 8, max: 10 }.into());
+        wnd_state
+            .rs
+            .insert_state(Id::LedLock.into(), LedState { lit: true }.into());
+        wnd_state
+            .rs
+            .insert_state(Id::ChbxEnbl.into(), ChbxState { checked: true }.into());
+        wnd_state
+            .rs
+            .insert_state(Id::PgControl.into(), PgctrlState { page: 0 }.into());
+        wnd_state.rs.insert_state(
+            Id::TbxWide.into(),
+            TxtbxState {
+                top_line: 9,
+                lines: Default::default(),
+            }
+            .into(),
+        );
         wnd_state
     }
 }
@@ -110,23 +130,23 @@ impl rtwins::WindowState for DemoWndState {
         // self.ctx.flush_buff();
     }
 
-    fn on_button_up(&mut self, wgt: &Widget, ii: &InputInfo) {
+    fn on_button_up(&mut self, wgt: &Widget, ii: &InputInfo) {}
 
-    }
-
-    fn on_button_click(&mut self, wgt: &Widget, ii: &InputInfo) {
-
-    }
+    fn on_button_click(&mut self, wgt: &Widget, ii: &InputInfo) {}
 
     fn on_button_key(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
         false
     }
 
-    fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {
+    fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {}
 
-    }
-
-    fn on_text_edit_input_evt(&mut self, wgt: &Widget, ii: &InputInfo, txt: &mut String, cursor_pos: &mut i16) -> bool {
+    fn on_text_edit_input_evt(
+        &mut self,
+        wgt: &Widget,
+        ii: &InputInfo,
+        txt: &mut String,
+        cursor_pos: &mut i16,
+    ) -> bool {
         false
     }
 
@@ -176,9 +196,7 @@ impl rtwins::WindowState for DemoWndState {
         rs.top_line = top_line;
     }
 
-    fn on_custom_widget_draw(&mut self, wgt: &Widget) {
-
-    }
+    fn on_custom_widget_draw(&mut self, wgt: &Widget) {}
 
     fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
         false
@@ -257,8 +275,7 @@ impl rtwins::WindowState for DemoWndState {
             << esc::NORMAL
             << esc::UNDERLINE_ON
             << " (Ctrl+D quit)"
-            << esc::UNDERLINE_OFF
-            ;
+            << esc::UNDERLINE_OFF;
     }
 
     fn get_checkbox_checked(&mut self, wgt: &Widget) -> bool {
@@ -268,9 +285,7 @@ impl rtwins::WindowState for DemoWndState {
 
     fn get_label_text(&mut self, wgt: &Widget, txt: &mut String) {
         if wgt.id == tui_def::Id::LabelDate.into() {
-            txt.push_str(format!("Date•{}",
-                "<datetime>").as_str()
-            );
+            txt.push_str(format!("Date•{}", "<datetime>").as_str());
         }
 
         if wgt.id == tui_def::Id::LabelAbout.into() {
@@ -298,8 +313,7 @@ impl rtwins::WindowState for DemoWndState {
                 << esc::UNDERLINE_ON
                 << "Enter"
                 << esc::UNDERLINE_OFF
-                << " -> select the item"
-                ;
+                << " -> select the item";
         }
     }
 
@@ -356,21 +370,20 @@ impl rtwins::WindowState for DemoWndState {
 
         if wgt.id == tui_def::Id::TbxWide.into() {
             if self.tbx_wide_lines.borrow().len() == 0 {
-                self.tbx_wide_lines = utils::word_wrap(wgt.size.width as usize-2, &self.tbx_text);
+                self.tbx_wide_lines = utils::word_wrap(wgt.size.width as usize - 2, &self.tbx_text);
             }
             state.lines = Rc::clone(&self.tbx_wide_lines);
         }
         else if wgt.id == tui_def::Id::TbxNarrow.into() {
             if self.tbx_narrow_lines.borrow().len() == 0 {
-                self.tbx_narrow_lines = utils::word_wrap(wgt.size.width as usize-2, &self.tbx_text);
+                self.tbx_narrow_lines =
+                    utils::word_wrap(wgt.size.width as usize - 2, &self.tbx_text);
             }
             state.lines = Rc::clone(&self.tbx_narrow_lines);
         }
     }
 
-    fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {
-
-    }
+    fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {}
 
     /* */
 

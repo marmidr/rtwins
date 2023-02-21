@@ -7,13 +7,17 @@ pub trait Pal {
     fn write_char_n(&mut self, c: char, repeat: i16) {}
 
     /// Write single character
-    fn write_char(&mut self, c: char) { self.write_char_n(c, 1); }
+    fn write_char(&mut self, c: char) {
+        self.write_char_n(c, 1);
+    }
 
     /// Write string multiple times
     fn write_str_n(&mut self, s: &str, repeat: i16) {}
 
     /// Write single string
-    fn write_str(&mut self, s: &str) { self.write_str_n(s, 1); }
+    fn write_str(&mut self, s: &str) {
+        self.write_str_n(s, 1);
+    }
 
     /// Flush buffer to the terminal (depends on implementation)
     fn flush_buff(&mut self) {}
@@ -25,16 +29,18 @@ pub trait Pal {
     fn sleep(&self, ms: u16) {}
 
     /// Get current timestamp (since program start) in milliseconds
-    fn get_timestamp(&self) -> u32 { 0 }
+    fn get_timestamp(&self) -> u32 {
+        0
+    }
 
     /// Get difference between current and previous timestamp, in milliseconds
-    fn get_timespan_ms(&self, prev_timestamp: u32) -> u32 { 0 }
+    fn get_timespan_ms(&self, prev_timestamp: u32) -> u32 {
+        0
+    }
 }
 
 /// Empty PAL
 #[derive(Default)]
-pub struct PalStub {
-}
+pub struct PalStub {}
 
-impl Pal for PalStub {
-}
+impl Pal for PalStub {}

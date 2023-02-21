@@ -1,8 +1,8 @@
 //! # RTWins String extensions
 
-use unicode_width::{UnicodeWidthStr, UnicodeWidthChar};
 use std::fmt::Write;
 use std::ops::Shl;
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 /// Trait extending base `String` functionality
 pub trait StringExt {
@@ -25,7 +25,8 @@ pub trait StringExt {
 impl StringExt for String {
     fn push_esc_fmt(&mut self, escfmt: &str, val: i16) {
         if let Some((a, b)) = escfmt.split_once("{0}") {
-            self.write_fmt(format_args!("{}{}{}", a, val, b)).unwrap_or_default();
+            self.write_fmt(format_args!("{}{}{}", a, val, b))
+                .unwrap_or_default();
         }
         else {
             self.write_str(escfmt).unwrap_or_default();
@@ -103,7 +104,6 @@ impl StringExt for String {
     }
 }
 
-
 pub trait StrExt {
     /// Returns ANSI escape sequence length, if begins with `\x1B`
     fn esc_seq_len(&self) -> usize;
@@ -122,7 +122,12 @@ impl StrExt for str {
         const ESC_MAX_SEQ_LEN: usize = 20;
 
         if self.starts_with('\x1B') {
-            let seq_len = if self.len() < ESC_MAX_SEQ_LEN { self.len() } else { ESC_MAX_SEQ_LEN };
+            let seq_len = if self.len() < ESC_MAX_SEQ_LEN {
+                self.len()
+            }
+            else {
+                ESC_MAX_SEQ_LEN
+            };
             let mut it = self.as_bytes().iter().skip(1);
             let mut seq_idx = 1;
 
@@ -130,16 +135,15 @@ impl StrExt for str {
                 let c = *it.next().unwrap() as char;
 
                 match c {
-                    '@' | '^' | '~' =>
-                        return seq_idx + 1,
+                    '@' | '^' | '~' => return seq_idx + 1,
                     'M' => {
                         if seq_len >= 6 && self.len() >= 6 {
                             return 6;
                         }
                         else {
-                            return 0
+                            return 0;
                         };
-                    },
+                    }
                     _ => {
                         if ('A'..='Z').contains(&c) && c != 'O' {
                             return seq_idx + 1;
@@ -147,7 +151,7 @@ impl StrExt for str {
                         if ('a'..='z').contains(&c) {
                             return seq_idx + 1;
                         }
-                    },
+                    }
                 }
 
                 seq_idx += 1;

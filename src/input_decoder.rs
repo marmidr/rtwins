@@ -2,8 +2,8 @@
 
 #![allow(dead_code)]
 
-use std::cmp::Ordering;
 use crate::input::*;
+use std::cmp::Ordering;
 
 pub type InputQue = std::collections::vec_deque::VecDeque<u8>;
 
@@ -13,18 +13,23 @@ pub type InputQue = std::collections::vec_deque::VecDeque<u8>;
 #[derive(Copy, Clone)]
 struct SeqMap {
     // ESC sequence
-    seq:    &'static str,
+    seq: &'static str,
     // keyboard key name mapped to sequence
-    name:   &'static str,
+    name: &'static str,
     // keyboard special key code
-    key:    Key,
+    key: Key,
     // key modifiers, like KEY_MOD_CTRL
-    kmod:   u8,
+    kmod: u8,
 }
 
 impl SeqMap {
     const fn cdeflt() -> Self {
-        Self{seq: "", name: "", key: Key::None, kmod: 0}
+        Self {
+            seq: "",
+            name: "",
+            key: Key::None,
+            kmod: 0,
+        }
     }
 }
 
@@ -32,18 +37,23 @@ impl SeqMap {
 #[derive(Copy, Clone)]
 struct LetterMap {
     // letter A..Z
-    code:   u8,
+    code: u8,
     // key code
-    key:    u8,
+    key: u8,
     // key modifiers, like KEY_MOD_CTRL
-    kmod:   u8,
+    kmod: u8,
     // key name
-    name:   &'static str,
+    name: &'static str,
 }
 
 impl LetterMap {
     const fn cdeflt() -> Self {
-        Self{code: 0, key: 0, kmod: 0, name: ""}
+        Self {
+            code: 0,
+            key: 0,
+            kmod: 0,
+            name: "",
+        }
     }
 }
 
@@ -51,18 +61,23 @@ impl LetterMap {
 #[derive(Copy, Clone)]
 struct SpecialMap {
     // 0x01..
-    code:   u8,
+    code: u8,
     // key code
-    key:    Key,
+    key: Key,
     // key modifiers, like KEY_MOD_CTRL
-    kmod:   u8,
+    kmod: u8,
     // key name
-    name:   &'static str,
+    name: &'static str,
 }
 
 impl SpecialMap {
     const fn cdeflt() -> Self {
-        Self{code: 0, key: Key::None, kmod: 0, name: ""}
+        Self {
+            code: 0,
+            key: Key::None,
+            kmod: 0,
+            name: "",
+        }
     }
 }
 
@@ -70,7 +85,12 @@ impl SpecialMap {
 
 macro_rules! seq_def {
     ($s:literal, $n:literal, $k:expr, $m:expr) => {
-        SeqMap{seq: $s, name: $n, key: $k, kmod: $m}
+        SeqMap {
+            seq: $s,
+            name: $n,
+            key: $k,
+            kmod: $m,
+        }
     };
 }
 
@@ -239,11 +259,16 @@ const ESC_KEYS_MAP_UNSORTED : [SeqMap; 155] = [
     // + Shift + Alt
 ];
 
-const ESC_KEYS_MAP_SORTED : [SeqMap; ESC_KEYS_MAP_UNSORTED.len()] = sort_seq(&ESC_KEYS_MAP_UNSORTED);
+const ESC_KEYS_MAP_SORTED: [SeqMap; ESC_KEYS_MAP_UNSORTED.len()] = sort_seq(&ESC_KEYS_MAP_UNSORTED);
 
 macro_rules! ctrl_def {
     ($c:literal, $n:literal, $k:literal, $m:expr) => {
-        LetterMap{code: $c, name: $n, key: $k, kmod: $m}
+        LetterMap {
+            code: $c,
+            name: $n,
+            key: $k,
+            kmod: $m,
+        }
     };
 }
 
@@ -280,7 +305,12 @@ const CTRL_KEYS_MAP_SORTED : [LetterMap; 26] = [
 
 macro_rules! special_def {
     ($c:expr, $n:literal, $k:expr, $m:expr) => {
-        SpecialMap{code: $c as u8, key: $k, kmod: $m, name: $n}
+        SpecialMap {
+            code: $c as u8,
+            key: $k,
+            kmod: $m,
+            name: $n,
+        }
     };
 }
 
@@ -320,7 +350,7 @@ const fn sort<const N: usize>(mut array: [SeqMap; N]) -> [SeqMap; N] {
     if array.len() > 1 {
         let mut l = 0usize;
 
-        while l < array.len() -1 {
+        while l < array.len() - 1 {
             let mut r = l + 1;
 
             while r < array.len() {
@@ -348,16 +378,21 @@ const fn seqmap_cmp(left: &SeqMap, right: &SeqMap) -> Ordering {
 /// Compares two byte slices using method similar to strcmp
 /// .0 == true - left begins with right, but latter they may differ
 const fn seq_cmp(left: &[u8], right: &[u8]) -> (bool, Ordering) {
-    let commn_len = if left.len() < right.len() { left.len() } else { right.len() };
+    let commn_len = if left.len() < right.len() {
+        left.len()
+    }
+    else {
+        right.len()
+    };
     let mut i = 0usize;
 
     while i < commn_len {
         if left[i] != right[i] {
             if left[i] < right[i] {
-                return (false, Ordering::Less)
+                return (false, Ordering::Less);
             }
             else {
-                return (false, Ordering::Greater)
+                return (false, Ordering::Greater);
             }
         }
         i += 1;
@@ -407,7 +442,9 @@ fn seq_binary_search(sequence: &[u8], map: &'static [SeqMap]) -> Option<&'static
             hi = mid - 1;
         }
 
-        if hi < lo { break; }
+        if hi < lo {
+            break;
+        }
         mid = lo + ((hi - lo) / 2);
     }
 
@@ -419,9 +456,9 @@ fn seq_binary_search(sequence: &[u8], map: &'static [SeqMap]) -> Option<&'static
 
 /// ESC sequence into Key description decoder
 pub struct Decoder {
-    decode_fail_ctr : u8,
-    prev_cr : u8,
-    prev_esc_ignored : bool
+    decode_fail_ctr: u8,
+    prev_cr: u8,
+    prev_esc_ignored: bool,
 }
 
 impl Decoder {
@@ -445,7 +482,7 @@ impl Decoder {
 
         let read_seq_from_queue = |inp: &InputQue, out: &mut [u8]| -> usize {
             // out.copy_from_slice() impossible as Deque is noncontiguous
-            let count = (out.len()-1).min(inp.len());
+            let count = (out.len() - 1).min(inp.len());
             let mut it = inp.iter();
             #[allow(clippy::needless_range_loop)]
             for i in 0..count {
@@ -464,10 +501,7 @@ impl Decoder {
 
             // 1. ANSI escape sequence
             //    check for two following ESC characters to avoid lock
-            if seq_sz > 1
-                && seq[0] == AnsiCodes::ESC as u8
-                && seq[1] != AnsiCodes::ESC as u8
-            {
+            if seq_sz > 1 && seq[0] == AnsiCodes::ESC as u8 && seq[1] != AnsiCodes::ESC as u8 {
                 if seq_sz < 3 {
                     // sequence too short
                     return 0;
@@ -476,10 +510,7 @@ impl Decoder {
                 self.prev_esc_ignored = false;
 
                 // check mouse code
-                if seq_sz >= 6
-                    && seq[1] == b'['
-                    && seq[2] == b'M'
-                {
+                if seq_sz >= 6 && seq[1] == b'[' && seq[2] == b'M' {
                     let mouse_btn = seq[3] - b' ';
                     let mut mi = MouseInfo::default();
                     match mouse_btn & 0xE3 {
@@ -491,12 +522,18 @@ impl Decoder {
                         0x81 => mi.evt = MouseEvent::ButtonGoForward,
                         0x40 => mi.evt = MouseEvent::WheelUp,
                         0x41 => mi.evt = MouseEvent::WheelDown,
-                        _    => mi.evt = MouseEvent::None,
+                        _ => mi.evt = MouseEvent::None,
                     }
 
-                    if mouse_btn & 0x04 != 0 { inp_info.kmod.set_shift(); }
-                    if mouse_btn & 0x08 != 0 { inp_info.kmod.set_alt(); }
-                    if mouse_btn & 0x10 != 0 { inp_info.kmod.set_ctrl(); }
+                    if mouse_btn & 0x04 != 0 {
+                        inp_info.kmod.set_shift();
+                    }
+                    if mouse_btn & 0x08 != 0 {
+                        inp_info.kmod.set_alt();
+                    }
+                    if mouse_btn & 0x10 != 0 {
+                        inp_info.kmod.set_ctrl();
+                    }
 
                     mi.col = seq[4] - b' ';
                     mi.row = seq[5] - b' ';
@@ -516,7 +553,8 @@ impl Decoder {
                 }
 
                 // ESC sequence invalid or unknown?
-                if seq_sz > 3 { // 3 is mimimum ESC seq len
+                if seq_sz > 3 {
+                    // 3 is mimimum ESC seq len
                     let mut esc_found = false;
                     // data is long enough to store ESC sequence
                     #[allow(clippy::needless_range_loop)]
@@ -546,10 +584,7 @@ impl Decoder {
             }
             else {
                 // single character
-                if seq[0] == AnsiCodes::ESC as u8
-                    && seq_sz == 1
-                    && !self.prev_esc_ignored
-                {
+                if seq[0] == AnsiCodes::ESC as u8 && seq_sz == 1 && !self.prev_esc_ignored {
                     // avoid situations where ESC not followed by another code
                     // is decoded as freestanding Esc key
                     self.prev_esc_ignored = true;
@@ -602,7 +637,7 @@ impl Decoder {
 
                 // 4. regular ASCII character or UTF-8 sequence
                 let utf8seqlen = crate::utils::utf8_char_width(seq[0]); // 0..4
-                // dbg!(seq, seq_sz, utf8seqlen);
+                                                                        // dbg!(seq, seq_sz, utf8seqlen);
 
                 if utf8seqlen > 0 && utf8seqlen <= seq_sz {
                     // copy valid UTF-8 seq
@@ -639,107 +674,134 @@ impl Decoder {
 impl Default for Decoder {
     /// Creates a new decoder instance
     fn default() -> Self {
-        Self{decode_fail_ctr: 0, prev_cr: 0, prev_esc_ignored: false}
-   }
+        Self {
+            decode_fail_ctr: 0,
+            prev_cr: 0,
+            prev_esc_ignored: false,
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
-// tests of local stuff only
-use super::*;
+    // tests of local stuff only
+    use super::*;
 
-#[test]
-fn test_seq_cmp() {
-    {
-        // same length, equal
-        let l = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
-        let r = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
-        assert_eq!(Ordering::Equal, seqmap_cmp(&l, &r));
-    }
+    #[test]
+    fn test_seq_cmp() {
+        {
+            // same length, equal
+            let l = SeqMap {
+                seq: "AAA",
+                ..SeqMap::cdeflt()
+            };
+            let r = SeqMap {
+                seq: "AAA",
+                ..SeqMap::cdeflt()
+            };
+            assert_eq!(Ordering::Equal, seqmap_cmp(&l, &r));
+        }
 
-    {
-        // same length, inequal
-        let l = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
-        let r = SeqMap{seq: "AAB", ..SeqMap::cdeflt()};
-        assert_eq!(Ordering::Less, seqmap_cmp(&l, &r));
-        assert_eq!(Ordering::Greater, seqmap_cmp(&r, &l));
-    }
+        {
+            // same length, inequal
+            let l = SeqMap {
+                seq: "AAA",
+                ..SeqMap::cdeflt()
+            };
+            let r = SeqMap {
+                seq: "AAB",
+                ..SeqMap::cdeflt()
+            };
+            assert_eq!(Ordering::Less, seqmap_cmp(&l, &r));
+            assert_eq!(Ordering::Greater, seqmap_cmp(&r, &l));
+        }
 
-    {
-        // similar, diferent lenght
-        let l = SeqMap{seq: "AAA", ..SeqMap::cdeflt()};
-        let r = SeqMap{seq: "AAAA", ..SeqMap::cdeflt()};
-        assert_eq!(Ordering::Less, seqmap_cmp(&l, &r));
-        assert_eq!(Ordering::Greater, seqmap_cmp(&r, &l));
-    }
+        {
+            // similar, diferent lenght
+            let l = SeqMap {
+                seq: "AAA",
+                ..SeqMap::cdeflt()
+            };
+            let r = SeqMap {
+                seq: "AAAA",
+                ..SeqMap::cdeflt()
+            };
+            assert_eq!(Ordering::Less, seqmap_cmp(&l, &r));
+            assert_eq!(Ordering::Greater, seqmap_cmp(&r, &l));
+        }
 
-    {
-        // different content and length
-        let l = SeqMap{seq: "AAB", ..SeqMap::cdeflt()};
-        let r = SeqMap{seq: "AAAA", ..SeqMap::cdeflt()};
-        assert_eq!(Ordering::Greater, seqmap_cmp(&l, &r));
-        assert_eq!(Ordering::Less, seqmap_cmp(&r, &l));
-    }
-}
-
-#[test]
-fn test_seq_binary_search() {
-    {
-        // empy input
-        let opt = seq_binary_search(b"", &ESC_KEYS_MAP_SORTED);
-        assert!(opt.is_none());
-    }
-
-    {
-        // input too short
-        let opt = seq_binary_search(b"[", &ESC_KEYS_MAP_SORTED);
-        assert!(opt.is_none());
-    }
-
-    {
-        // input unknown
-        let opt = seq_binary_search(b"[abc", &ESC_KEYS_MAP_SORTED);
-        assert!(opt.is_none());
-    }
-
-    {
-        // input followed by "BC"
-        let opt = seq_binary_search(b"[ABC", &ESC_KEYS_MAP_SORTED);
-        assert!(opt.is_some());
-        if let Some(km) = opt {
-            assert_eq!(Key::Up, km.key);
+        {
+            // different content and length
+            let l = SeqMap {
+                seq: "AAB",
+                ..SeqMap::cdeflt()
+            };
+            let r = SeqMap {
+                seq: "AAAA",
+                ..SeqMap::cdeflt()
+            };
+            assert_eq!(Ordering::Greater, seqmap_cmp(&l, &r));
+            assert_eq!(Ordering::Less, seqmap_cmp(&r, &l));
         }
     }
 
-    {
-        // valid input
-        let opt = seq_binary_search(b"[H", &ESC_KEYS_MAP_SORTED);
-        assert!(opt.is_some());
-        if let Some(km) = opt {
-            assert_eq!(Key::Home, km.key);
+    #[test]
+    fn test_seq_binary_search() {
+        {
+            // empy input
+            let opt = seq_binary_search(b"", &ESC_KEYS_MAP_SORTED);
+            assert!(opt.is_none());
+        }
+
+        {
+            // input too short
+            let opt = seq_binary_search(b"[", &ESC_KEYS_MAP_SORTED);
+            assert!(opt.is_none());
+        }
+
+        {
+            // input unknown
+            let opt = seq_binary_search(b"[abc", &ESC_KEYS_MAP_SORTED);
+            assert!(opt.is_none());
+        }
+
+        {
+            // input followed by "BC"
+            let opt = seq_binary_search(b"[ABC", &ESC_KEYS_MAP_SORTED);
+            assert!(opt.is_some());
+            if let Some(km) = opt {
+                assert_eq!(Key::Up, km.key);
+            }
+        }
+
+        {
+            // valid input
+            let opt = seq_binary_search(b"[H", &ESC_KEYS_MAP_SORTED);
+            assert!(opt.is_some());
+            if let Some(km) = opt {
+                assert_eq!(Key::Home, km.key);
+            }
+        }
+
+        {
+            // valid input
+            let opt = seq_binary_search(b"[24;5~", &ESC_KEYS_MAP_SORTED);
+            assert!(opt.is_some());
+            if let Some(km) = opt {
+                assert_eq!(Key::F12, km.key);
+            }
+        }
+
+        {
+            // valid input
+            let opt = seq_binary_search(b"[24;6~", &ESC_KEYS_MAP_SORTED);
+            assert!(opt.is_some());
+            if let Some(km) = opt {
+                assert_eq!(Key::F12, km.key);
+                assert_eq!(KEY_MOD_CTRL | KEY_MOD_SHIFT | KEY_MOD_SPECIAL, km.kmod);
+            }
         }
     }
-
-    {
-        // valid input
-        let opt = seq_binary_search(b"[24;5~", &ESC_KEYS_MAP_SORTED);
-        assert!(opt.is_some());
-        if let Some(km) = opt {
-            assert_eq!(Key::F12, km.key);
-        }
-    }
-
-    {
-        // valid input
-        let opt = seq_binary_search(b"[24;6~", &ESC_KEYS_MAP_SORTED);
-        assert!(opt.is_some());
-        if let Some(km) = opt {
-            assert_eq!(Key::F12, km.key);
-            assert_eq!(KEY_MOD_CTRL|KEY_MOD_SHIFT|KEY_MOD_SPECIAL, km.kmod);
-        }
-    }
-}
-
 } // mod tests

@@ -3,11 +3,11 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use crate::common::*;
+use crate::input::*;
 use crate::string_ext::StrExt;
 use crate::string_ext::StringExt;
 use crate::widget_def::*;
-use crate::common::*;
-use crate::input::*;
 use crate::*;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -16,11 +16,11 @@ use crate::*;
 // using WId instead of references will solve lifetime problems
 #[derive(Default)]
 struct WidgetState {
-    focused_wgt:     WId,
-    mouse_down_wgt:  WId,
+    focused_wgt: WId,
+    mouse_down_wgt: WId,
     drop_down_combo: WId,
     text_edit_state: TextEditState,
-    mouse_down_ii:   InputInfo,
+    mouse_down_ii: InputInfo,
 }
 
 impl WidgetState {
@@ -39,7 +39,8 @@ struct TextEditState {
 
 // https://www.sitepoint.com/rust-global-variables/
 thread_local!(
-    static WGT_STATE: std::cell::RefCell<WidgetState> = std::cell::RefCell::new(WidgetState::default());
+    static WGT_STATE: std::cell::RefCell<WidgetState> =
+        std::cell::RefCell::new(WidgetState::default());
 );
 
 // ---------------------------------------------------------------------------------------------- //
@@ -69,7 +70,12 @@ pub mod transform {
         out
     }
 
-const fn do_transform<const N: usize>(mut out: [Widget; N], wgt: &Widget, out_idx: usize, mut next_free_idx: usize) -> (usize, [Widget; N]) {
+    const fn do_transform<const N: usize>(
+        mut out: [Widget; N],
+        wgt: &Widget,
+        out_idx: usize,
+        mut next_free_idx: usize,
+    ) -> (usize, [Widget; N]) {
         out[out_idx] = *wgt;
         out[out_idx].link.own_idx = out_idx as u16;
         out[out_idx].children = &[];
@@ -95,7 +101,6 @@ const fn do_transform<const N: usize>(mut out: [Widget; N], wgt: &Widget, out_id
 
         (next_free_idx, out)
     }
-
 } // mod
 
 // ---------------------------------------------------------------------------------------------- //
@@ -104,12 +109,13 @@ const fn do_transform<const N: usize>(mut out: [Widget; N], wgt: &Widget, out_id
 
 /// Checks if given widget is parent-type
 pub const fn is_parent(wgt: &Widget) -> bool {
-    matches!(wgt.prop,
-        Property::Window(_)   |
-        Property::Panel(_)    |
-        Property::PageCtrl(_) |
-        Property::Page(_)     |
-        Property::Layer(_)
+    matches!(
+        wgt.prop,
+        Property::Window(_)
+            | Property::Panel(_)
+            | Property::PageCtrl(_)
+            | Property::Page(_)
+            | Property::Layer(_)
     )
 }
 
@@ -133,7 +139,12 @@ pub fn find_by_id(wndarray: &[Widget], id: WId) -> Option<&Widget> {
 
 /// Finds visible Widget at cursor position `col:row`;
 /// Sets `wgt_rect` to found widget screen-based coordinates
-pub fn find_at(ws: &mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) -> Option<&'static Widget> {
+pub fn find_at(
+    ws: &mut dyn WindowState,
+    col: u8,
+    row: u8,
+    wgt_rect: &mut Rect,
+) -> Option<&'static Widget> {
     let mut found_wgt: Option<&'static Widget> = None;
     let mut best_rect = Rect::cdeflt();
     best_rect.set_max();
@@ -150,16 +161,15 @@ pub fn find_at(ws: &mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) 
 
         // correct the widget size
         match wgt.prop {
-            Property::TextEdit(ref _p) => {
-            },
+            Property::TextEdit(ref _p) => {}
             Property::CheckBox(ref p) => {
                 wgt_screen_rect.size.height = 1;
                 wgt_screen_rect.size.width = 4 + p.text.displayed_width() as u8;
-            },
+            }
             Property::Radio(ref p) => {
                 wgt_screen_rect.size.height = 1;
                 wgt_screen_rect.size.width = 4 + p.text.displayed_width() as u8;
-            },
+            }
             Property::Button(ref p) => {
                 let txt_w;
 
@@ -179,24 +189,22 @@ pub fn find_at(ws: &mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) 
                     ButtonStyle::Simple => {
                         wgt_screen_rect.size.height = 1;
                         wgt_screen_rect.size.width = 4 + txt_w;
-                    },
+                    }
                     ButtonStyle::Solid => {
                         wgt_screen_rect.size.height = 1;
                         wgt_screen_rect.size.width = 2 + txt_w;
-                    },
+                    }
                     ButtonStyle::Solid1p5 => {
                         wgt_screen_rect.size.height = 3;
                         wgt_screen_rect.size.width = 2 + txt_w;
-                    },
+                    }
                 }
-            },
+            }
             Property::PageCtrl(ref p) => {
                 wgt_screen_rect.size.width = p.tab_width;
-            },
-            Property::ListBox(ref _p) => {
-            },
-            Property::ComboBox(ref _p) => {
-            },
+            }
+            Property::ListBox(ref _p) => {}
+            Property::ComboBox(ref _p) => {}
             _ => {
                 stop_searching = false;
             }
@@ -222,27 +230,25 @@ pub fn find_at(ws: &mut dyn WindowState, col: u8, row: u8, wgt_rect: &mut Rect) 
 }
 
 pub fn get_screen_coord(wgt: &Widget) -> Coord {
-    wgt.iter_parents()
-        .skip(1)
-        .fold(wgt.coord, |c, parent| {
-            let mut c = c;
+    wgt.iter_parents().skip(1).fold(wgt.coord, |c, parent| {
+        let mut c = c;
 
-            if let Property::Window(ref prop) = parent.prop {
-                if prop.is_popup {
-                    // TODO: for popups must be centered on parent window
-                }
-                c = c + parent.coord;
+        if let Property::Window(ref prop) = parent.prop {
+            if prop.is_popup {
+                // TODO: for popups must be centered on parent window
             }
-            else {
-                c = c + parent.coord;
-            }
+            c = c + parent.coord;
+        }
+        else {
+            c = c + parent.coord;
+        }
 
-            if let Property::PageCtrl(ref prop) = parent.prop {
-                c.col += prop.tab_width;
-            }
+        if let Property::PageCtrl(ref prop) = parent.prop {
+            c.col += prop.tab_width;
+        }
 
-            c
-        })
+        c
+    })
 }
 
 /// Move cursor to the best position for given type of the widget
@@ -251,14 +257,14 @@ pub fn set_cursor_at(term: &mut Term, ws: &mut dyn WindowState, wgt: &Widget) {
 
     match wgt.prop {
         Property::TextEdit(ref _p) => {
-            WGT_STATE.with(|wgtstate|{
+            WGT_STATE.with(|wgtstate| {
                 let text_edit_state = &wgtstate.borrow().text_edit_state;
 
                 if wgt.id == text_edit_state.wgt_id {
-                    let max_w = wgt.size.width -3;
+                    let max_w = wgt.size.width - 3;
                     coord.col += text_edit_state.cursor_pos as u8;
                     let mut cursor_pos = text_edit_state.cursor_pos;
-                    let delta = max_w/2;
+                    let delta = max_w / 2;
 
                     while cursor_pos >= max_w as i16 - 1 {
                         coord.col -= delta;
@@ -269,31 +275,29 @@ pub fn set_cursor_at(term: &mut Term, ws: &mut dyn WindowState, wgt: &Widget) {
                     coord.col += wgt.size.width - 2;
                 }
             });
-        },
+        }
         Property::CheckBox(ref _p) => {
             coord.col += 1;
-        },
+        }
         Property::Radio(ref _p) => {
             coord.col += 1;
-        },
-        Property::Button(ref p) => {
-            match p.style {
+        }
+        Property::Button(ref p) => match p.style {
             ButtonStyle::Simple => {
                 coord.col += 2;
-                },
+            }
             ButtonStyle::Solid => {
                 coord.col += 1;
-                },
+            }
             ButtonStyle::Solid1p5 => {
                 coord.col += 1;
                 coord.row += 1;
-                },
             }
         },
         Property::PageCtrl(ref p) => {
             coord.row += 1 + p.vert_offs;
             coord.row += ws.get_page_ctrl_page_index(wgt) as u8
-        },
+        }
         Property::ListBox(ref p) => {
             let mut lbs = Default::default();
             let frame_size = p.no_frame as u8;
@@ -304,7 +308,7 @@ pub fn set_cursor_at(term: &mut Term, ws: &mut dyn WindowState, wgt: &Widget) {
 
             coord.col += frame_size;
             coord.row += frame_size + row as u8;
-        },
+        }
         _ => {}
     }
 
@@ -321,9 +325,7 @@ pub fn is_enabled(ws: &dyn WindowState, wgt: &Widget) -> bool {
 
 /// Shall be called eg. on top window change
 pub fn reset_internal_state() {
-    WGT_STATE.with(|wgstate|
-        wgstate.borrow_mut().reset()
-    );
+    WGT_STATE.with(|wgstate| wgstate.borrow_mut().reset());
 }
 
 pub fn process_input(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
@@ -340,9 +342,9 @@ pub fn process_input(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
         key_processed = process_key(ws, ii);
 
         if !key_processed && ii.kmod.has_special() {
-            WGT_STATE.with(|wgtstate|{
+            WGT_STATE.with(|wgtstate| {
                 let dd_combo_id = wgtstate.borrow().drop_down_combo;
-                if dd_combo_id!= WIDGET_ID_NONE {
+                if dd_combo_id != WIDGET_ID_NONE {
                     if let Some(wgt) = find_by_id(ws.get_widgets(), dd_combo_id) {
                         combo_box_hide_list(ws, wgt);
                     }
@@ -424,7 +426,11 @@ pub fn pagectrl_select_page(ws: &mut dyn WindowState, pgctrl_id: WId, page_id: W
         }
     }
 
-    tr_warn!("Widget Id={} is not PageControl Id={} page", page_id, pgctrl_id);
+    tr_warn!(
+        "Widget Id={} is not PageControl Id={} page",
+        page_id,
+        pgctrl_id
+    );
 }
 
 pub fn pagectrl_select_next_page(ws: &mut dyn WindowState, pgctrl_id: WId, next: bool) {
@@ -435,9 +441,9 @@ pub fn pagectrl_select_next_page(ws: &mut dyn WindowState, pgctrl_id: WId, next:
 
 /// Mark internal clicked widget id
 pub fn mark_button_down(btn: &Widget, is_down: bool) {
-    WGT_STATE.with(|wgstate|
+    WGT_STATE.with(|wgstate| {
         wgstate.borrow_mut().mouse_down_wgt = if is_down { btn.id } else { WIDGET_ID_NONE }
-    );
+    });
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -445,13 +451,13 @@ pub fn mark_button_down(btn: &Widget, is_down: bool) {
 // ---------------------------------------------------------------------------------------------- //
 
 /// Iterator over parent-type Widget children
-pub struct ChildrenIter <'a> {
+pub struct ChildrenIter<'a> {
     children: &'a Widget,
     children_idx: u16,
-    children_cnt: u16
+    children_cnt: u16,
 }
 
-impl <'a> ChildrenIter<'a> {
+impl<'a> ChildrenIter<'a> {
     /// Creates a new iterator.
     ///
     /// If the given widget happen to be not a parent-type widget,
@@ -460,15 +466,20 @@ impl <'a> ChildrenIter<'a> {
         unsafe {
             // SAFETY: see `wgt_get_parent`
             let p_parent = parent_wgt as *const Widget;
-            let children_offs = parent_wgt.link.children_idx as isize - parent_wgt.link.own_idx as isize;
+            let children_offs =
+                parent_wgt.link.children_idx as isize - parent_wgt.link.own_idx as isize;
             let p_children = p_parent.offset(children_offs);
 
-            ChildrenIter { children: &*p_children, children_idx: 0, children_cnt: parent_wgt.link.children_cnt }
+            ChildrenIter {
+                children: &*p_children,
+                children_idx: 0,
+                children_cnt: parent_wgt.link.children_cnt,
+            }
         }
     }
 }
 
-impl <'a> Iterator for ChildrenIter<'a> {
+impl<'a> Iterator for ChildrenIter<'a> {
     type Item = &'a Widget;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -489,18 +500,21 @@ impl <'a> Iterator for ChildrenIter<'a> {
 // ---------------------------------------------------------------------------------------------- //
 
 /// Iterator that traverses over parents hierarchy, starting at `wgt`, up to the root Window
-pub struct ParentsIter <'a> {
+pub struct ParentsIter<'a> {
     wgt: &'a Widget,
-    finished: bool
+    finished: bool,
 }
 
-impl <'a> ParentsIter<'a> {
+impl<'a> ParentsIter<'a> {
     pub fn new(wgt: &'a Widget) -> Self {
-        ParentsIter{wgt, finished: false}
+        ParentsIter {
+            wgt,
+            finished: false,
+        }
     }
 }
 
-impl <'a> Iterator for ParentsIter<'a> {
+impl<'a> Iterator for ParentsIter<'a> {
     type Item = &'a Widget;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -521,19 +535,20 @@ impl <'a> Iterator for ParentsIter<'a> {
 // ---------------------------------------------------------------------------------------------- //
 
 fn is_focusable(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
-    if matches!(wgt.prop,
-        Property::TextEdit(_)   |
-        Property::CheckBox(_)   |
-        Property::Radio(_)      |
-        Property::Button(_)     |
-        Property::ListBox(_)    |
-        Property::ComboBox(_)
+    if matches!(
+        wgt.prop,
+        Property::TextEdit(_)
+            | Property::CheckBox(_)
+            | Property::Radio(_)
+            | Property::Button(_)
+            | Property::ListBox(_)
+            | Property::ComboBox(_)
     ) {
         return true;
     }
 
     if let Property::TextBox(_) = wgt.prop {
-        return is_enabled(ws, wgt)
+        return is_enabled(ws, wgt);
     }
 
     false
@@ -548,12 +563,17 @@ fn is_focusable_by_id(ws: &mut dyn WindowState, widget_id: WId) -> bool {
     }
 }
 
-fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, focused_id: WId, forward: bool,
-    mut first_parent: Option<&'static Widget>, break_search: &mut bool) -> Option<&'static Widget>
-{
+fn get_next_focusable(
+    ws: &mut dyn WindowState,
+    mut parent: &'static Widget,
+    focused_id: WId,
+    forward: bool,
+    mut first_parent: Option<&'static Widget>,
+    break_search: &mut bool,
+) -> Option<&'static Widget> {
     if let Some(fp) = first_parent {
         if std::ptr::eq(parent, fp) {
-            tr_err!("full loop detected");// (pFirstParent id=%d)", pFirstParent?pFirstParent->id:-1);
+            tr_err!("full loop detected"); // (pFirstParent id=%d)", pFirstParent?pFirstParent->id:-1);
             *break_search = true;
             return None;
         }
@@ -568,10 +588,7 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
 
     // get childrens and their number
     match parent.prop {
-        Property::Window(_) |
-        Property::Panel(_) |
-        Property::Page(_) |
-        Property::Layer(_) => {
+        Property::Window(_) | Property::Panel(_) | Property::Page(_) | Property::Layer(_) => {
             children = &ws.get_widgets()[parent.link.children_idx as usize..];
             child_cnt = parent.link.children_cnt;
         }
@@ -591,7 +608,11 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
             }
         }
         _ => {
-            tr_err!("Widget [{} id:{}] is not a parent type widget", parent.prop.to_string(), parent.id);
+            tr_err!(
+                "Widget [{} id:{}] is not a parent type widget",
+                parent.prop.to_string(),
+                parent.id
+            );
             return None;
         }
     }
@@ -601,9 +622,7 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
     }
 
     match parent.prop {
-        Property::Page(_) |
-        Property::Panel(_) |
-        Property::Layer(_) => {
+        Property::Page(_) | Property::Panel(_) | Property::Layer(_) => {
             if first_parent.is_none() {
                 // it must be Panel/Page/Layer because while traversing we never step below Page level
                 tr_debug!("1st parent[%{} id:{}]", parent.prop.to_string(), parent.id);
@@ -615,11 +634,16 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
 
     assert!(!children.is_empty());
     let mut child_idx = 0;
-    tr_debug!("parent[{} id:{}] focused_id={}", parent.prop.to_string(), parent.id, focused_id); //crate::sleepMs(200);
+    tr_debug!(
+        "parent[{} id:{}] focused_id={}",
+        parent.prop.to_string(),
+        parent.id,
+        focused_id
+    ); //crate::sleepMs(200);
 
     if focused_id == WIDGET_ID_NONE {
         // get first/last of the children ID
-        child_idx = if forward { 0 } else { child_cnt as usize -1 };
+        child_idx = if forward { 0 } else { child_cnt as usize - 1 };
         let child = &children[child_idx];
 
         if is_focusable(ws, child) && is_visible(ws, child) {
@@ -627,7 +651,14 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
         }
 
         if is_parent(child) {
-            if let Some(nf) = get_next_focusable(ws, parent, WIDGET_ID_NONE, forward, first_parent, break_search) {
+            if let Some(nf) = get_next_focusable(
+                ws,
+                parent,
+                WIDGET_ID_NONE,
+                forward,
+                first_parent,
+                break_search,
+            ) {
                 return Some(nf);
             }
         }
@@ -639,12 +670,21 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
         }
 
         if child_idx >= child_cnt as usize {
-            tr_warn!("Focused ID={} not found on parent ID={}", focused_id, parent.id);
+            tr_warn!(
+                "Focused ID={} not found on parent ID={}",
+                focused_id,
+                parent.id
+            );
             return None;
         }
     }
 
-    tr_debug!("search in [{} id:{} children cnt:{}]", parent.prop.to_string(), parent.id, child_cnt);
+    tr_debug!(
+        "search in [{} id:{} children cnt:{}]",
+        parent.prop.to_string(),
+        parent.id,
+        child_cnt
+    );
 
     // iterate until focusable found or children border reached
     for _ in 0..child_cnt {
@@ -658,11 +698,17 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
         if child_idx == child_cnt as usize || child_idx == usize::MAX {
             // border reached: if we are on Panel or Layer, jump to next sibling
             match parent.prop {
-                Property::Panel(_) |
-                Property::Layer(_) => {
+                Property::Panel(_) | Property::Layer(_) => {
                     let parents_parent = get_parent(parent);
                     let mut brk = false;
-                    return get_next_focusable(ws, parents_parent, parent.id, forward, first_parent, &mut brk);
+                    return get_next_focusable(
+                        ws,
+                        parents_parent,
+                        parent.id,
+                        forward,
+                        first_parent,
+                        &mut brk,
+                    );
                 }
                 _ => {}
             }
@@ -684,8 +730,14 @@ fn get_next_focusable(ws: &mut dyn WindowState, mut parent: &'static Widget, foc
         if is_parent(&children[child_idx]) {
             let mut brk = false;
 
-            if let Some(nf) = get_next_focusable(ws, &children[child_idx], WIDGET_ID_NONE,
-                    forward, first_parent, &mut brk) {
+            if let Some(nf) = get_next_focusable(
+                ws,
+                &children[child_idx],
+                WIDGET_ID_NONE,
+                forward,
+                first_parent,
+                &mut brk,
+            ) {
                 return Some(nf);
             }
 
@@ -707,13 +759,18 @@ fn get_next_to_focus(ws: &mut dyn WindowState, focused_id: WId, forward: bool) -
     }
 
     if let Some(focused_wgt) = focused_wgt {
-        tr_debug!("focused_wgt: {} id={}", focused_wgt.prop.to_string(), focused_wgt.id);
+        tr_debug!(
+            "focused_wgt: {} id={}",
+            focused_wgt.prop.to_string(),
+            focused_wgt.id
+        );
 
         // use the parent to get next widget
         let focused_wgt_parent = get_parent(focused_wgt);
         let mut brk = false;
-        if let Some(nf) = get_next_focusable(ws, focused_wgt_parent, focused_id,
-                forward, None, &mut brk) {
+        if let Some(nf) =
+            get_next_focusable(ws, focused_wgt_parent, focused_id, forward, None, &mut brk)
+        {
             return nf.id;
         }
     }
@@ -744,7 +801,11 @@ fn change_focus_to(ws: &mut dyn WindowState, new_id: WId) -> bool {
         ws.set_focused_id(new_id);
 
         if let Some(new_focused_wgt) = find_by_id(ws.get_widgets(), new_id) {
-            tr_debug!("new_focused_wgt: {} id={}", new_focused_wgt.prop.to_string(), new_focused_wgt.id);
+            tr_debug!(
+                "new_focused_wgt: {} id={}",
+                new_focused_wgt.prop.to_string(),
+                new_focused_wgt.id
+            );
 
             if let Property::ListBox(_) = new_focused_wgt.prop {
                 let mut lbs = Default::default();
@@ -760,7 +821,7 @@ fn change_focus_to(ws: &mut dyn WindowState, new_id: WId) -> bool {
                 set_cursor_at(term, ws, new_focused_wgt);
             }
 
-            WGT_STATE.with(|wgtstate|{
+            WGT_STATE.with(|wgtstate| {
                 wgtstate.borrow_mut().focused_wgt = new_focused_wgt.id;
             });
         }
@@ -788,7 +849,7 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
         let mut idx = ws.get_page_ctrl_page_index(pgctrl) as i16;
         idx += if next { 1 } else { -1 };
         if idx < 0 {
-            idx = pgctrl.link.children_cnt as i16 -1;
+            idx = pgctrl.link.children_cnt as i16 - 1;
         }
         if idx >= pgctrl.link.children_cnt as i16 {
             idx = 0;
@@ -800,15 +861,11 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
     ws.invalidate(pgctrl.id);
 
     // cancel EDIT mode
-    WGT_STATE.with(|wgstate|
-        wgstate.borrow_mut().text_edit_state.wgt_id = WIDGET_ID_NONE
-    );
+    WGT_STATE.with(|wgstate| wgstate.borrow_mut().text_edit_state.wgt_id = WIDGET_ID_NONE);
 
     if let Some(focused) = find_by_id(ws.get_widgets(), ws.get_focused_id()) {
         // tr_debug!("focused id={} ({})", focused.id, focused.prop);
-        WGT_STATE.with(|wgstate|
-            wgstate.borrow_mut().focused_wgt = focused.id
-        );
+        WGT_STATE.with(|wgstate| wgstate.borrow_mut().focused_wgt = focused.id);
 
         if let Ok(mut term_lock) = crate::Term::try_lock_write() {
             wgt::set_cursor_at(&mut term_lock, ws, focused);
@@ -818,9 +875,7 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
         }
     }
     else {
-        WGT_STATE.with(|wgstate|
-            wgstate.borrow_mut().focused_wgt = WIDGET_ID_NONE
-        );
+        WGT_STATE.with(|wgstate| wgstate.borrow_mut().focused_wgt = WIDGET_ID_NONE);
 
         if let Ok(mut term_lock) = crate::Term::try_lock_write() {
             term_lock.move_to_home();
@@ -851,7 +906,7 @@ fn combo_box_hide_list(ws: &mut dyn WindowState, wgt: &Widget) {
     let parent = get_parent(wgt);
     ws.invalidate(parent.id);
 
-    WGT_STATE.with(|wgtstate|{
+    WGT_STATE.with(|wgtstate| {
         wgtstate.borrow_mut().drop_down_combo = WIDGET_ID_NONE;
     });
 }
@@ -894,18 +949,17 @@ fn process_key(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
             Property::ListBox(_) => process_key_list_box(ws, wgt, ii),
             Property::ComboBox(_) => process_key_combo_box(ws, wgt, ii),
             Property::TextBox(_) => process_key_text_box(ws, wgt, ii),
-            _ => false
+            _ => false,
         };
     }
 
     key_handled
 }
 
-
 fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
     let mut text_edit_state = TextEditState::default();
 
-    let user_handled = WGT_STATE.with(|wgtstate|{
+    let user_handled = WGT_STATE.with(|wgtstate| {
         let te_state = &mut wgtstate.borrow_mut().text_edit_state;
 
         if wgt.id == te_state.wgt_id {
@@ -941,7 +995,9 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                     }
                     Key::Tab => {
                         // real TAB may have different widths and require extra processing
-                        text_edit_state.txt.insert_str(cursor_pos.max(0) as usize, "    ");
+                        text_edit_state
+                            .txt
+                            .insert_str(cursor_pos.max(0) as usize, "    ");
                         cursor_pos += 4;
                         ws.invalidate(wgt.id);
                         key_handled = true;
@@ -960,7 +1016,9 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                                 cursor_pos = 0;
                             }
                             else {
-                                text_edit_state.txt.erase_range((cursor_pos - 1).max(0) as usize, 1);
+                                text_edit_state
+                                    .txt
+                                    .erase_range((cursor_pos - 1).max(0) as usize, 1);
                                 cursor_pos -= 1;
                             }
                             ws.invalidate(wgt.id);
@@ -1003,7 +1061,7 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                         ws.invalidate(wgt.id);
                         key_handled = true;
                     }
-                    _  => {}
+                    _ => {}
                 }
             }
         }
@@ -1029,7 +1087,7 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
         }
     }
 
-    WGT_STATE.with(|wgtstate|{
+    WGT_STATE.with(|wgtstate| {
         wgtstate.borrow_mut().text_edit_state = text_edit_state;
     });
 
@@ -1085,14 +1143,14 @@ fn process_key_button(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) ->
     if let InputEvent::Key(ref key) = ii.evnt {
         if *key == Key::Enter {
             // pointer may change between onButtonUp and onButtonClick, so remember it
-            WGT_STATE.with(|wgtstate|{
+            WGT_STATE.with(|wgtstate| {
                 wgtstate.borrow_mut().mouse_down_wgt = wgt.id;
             });
 
             ws.on_button_down(wgt, ii);
             ws.invalidate_now(wgt.id);
             // TODO: sleepMs(50);
-            WGT_STATE.with(|wgtstate|{
+            WGT_STATE.with(|wgtstate| {
                 wgtstate.borrow_mut().mouse_down_wgt = WIDGET_ID_NONE;
             });
 
@@ -1141,16 +1199,36 @@ fn process_key_list_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
                 return true;
             }
             Key::Up => {
-                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {-1} else {0};
+                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
+                    -1
+                }
+                else {
+                    0
+                };
             }
             Key::Down => {
-                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {1} else {0};
+                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
+                    1
+                }
+                else {
+                    0
+                };
             }
             Key::PgUp => {
-                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {-items_visible} else {0};
+                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
+                    -items_visible
+                }
+                else {
+                    0
+                };
             }
             Key::PgDown => {
-                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {items_visible} else {0};
+                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
+                    items_visible
+                }
+                else {
+                    0
+                };
             }
             _ => {}
         }
@@ -1192,7 +1270,7 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
             if cbs.drop_down {
                 ws.on_combo_box_drop(wgt, true);
 
-                WGT_STATE.with(|wgtstate|{
+                WGT_STATE.with(|wgtstate| {
                     wgtstate.borrow_mut().drop_down_combo = wgt.id;
                 });
             }
@@ -1209,7 +1287,7 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
             if *key == Key::Up {
                 cbs.sel_idx -= 1;
                 if cbs.sel_idx < 0 {
-                    cbs.sel_idx = cbs.items_cnt-1;
+                    cbs.sel_idx = cbs.items_cnt - 1;
                 }
                 ws.on_combo_box_select(wgt, cbs.sel_idx);
             }
@@ -1226,7 +1304,7 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                 }
 
                 if cbs.sel_idx < 0 {
-                    cbs.sel_idx = cbs.items_cnt-1;
+                    cbs.sel_idx = cbs.items_cnt - 1;
                 }
                 ws.on_combo_box_select(wgt, cbs.sel_idx);
             }
@@ -1263,10 +1341,38 @@ fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
         let lines_visible = wgt.size.height as i16 - 2;
 
         match *key {
-            Key::Up => delta = if ii.kmod.mask == KEY_MOD_SPECIAL {-1} else {0},
-            Key::Down => delta = if ii.kmod.mask == KEY_MOD_SPECIAL {1} else {0},
-            Key::PgUp => delta = if ii.kmod.mask == KEY_MOD_SPECIAL {-lines_visible} else {0},
-            Key::PgDown => delta = if ii.kmod.mask == KEY_MOD_SPECIAL {lines_visible} else {0},
+            Key::Up => {
+                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
+                    -1
+                }
+                else {
+                    0
+                }
+            }
+            Key::Down => {
+                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
+                    1
+                }
+                else {
+                    0
+                }
+            }
+            Key::PgUp => {
+                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
+                    -lines_visible
+                }
+                else {
+                    0
+                }
+            }
+            Key::PgDown => {
+                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
+                    lines_visible
+                }
+                else {
+                    0
+                }
+            }
             _ => {}
         }
 
@@ -1304,7 +1410,11 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
         if mouse.evt == MouseEvent::ButtonGoBack || mouse.evt == MouseEvent::ButtonGoForward {
             if let Some(main_pg_ctrl) = find_main_pg_control(ws) {
                 if is_enabled(ws, main_pg_ctrl) {
-                    pagectrl_change_page(ws, main_pg_ctrl, mouse.evt == MouseEvent::ButtonGoForward);
+                    pagectrl_change_page(
+                        ws,
+                        main_pg_ctrl,
+                        mouse.evt == MouseEvent::ButtonGoForward,
+                    );
                 }
                 return true;
             }
@@ -1313,7 +1423,7 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
         let mut rct = Rect::cdeflt();
 
         if let Some(mut wgt) = find_at(ws, mouse.col, mouse.row, &mut rct) {
-            let ret = WGT_STATE.with(|wgtstate|{
+            let ret = WGT_STATE.with(|wgtstate| {
                 let md_wgt_id = wgtstate.borrow().mouse_down_wgt;
 
                 if md_wgt_id != WIDGET_ID_NONE {
@@ -1330,7 +1440,8 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
                 }
                 else {
                     // remember clicked widget
-                    if mouse.evt >= MouseEvent::ButtonLeft && mouse.evt < MouseEvent::ButtonReleased {
+                    if mouse.evt >= MouseEvent::ButtonLeft && mouse.evt < MouseEvent::ButtonReleased
+                    {
                         let mut stat = wgtstate.borrow_mut();
                         stat.mouse_down_wgt = wgt.id;
                         stat.mouse_down_ii = (*ii).clone();
@@ -1340,10 +1451,9 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
                 false
             });
 
-
             // TWINS_LOG_D("WidgetAt(%2d:%2d)=%s ID:%u", ii.mouse.col, ii.mouse.row, toString(wgt->type), wgt.id);
 
-            WGT_STATE.with(|wgtstate|{
+            WGT_STATE.with(|wgtstate| {
                 let ddcombo_wgt_id = wgtstate.borrow().drop_down_combo;
 
                 if ddcombo_wgt_id != WIDGET_ID_NONE {
@@ -1387,7 +1497,7 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
                             term.move_to_home();
                         }
 
-                        WGT_STATE.with(|wgtstate|{
+                        WGT_STATE.with(|wgtstate| {
                             wgtstate.borrow_mut().mouse_down_wgt = WIDGET_ID_NONE;
                         });
 
@@ -1397,7 +1507,7 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
             }
 
             if mouse.evt == MouseEvent::ButtonReleased {
-                WGT_STATE.with(|wgtstate|{
+                WGT_STATE.with(|wgtstate| {
                     wgtstate.borrow_mut().mouse_down_wgt = WIDGET_ID_NONE;
                 });
             }
@@ -1407,7 +1517,12 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
     true
 }
 
-fn process_mouse_text_edit(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+fn process_mouse_text_edit(
+    ws: &mut dyn WindowState,
+    wgt: &Widget,
+    wgt_rect: &Rect,
+    ii: &InputInfo,
+) {
     if let InputEvent::Mouse(ref mouse) = ii.evnt {
         if mouse.evt == MouseEvent::ButtonLeft {
             change_focus_to(ws, wgt.id);
@@ -1415,7 +1530,12 @@ fn process_mouse_text_edit(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
     }
 }
 
-fn process_mouse_check_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+fn process_mouse_check_box(
+    ws: &mut dyn WindowState,
+    wgt: &Widget,
+    wgt_rect: &Rect,
+    ii: &InputInfo,
+) {
     if let InputEvent::Mouse(ref mouse) = ii.evnt {
         if mouse.evt == MouseEvent::ButtonLeft {
             change_focus_to(ws, wgt.id);
@@ -1438,13 +1558,15 @@ fn process_mouse_radio(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, 
 fn process_mouse_button(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
     if let InputEvent::Mouse(ref mouse) = ii.evnt {
         // pointer may change between onButtonUp and onButtonClick, so remember it
-        WGT_STATE.with(|wgtstate|{
+        WGT_STATE.with(|wgtstate| {
             if mouse.evt == MouseEvent::ButtonLeft {
                 change_focus_to(ws, wgt.id);
                 ws.on_button_down(wgt, ii);
                 ws.invalidate(wgt.id);
             }
-            else if mouse.evt == MouseEvent::ButtonReleased && wgtstate.borrow().mouse_down_wgt == wgt.id {
+            else if mouse.evt == MouseEvent::ButtonReleased
+                && wgtstate.borrow().mouse_down_wgt == wgt.id
+            {
                 ws.on_button_up(wgt, ii);
                 ws.on_button_click(wgt, &wgtstate.borrow().mouse_down_ii);
                 wgtstate.borrow_mut().mouse_down_wgt = WIDGET_ID_NONE;
@@ -1460,14 +1582,19 @@ fn process_mouse_button(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect,
 fn process_mouse_button_release(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) {
     if let InputEvent::Mouse(ref mouse) = ii.evnt {
         ws.on_button_up(wgt, ii);
-        WGT_STATE.with(|wgtstate|{
+        WGT_STATE.with(|wgtstate| {
             wgtstate.borrow_mut().mouse_down_wgt = WIDGET_ID_NONE;
         });
         ws.invalidate(wgt.id);
     }
 }
 
-fn process_mouse_page_ctrl(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+fn process_mouse_page_ctrl(
+    ws: &mut dyn WindowState,
+    wgt: &Widget,
+    wgt_rect: &Rect,
+    ii: &InputInfo,
+) {
     if let InputEvent::Mouse(ref mouse) = ii.evnt {
         if mouse.evt == MouseEvent::ButtonLeft {
             change_focus_to(ws, wgt.id);
@@ -1532,7 +1659,12 @@ fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
                 return;
             }
 
-            let mut delta = if mouse.evt == MouseEvent::WheelUp {-1} else {1};
+            let mut delta = if mouse.evt == MouseEvent::WheelUp {
+                -1
+            }
+            else {
+                1
+            };
             if ii.kmod.has_ctrl() {
                 delta *= items_visible;
             }
@@ -1552,7 +1684,12 @@ fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
     }
 }
 
-fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+fn process_mouse_combo_box(
+    ws: &mut dyn WindowState,
+    wgt: &Widget,
+    wgt_rect: &Rect,
+    ii: &InputInfo,
+) {
     if let InputEvent::Mouse(ref mouse) = ii.evnt {
         let drop_down_size = if let Property::ComboBox(ref prop) = wgt.prop {
             prop.drop_down_size as i16
@@ -1592,7 +1729,7 @@ fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
                     ws.on_combo_box_drop(wgt, true);
                     ws.invalidate(wgt.id);
 
-                    WGT_STATE.with(|wgtstate|{
+                    WGT_STATE.with(|wgtstate| {
                         wgtstate.borrow_mut().drop_down_combo = wgt.id;
                     });
                 }
@@ -1606,12 +1743,16 @@ fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
             let mut cbs = Default::default();
             ws.get_combo_box_state(wgt, &mut cbs);
 
-
             if !cbs.drop_down || cbs.items_cnt <= 0 {
                 return;
             }
 
-            let mut delta = if mouse.evt == MouseEvent::WheelUp {-1} else {1};
+            let mut delta = if mouse.evt == MouseEvent::WheelUp {
+                -1
+            }
+            else {
+                1
+            };
 
             if ii.kmod.has_ctrl() {
                 delta *= drop_down_size;
@@ -1632,8 +1773,13 @@ fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
         }
         else if mouse.evt == MouseEvent::ButtonMid {
             let btn_left = InputInfo {
-                evnt: InputEvent::Mouse(MouseInfo{evt: MouseEvent::ButtonLeft, col: mouse.col, row: mouse.row}),
-                kmod: ii.kmod, name: ""
+                evnt: InputEvent::Mouse(MouseInfo {
+                    evt: MouseEvent::ButtonLeft,
+                    col: mouse.col,
+                    row: mouse.row,
+                }),
+                kmod: ii.kmod,
+                name: "",
             };
             process_mouse_combo_box(ws, wgt, wgt_rect, &btn_left);
 
@@ -1650,7 +1796,12 @@ fn process_mouse_combo_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Re
     }
 }
 
-fn process_mouse_custom_wgt(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
+fn process_mouse_custom_wgt(
+    ws: &mut dyn WindowState,
+    wgt: &Widget,
+    wgt_rect: &Rect,
+    ii: &InputInfo,
+) {
     ws.on_custom_widget_input_evt(wgt, ii);
 }
 
@@ -1665,7 +1816,12 @@ fn process_mouse_text_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
             let lines = tbs.lines.borrow();
 
             if !lines.is_empty() {
-                let mut delta = if mouse.evt == MouseEvent::WheelUp {-1} else {1};
+                let mut delta = if mouse.evt == MouseEvent::WheelUp {
+                    -1
+                }
+                else {
+                    1
+                };
                 let lines_visible = wgt.size.height as i16 - 2;
                 if ii.kmod.has_ctrl() {
                     delta *= lines_visible;

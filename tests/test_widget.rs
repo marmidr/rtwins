@@ -167,7 +167,6 @@ const WINDOW_TEST: Widget = Widget {
     ]
 };
 
-
 const WND_TEST_ARRAY: [Widget; rtwins::wgt::transform::tree_wgt_count(&WINDOW_TEST)] =
     rtwins::wgt::transform::tree_to_array(&WINDOW_TEST);
 
@@ -182,12 +181,13 @@ struct WndTestState {
 
 impl WndTestState {
     fn new(widgets: &'static [Widget]) -> Self {
-        WndTestState{widgets,
+        WndTestState {
+            widgets,
             wnd_visible: false,
             wnd_enabled: false,
             lbl_about_visible: false,
             lbl_about_enabled: false,
-            pgctrl_page_idx: 0
+            pgctrl_page_idx: 0,
         }
     }
 }
@@ -196,9 +196,15 @@ impl WindowState for WndTestState {
     /** common state queries **/
 
     fn is_enabled(&self, wgt: &Widget) -> bool {
-        if wgt.id == Id::WndTest.into() { self.wnd_enabled }
-        else if wgt.id == Id::LabelAbout.into() { self.lbl_about_enabled }
-        else { true }
+        if wgt.id == Id::WndTest.into() {
+            self.wnd_enabled
+        }
+        else if wgt.id == Id::LabelAbout.into() {
+            self.lbl_about_enabled
+        }
+        else {
+            true
+        }
     }
 
     fn is_focused(&self, _wgt: &Widget) -> bool {
@@ -206,9 +212,15 @@ impl WindowState for WndTestState {
     }
 
     fn is_visible(&self, wgt: &Widget) -> bool {
-        if wgt.id == Id::WndTest.into() { self.wnd_visible }
-        else if wgt.id == Id::LabelAbout.into() { self.lbl_about_visible }
-        else { true }
+        if wgt.id == Id::WndTest.into() {
+            self.wnd_visible
+        }
+        else if wgt.id == Id::LabelAbout.into() {
+            self.lbl_about_visible
+        }
+        else {
+            true
+        }
     }
 
     fn get_widgets(&self) -> &'static [Widget] {
@@ -250,10 +262,10 @@ fn rect_within() {
 fn point_within() {
     let r = Rect::new(2, 2, 10, 5);
     assert!(r.is_point_within(2, 2));
-    assert!(r.is_point_within(2+10-1, 2));
-    assert!(r.is_point_within(2+10-1, 2+5-1));
-    assert!(!r.is_point_within(2+10, 2));
-    assert!(!r.is_point_within(2+10-1, 2+5));
+    assert!(r.is_point_within(2 + 10 - 1, 2));
+    assert!(r.is_point_within(2 + 10 - 1, 2 + 5 - 1));
+    assert!(!r.is_point_within(2 + 10, 2));
+    assert!(!r.is_point_within(2 + 10 - 1, 2 + 5));
     assert!(!r.is_point_within(1, 2));
     assert!(!r.is_point_within(2, 1));
 }
@@ -369,7 +381,7 @@ fn widget_at() {
         assert_eq!(60, btn_coord.col);
         assert_eq!(10, btn_coord.row);
 
-        let opt_b = wgt::find_at(&mut ws, btn_coord.col+2, btn_coord.row, &mut wgt_r);
+        let opt_b = wgt::find_at(&mut ws, btn_coord.col + 2, btn_coord.row, &mut wgt_r);
         assert!(opt_b.is_some());
         if let Some(wgt) = opt_b {
             assert!(wgt.id == Id::BtnYes.into());
@@ -398,7 +410,6 @@ fn page_idx() {
         assert_eq!(1, idx.unwrap());
     }
 
-
     // wrong widget type
     {
         let btn = wgt::find_by_id(&WND_TEST_ARRAY, Id::BtnYes.into());
@@ -424,7 +435,7 @@ fn page_wid() {
         let pgctrl = wgt::find_by_id(&WND_TEST_ARRAY, Id::PgControl.into());
         assert!(pgctrl.is_some());
         let pgctrl = pgctrl.unwrap();
-        let wid = wgt::pagectrl_page_wid(&pgctrl,7);
+        let wid = wgt::pagectrl_page_wid(&pgctrl, 7);
         assert_eq!(WIDGET_ID_NONE, wid);
     }
 

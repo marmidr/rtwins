@@ -3,8 +3,8 @@
 #![allow(unused_variables)]
 
 extern crate rtwins;
-use rtwins::*;
-use rtwins::WindowState; // to use trait implementation
+use rtwins::WindowState;
+use rtwins::*; // to use trait implementation
 
 use std::io::Write;
 
@@ -102,7 +102,7 @@ fn tui_demo() {
     // let mut wm = WndManager::new();
 
     // register function providing traces timestamp
-    rtwins::tr_set_timestr_function!(||{
+    rtwins::tr_set_timestr_function!(|| {
         let local_time = chrono::Local::now();
         local_time.format("%H:%M:%S%.3f ").to_string()
     });
@@ -129,7 +129,7 @@ fn tui_demo() {
 
     let mut itty = rtwins::input_tty::InputTty::new(1000);
     let mut ique = rtwins::input_decoder::InputQue::new();
-    let mut dec =  rtwins::input_decoder::Decoder::default();
+    let mut dec = rtwins::input_decoder::Decoder::default();
     let mut ii = rtwins::input::InputInfo::default();
 
     loop {
@@ -155,7 +155,8 @@ fn tui_demo() {
 
                     if *b < b' ' {
                         s.push('�')
-                    } else {
+                    }
+                    else {
                         s.push(*b as char)
                     };
                 }
@@ -174,22 +175,27 @@ fn tui_demo() {
                 match ii.evnt {
                     InputEvent::Char(ref cb) => {
                         rtwins::tr_debug!("char='{}'", cb.utf8str());
-                    },
+                    }
                     InputEvent::Key(ref k) => {
                         rtwins::tr_debug!("key={}", ii.name);
-                    },
+                    }
                     InputEvent::Mouse(ref m) => {
                         let mut r = rtwins::Rect::cdeflt();
                         let wgt_opt = wgt::find_at(&mut dws, m.col, m.row, &mut r);
                         if let Some(w) = wgt_opt {
-                            rtwins::tr_debug!("mouse={:?} at {}:{} ({})", m.evt, m.col, m.row, w.prop);
+                            rtwins::tr_debug!(
+                                "mouse={:?} at {}:{} ({})",
+                                m.evt,
+                                m.col,
+                                m.row,
+                                w.prop
+                            );
                         }
                         else {
                             rtwins::tr_debug!("mouse={:?} at {}:{}", m.evt, m.col, m.row);
                         }
-                    },
-                    InputEvent::None => {
-                    },
+                    }
+                    InputEvent::None => {}
                 }
 
                 // input processing
@@ -197,15 +203,22 @@ fn tui_demo() {
                     use tui_def::Id;
 
                     if *key == Key::F2 {
-                        dws.rs.set_enabled(Id::WndMain.into(),
-                            !dws.rs.get_enabled_or_default(Id::WndMain.into()));
+                        dws.rs.set_enabled(
+                            Id::WndMain.into(),
+                            !dws.rs.get_enabled_or_default(Id::WndMain.into()),
+                        );
                         dws.invalidate(rtwins::WIDGET_ID_ALL);
                     }
                     else if *key == Key::F4 {
                         mouse_on = !mouse_on;
-                        rtwins::tr_info!("Mouse {}", if mouse_on {"ON"} else {"OFF"});
+                        rtwins::tr_info!("Mouse {}", if mouse_on { "ON" } else { "OFF" });
                         let mut term = rtwins::Term::lock_write();
-                        term.mouse_mode(if mouse_on {rtwins::MouseMode::M2} else {rtwins::MouseMode::Off});
+                        term.mouse_mode(if mouse_on {
+                            rtwins::MouseMode::M2
+                        }
+                        else {
+                            rtwins::MouseMode::Off
+                        });
                         term.flush_buff();
                     }
                     else if *key == Key::F5 {
@@ -222,14 +235,22 @@ fn tui_demo() {
                     }
                     else if ii.kmod.has_ctrl() && (*key == Key::PgUp || *key == Key::PgDown) {
                         // if wm.is_top_wnd(&dws) {
-                            rtwins::wgt::pagectrl_select_next_page(&mut dws, Id::PgControl.into(), *key == Key::PgDown);
-                            dws.invalidate(Id::PgControl.into());
+                        rtwins::wgt::pagectrl_select_next_page(
+                            &mut dws,
+                            Id::PgControl.into(),
+                            *key == Key::PgDown,
+                        );
+                        dws.invalidate(Id::PgControl.into());
                         // }
                     }
                     else if *key == Key::F9 || *key == Key::F10 {
                         // if wm.is_top_wnd(&dws) {
-                            rtwins::wgt::pagectrl_select_next_page(&mut dws, Id::PgControl.into(), *key == Key::F10);
-                            dws.invalidate(Id::PgControl.into());
+                        rtwins::wgt::pagectrl_select_next_page(
+                            &mut dws,
+                            Id::PgControl.into(),
+                            *key == Key::F10,
+                        );
+                        dws.invalidate(Id::PgControl.into());
                         // }
                     }
                 }
@@ -283,20 +304,13 @@ fn test_esc_codes() {
 fn test_property_access() {
     for (idx, w) in tui_def::WND_MAIN_ARRAY.iter().enumerate() {
         let w_par = wgt::get_parent(w);
-        println!("  {:2}. {:2}:{:10}, idx:{}, chidx:{}, parid {}:{}",
-            idx, w.id, w.prop, w.link.own_idx, w.link.children_idx, w_par.id, w_par.prop);
+        println!(
+            "  {:2}. {:2}:{:10}, idx:{}, chidx:{}, parid {}:{}",
+            idx, w.id, w.prop, w.link.own_idx, w.link.children_idx, w_par.id, w_par.prop
+        );
     }
 
-    println!(
-        "sizeof Widget: {}",
-        std::mem::size_of::<rtwins::Widget>()
-    );
-    println!(
-        "sizeof Type: {}",
-        std::mem::size_of::<rtwins::Property>()
-    );
-    println!("sizeof Id: {}",
-        std::mem::size_of::<tui_def::Id>()
-    );
+    println!("sizeof Widget: {}", std::mem::size_of::<rtwins::Widget>());
+    println!("sizeof Type: {}", std::mem::size_of::<rtwins::Property>());
+    println!("sizeof Id: {}", std::mem::size_of::<tui_def::Id>());
 }
-

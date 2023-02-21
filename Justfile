@@ -49,3 +49,7 @@ cover-tarp:
 # vulnerabilities check
 audit:
     cargo audit
+
+# format using nightly (due to unstable rustfmt options)
+fmt:
+    cargo +nightly fmt

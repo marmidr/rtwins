@@ -92,7 +92,14 @@ type Msg = std::borrow::Cow<'static, str>;
 
 impl TraceBuffer {
     /// Creates a new trace entry on the internal queue
-    fn push(&mut self, filepath: &str, line: u32, fg_color: &'static str, prefix: &'static str, msg: Msg) {
+    fn push(
+        &mut self,
+        filepath: &str,
+        line: u32,
+        fg_color: &'static str,
+        prefix: &'static str,
+        msg: Msg,
+    ) {
         let mut msg = msg.to_string();
         let time_str = self.trace_timestr.as_ref()();
 
@@ -104,7 +111,7 @@ impl TraceBuffer {
 
         // deferred log, as the Term is locked OR already contains some items on queue,
         // in order to preserve the messages ordering
-        self.queue.push_back(TraceItem{
+        self.queue.push_back(TraceItem {
             fg_color,
             time_str,
             prefix,
@@ -173,10 +180,10 @@ impl TraceBuffer {
 
 impl Default for TraceBuffer {
     fn default() -> TraceBuffer {
-        TraceBuffer{
+        TraceBuffer {
             queue: Default::default(),
             print_location: true,
-            trace_timestr: Box::new(|| {TraceBuffer::timestr_default().to_owned()})
+            trace_timestr: Box::new(|| TraceBuffer::timestr_default().to_owned()),
         }
     }
 }

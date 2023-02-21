@@ -1,12 +1,12 @@
 //! # RTWins Context definition
 
-use crate::common::*;
 use crate::colors::*;
+use crate::common::*;
 use crate::esc;
 use crate::wgt;
 use crate::widget_def::*;
 
-use std::sync::{RwLock, RwLockWriteGuard, RwLockReadGuard, TryLockResult};
+use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard, TryLockResult};
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -56,7 +56,7 @@ impl Term {
 
     /// Creates default instance using provided Pal
     pub fn new(p: PalBox) -> Self {
-        Term{
+        Term {
             pal: p,
             trace_row: 0,
             current_cl_fg: ColorFG::Default,
@@ -142,8 +142,7 @@ impl Term {
 
     /// Set cursor at column `col`
     pub fn move_to_col(&mut self, col: u16) -> &mut Self {
-        let s = String::from(esc::CURSOR_COLUMN_FMT)
-            .replace("{0}", &col.to_string());
+        let s = String::from(esc::CURSOR_COLUMN_FMT).replace("{0}", &col.to_string());
         self.pal.write_str(s.as_str());
         self
     }
@@ -321,15 +320,34 @@ impl Term {
         self.stack_attr.push(attr);
 
         match attr {
-            FontAttrib::Bold =>         { if self.attr_faint == 0 { self.write_str(esc::BOLD); }},
-            FontAttrib::Faint =>        { self.attr_faint += 1; self.write_str(esc::FAINT); },
-            FontAttrib::Italics =>      { self.write_str(esc::ITALICS_ON); },
-            FontAttrib::Underline =>    { self.write_str(esc::UNDERLINE_ON); },
-            FontAttrib::Blink =>        { self.write_str(esc::BLINK); },
-            FontAttrib::Inverse =>      { self.write_str(esc::INVERSE_ON); },
-            FontAttrib::Invisible =>    { self.write_str(esc::INVISIBLE_ON); },
-            FontAttrib::StrikeThrough => { self.write_str(esc::STRIKETHROUGH_ON); },
-            _  => {}
+            FontAttrib::Bold => {
+                if self.attr_faint == 0 {
+                    self.write_str(esc::BOLD);
+                }
+            }
+            FontAttrib::Faint => {
+                self.attr_faint += 1;
+                self.write_str(esc::FAINT);
+            }
+            FontAttrib::Italics => {
+                self.write_str(esc::ITALICS_ON);
+            }
+            FontAttrib::Underline => {
+                self.write_str(esc::UNDERLINE_ON);
+            }
+            FontAttrib::Blink => {
+                self.write_str(esc::BLINK);
+            }
+            FontAttrib::Inverse => {
+                self.write_str(esc::INVERSE_ON);
+            }
+            FontAttrib::Invisible => {
+                self.write_str(esc::INVISIBLE_ON);
+            }
+            FontAttrib::StrikeThrough => {
+                self.write_str(esc::STRIKETHROUGH_ON);
+            }
+            _ => {}
         }
     }
 
@@ -339,15 +357,36 @@ impl Term {
             let attr = self.stack_attr.pop().unwrap();
 
             match attr {
-                FontAttrib::Bold =>         { if self.attr_faint == 0 { self.write_str(esc::NORMAL); }},
-                FontAttrib::Faint =>        { if self.attr_faint > 0 { self.attr_faint -= 1; self.write_str(esc::NORMAL); }},
-                FontAttrib::Italics =>      { self.write_str(esc::ITALICS_OFF); },
-                FontAttrib::Underline =>    { self.write_str(esc::UNDERLINE_OFF); },
-                FontAttrib::Blink =>        { self.write_str(esc::BLINK_OFF); },
-                FontAttrib::Inverse =>      { self.write_str(esc::INVERSE_OFF); },
-                FontAttrib::Invisible =>    { self.write_str(esc::INVISIBLE_OFF); },
-                FontAttrib::StrikeThrough => { self.write_str(esc::STRIKETHROUGH_OFF); },
-                _  => {}
+                FontAttrib::Bold => {
+                    if self.attr_faint == 0 {
+                        self.write_str(esc::NORMAL);
+                    }
+                }
+                FontAttrib::Faint => {
+                    if self.attr_faint > 0 {
+                        self.attr_faint -= 1;
+                        self.write_str(esc::NORMAL);
+                    }
+                }
+                FontAttrib::Italics => {
+                    self.write_str(esc::ITALICS_OFF);
+                }
+                FontAttrib::Underline => {
+                    self.write_str(esc::UNDERLINE_OFF);
+                }
+                FontAttrib::Blink => {
+                    self.write_str(esc::BLINK_OFF);
+                }
+                FontAttrib::Inverse => {
+                    self.write_str(esc::INVERSE_OFF);
+                }
+                FontAttrib::Invisible => {
+                    self.write_str(esc::INVISIBLE_OFF);
+                }
+                FontAttrib::StrikeThrough => {
+                    self.write_str(esc::STRIKETHROUGH_OFF);
+                }
+                _ => {}
             }
             n -= 1;
         }
@@ -375,9 +414,16 @@ impl Term {
     /// Mouse reporting
     pub fn mouse_mode(&mut self, mode: MouseMode) {
         match mode {
-            MouseMode::Off => { self.write_str(esc::MOUSE_REPORTING_M1_OFF); self.write_str(esc::MOUSE_REPORTING_M2_OFF); },
-            MouseMode::M1  => { self.write_str(esc::MOUSE_REPORTING_M1_ON); },
-            MouseMode::M2  => { self.write_str(esc::MOUSE_REPORTING_M2_ON); },
+            MouseMode::Off => {
+                self.write_str(esc::MOUSE_REPORTING_M1_OFF);
+                self.write_str(esc::MOUSE_REPORTING_M2_OFF);
+            }
+            MouseMode::M1 => {
+                self.write_str(esc::MOUSE_REPORTING_M1_ON);
+            }
+            MouseMode::M2 => {
+                self.write_str(esc::MOUSE_REPORTING_M2_ON);
+            }
         }
     }
 

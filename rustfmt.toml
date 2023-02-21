@@ -6,3 +6,7 @@
 ignore = [
     "src/esc.rs",
 ]
+
+# https://rust-lang.github.io/rustfmt/?version=v1.5.1&search=#control_brace_style
+control_brace_style = "ClosingNextLine"
+newline_style = "Unix"

@@ -60,12 +60,18 @@ pub struct Size {
 impl Size {
     /// Returns default object; can be used in `const` initialization
     pub const fn cdeflt() -> Size {
-        Size { width: 0, height: 0 }
+        Size {
+            width: 0,
+            height: 0,
+        }
     }
 
     /// Creates a new size object with width and height set to `w` and `h`
     pub const fn new(w: u8, h: u8) -> Self {
-        Size { width: w, height: h }
+        Size {
+            width: w,
+            height: h,
+        }
     }
 }
 
@@ -73,7 +79,7 @@ impl std::ops::Sub for Size {
     type Output = Self;
     fn sub(self, other: Size) -> Size {
         Size {
-            width:  self.width.saturating_sub(other.width),
+            width: self.width.saturating_sub(other.width),
             height: self.height.saturating_sub(other.height),
         }
     }
@@ -97,7 +103,10 @@ impl Rect {
 
     /// Creates a new rect object with coordinates and size set according to `c, r` and `w, h`
     pub fn new(c: u8, r: u8, w: u8, h: u8) -> Rect {
-        Rect{coord: Coord::new(c, r), size: Size::new(w, h)}
+        Rect {
+            coord: Coord::new(c, r),
+            size: Size::new(w, h),
+        }
     }
 
     pub fn set_max(&mut self) {
@@ -109,18 +118,18 @@ impl Rect {
 
     /// Checks if given point at `col:row` is within this rectangle
     pub fn is_point_within(&self, col: u8, row: u8) -> bool {
-        col >= self.coord.col &&
-        col <  self.coord.col + self.size.width &&
-        row >= self.coord.row &&
-        row <  self.coord.row + self.size.height
+        col >= self.coord.col
+            && col < self.coord.col + self.size.width
+            && row >= self.coord.row
+            && row < self.coord.row + self.size.height
     }
 
     /// Check if `r` fits within this rectangle
     pub fn is_rect_within(&self, r: &Rect) -> bool {
-        r.coord.col                 >= self.coord.col &&
-        r.coord.col + r.size.width  <= self.coord.col + self.size.width &&
-        r.coord.row                 >= self.coord.row &&
-        r.coord.row + r.size.height <= self.coord.row + self.size.height
+        r.coord.col >= self.coord.col
+            && r.coord.col + r.size.width <= self.coord.col + self.size.width
+            && r.coord.row >= self.coord.row
+            && r.coord.row + r.size.height <= self.coord.row + self.size.height
     }
 }
 
@@ -152,21 +161,25 @@ pub enum FontAttrib {
 
 /// Remembers and restores font attributes on request
 pub(crate) struct FontMementoManual {
-    fg_stack_len : i8,
-    bg_stack_len : i8,
-    at_stack_len : i8,
+    fg_stack_len: i8,
+    bg_stack_len: i8,
+    at_stack_len: i8,
 }
 
 impl FontMementoManual {
     pub fn new() -> Self {
         FontMementoManual {
-            fg_stack_len: 0, bg_stack_len: 0, at_stack_len: 0
+            fg_stack_len: 0,
+            bg_stack_len: 0,
+            at_stack_len: 0,
         }
     }
 
     pub fn from_term(term: &Term) -> Self {
         let mut fm = FontMementoManual {
-            fg_stack_len: 0, bg_stack_len: 0, at_stack_len: 0
+            fg_stack_len: 0,
+            bg_stack_len: 0,
+            at_stack_len: 0,
         };
         fm.store(term);
         fm
@@ -175,13 +188,13 @@ impl FontMementoManual {
     pub fn store(&mut self, term: &Term) {
         self.fg_stack_len = term.stack_cl_fg.len() as i8;
         self.bg_stack_len = term.stack_cl_bg.len() as i8;
-        self.at_stack_len = term.stack_attr.len()  as i8;
+        self.at_stack_len = term.stack_attr.len() as i8;
     }
 
     pub fn restore(&mut self, term: &mut Term) {
         term.pop_cl_fg_n(term.stack_cl_fg.len() as i8 - self.fg_stack_len);
         term.pop_cl_bg_n(term.stack_cl_bg.len() as i8 - self.bg_stack_len);
-        term.pop_attr_n(term.stack_attr.len()   as i8 - self.at_stack_len);
+        term.pop_attr_n(term.stack_attr.len() as i8 - self.at_stack_len);
     }
 }
 
@@ -189,13 +202,13 @@ impl FontMementoManual {
 // https://doc.rust-lang.org/stable/rust-by-example/scope/lifetime/lifetime_coercion.html
 // lifetime of `a` is >= lifetime of `b`
 pub(crate) struct FontMemento<'b, 'a: 'b> {
-    fg_stack_len : i8,
-    bg_stack_len : i8,
-    at_stack_len : i8,
+    fg_stack_len: i8,
+    bg_stack_len: i8,
+    at_stack_len: i8,
     term: &'b std::cell::RefCell<&'a mut Term>,
 }
 
-impl <'b, 'a> FontMemento<'b, 'a> {
+impl<'b, 'a> FontMemento<'b, 'a> {
     pub fn new(term: &'b std::cell::RefCell<&'a mut Term>) -> Self {
         let fg;
         let bg;
@@ -205,24 +218,24 @@ impl <'b, 'a> FontMemento<'b, 'a> {
             let ref_term = term.borrow();
             fg = ref_term.stack_cl_fg.len() as i8;
             bg = ref_term.stack_cl_bg.len() as i8;
-            at = ref_term.stack_attr.len()  as i8;
+            at = ref_term.stack_attr.len() as i8;
         }
 
         FontMemento {
             fg_stack_len: fg,
             bg_stack_len: bg,
             at_stack_len: at,
-            term
+            term,
         }
     }
 }
 
-impl <'b, 'a> Drop for FontMemento<'b, 'a> {
+impl<'b, 'a> Drop for FontMemento<'b, 'a> {
     fn drop(&mut self) {
         let mut ref_term = self.term.borrow_mut();
         let new_fg = ref_term.stack_cl_fg.len() as i8 - self.fg_stack_len;
         let new_bg = ref_term.stack_cl_bg.len() as i8 - self.bg_stack_len;
-        let new_at = ref_term.stack_attr.len()  as i8 - self.at_stack_len;
+        let new_at = ref_term.stack_attr.len() as i8 - self.at_stack_len;
         ref_term.pop_cl_fg_n(new_fg);
         ref_term.pop_cl_bg_n(new_bg);
         ref_term.pop_attr_n(new_at);
@@ -238,5 +251,5 @@ pub enum MouseMode {
     /// only buttons
     M1,
     /// buttons and wheel
-    M2
+    M2,
 }

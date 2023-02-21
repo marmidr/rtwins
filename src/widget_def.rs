@@ -5,8 +5,8 @@
 
 use std::collections::HashMap;
 
-use crate::*;
 use crate::input::*;
+use crate::*;
 use paste::paste;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -23,9 +23,9 @@ pub const WIDGET_ID_ALL: WId = WId::MAX;
 
 /// Widget static properties
 pub mod prop {
-    use crate::colors::*;
     use super::ButtonStyle;
     use super::PgBarStyle;
+    use crate::colors::*;
 
     #[derive(Copy, Clone)]
     pub struct Window {
@@ -255,23 +255,23 @@ use std::fmt;
 impl fmt::Display for Property {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let name = match self {
-            Self::NoWgt         => "NoWgt",
-            Self::Window(_)     => "Window",
-            Self::Panel(_)      => "Panel",
-            Self::Label(_)      => "Label",
-            Self::TextEdit(_)   => "TextEdit",
-            Self::CheckBox(_)   => "CheckBox",
-            Self::Radio(_)      => "Radio",
-            Self::Button(_)     => "Button",
-            Self::Led(_)        => "Led",
-            Self::PageCtrl(_)   => "PageCtrl",
-            Self::Page(_)       => "Page",
+            Self::NoWgt => "NoWgt",
+            Self::Window(_) => "Window",
+            Self::Panel(_) => "Panel",
+            Self::Label(_) => "Label",
+            Self::TextEdit(_) => "TextEdit",
+            Self::CheckBox(_) => "CheckBox",
+            Self::Radio(_) => "Radio",
+            Self::Button(_) => "Button",
+            Self::Led(_) => "Led",
+            Self::PageCtrl(_) => "PageCtrl",
+            Self::Page(_) => "Page",
             Self::ProgressBar(_) => "ProgressBar",
-            Self::ListBox(_)    => "ListBox",
-            Self::ComboBox(_)   => "ComboBox",
-            Self::CustomWgt(_)  => "CustomWgt",
-            Self::TextBox(_)    => "TextBox",
-            Self::Layer(_)      => "Layer",
+            Self::ListBox(_) => "ListBox",
+            Self::ComboBox(_) => "ComboBox",
+            Self::CustomWgt(_) => "CustomWgt",
+            Self::TextBox(_) => "TextBox",
+            Self::Layer(_) => "Layer",
         };
         write!(f, "{name}")
     }
@@ -283,22 +283,22 @@ impl Property {
         Self::NoWgt
     }
 
-//     /// Extract window properties from enum
-//     // pub fn prop_wnd<'a>(&'a self) -> &'a wp::Window {
-//     pub fn prop_wnd(&self) -> &prop::Window {
-//         match self {
-//             Self::Window(ref wp) => wp,
-//             _ => panic!(),
-//         }
-//     }
+    //     /// Extract window properties from enum
+    //     // pub fn prop_wnd<'a>(&'a self) -> &'a wp::Window {
+    //     pub fn prop_wnd(&self) -> &prop::Window {
+    //         match self {
+    //             Self::Window(ref wp) => wp,
+    //             _ => panic!(),
+    //         }
+    //     }
 
-//     /// Extract panel properties from enum
-//     pub fn prop_pnl(&self) -> &prop::Panel {
-//         match self {
-//             Self::Panel(ref wp) => wp,
-//             _ => panic!(),
-//         }
-//     }
+    //     /// Extract panel properties from enum
+    //     pub fn prop_pnl(&self) -> &prop::Panel {
+    //         match self {
+    //             Self::Panel(ref wp) => wp,
+    //             _ => panic!(),
+    //         }
+    //     }
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -329,7 +329,7 @@ pub enum FrameStyle {
     Single,
     Double,
     PgControl,
-    ListBox
+    ListBox,
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -385,7 +385,7 @@ impl Widget {
 /// Filled up in compile time
 #[derive(Copy, Clone)]
 pub struct Link {
-    pub own_idx:    u16,
+    pub own_idx: u16,
     pub parent_idx: u16,
     pub children_idx: u16,
     pub children_cnt: u16,
@@ -394,7 +394,12 @@ pub struct Link {
 impl Link {
     /// Returns default object; can be used in `const` initialization
     pub const fn cdeflt() -> Self {
-        Link{ own_idx: 0, parent_idx: 0, children_idx: 0, children_cnt: 0 }
+        Link {
+            own_idx: 0,
+            parent_idx: 0,
+            children_idx: 0,
+            children_cnt: 0,
+        }
     }
 }
 
@@ -405,64 +410,64 @@ impl Link {
 /// Widget RunTime state
 pub mod state_rt {
 
-use crate::utils::StringListRc;
+    use crate::utils::StringListRc;
 
-/// CheckBox
-#[derive(Default, Clone, Copy)]
-pub struct ChbxState {
-    pub checked: bool,
-}
+    /// CheckBox
+    #[derive(Default, Clone, Copy)]
+    pub struct ChbxState {
+        pub checked: bool,
+    }
 
-/// Led
-#[derive(Default, Clone, Copy)]
-pub struct LedState {
-    pub lit: bool,
-}
+    /// Led
+    #[derive(Default, Clone, Copy)]
+    pub struct LedState {
+        pub lit: bool,
+    }
 
-/// ListBox
-#[derive(Default, Clone, Copy)]
-pub struct LbxState {
-    pub item_idx: i16,
-    // used only when returning current state
-    pub items_cnt: i16,
-    pub sel_idx: i16,
-}
+    /// ListBox
+    #[derive(Default, Clone, Copy)]
+    pub struct LbxState {
+        pub item_idx: i16,
+        // used only when returning current state
+        pub items_cnt: i16,
+        pub sel_idx: i16,
+    }
 
-/// ComboBox
-#[derive(Default, Clone, Copy)]
-pub struct CbbxState {
-    pub item_idx: i16,
-    // used only when returning current state
-    pub items_cnt: i16,
-    pub sel_idx: i16,
-    pub drop_down: bool,
-}
+    /// ComboBox
+    #[derive(Default, Clone, Copy)]
+    pub struct CbbxState {
+        pub item_idx: i16,
+        // used only when returning current state
+        pub items_cnt: i16,
+        pub sel_idx: i16,
+        pub drop_down: bool,
+    }
 
-/// ProgressBar
-#[derive(Default, Clone, Copy)]
-pub struct PgbarState {
-    pub pos: i32,
-    pub max: i32,
-}
+    /// ProgressBar
+    #[derive(Default, Clone, Copy)]
+    pub struct PgbarState {
+        pub pos: i32,
+        pub max: i32,
+    }
 
-/// TextBox
-#[derive(Default)]
-pub struct TxtbxState {
-    pub top_line: i16,
-    // used only when returning current state
-    pub lines: StringListRc,
-}
+    /// TextBox
+    #[derive(Default)]
+    pub struct TxtbxState {
+        pub top_line: i16,
+        // used only when returning current state
+        pub lines: StringListRc,
+    }
 
-/// PageControl
-#[derive(Default)]
-pub struct PgctrlState {
-    pub page: i16
-}
+    /// PageControl
+    #[derive(Default)]
+    pub struct PgctrlState {
+        pub page: i16,
+    }
 
-use super::paste;
+    use super::paste;
 
-// Implements into() for all properties
-macro_rules! impl_into {
+    // Implements into() for all properties
+    macro_rules! impl_into {
     ($($prop: ident)*) => ($(
         impl paste!{ [< $prop State >]} {
             pub fn into(self) -> State {
@@ -472,25 +477,24 @@ macro_rules! impl_into {
     )*)
 }
 
-impl_into!{Chbx Led Lbx Cbbx Pgbar Txtbx Pgctrl}
+    impl_into! {Chbx Led Lbx Cbbx Pgbar Txtbx Pgctrl}
 
-pub enum State {
-    None,
-    Chbx(ChbxState),
-    Led(LedState),
-    Lbx(LbxState),
-    Cbbx(CbbxState),
-    Pgbar(PgbarState),
-    Txtbx(TxtbxState),
-    Pgctrl(PgctrlState),
-}
-
-impl Default for State {
-    fn default() -> State {
-        State::None
+    pub enum State {
+        None,
+        Chbx(ChbxState),
+        Led(LedState),
+        Lbx(LbxState),
+        Cbbx(CbbxState),
+        Pgbar(PgbarState),
+        Txtbx(TxtbxState),
+        Pgctrl(PgctrlState),
     }
-}
 
+    impl Default for State {
+        fn default() -> State {
+            State::None
+        }
+    }
 } // mod
 
 /// Contains runtime states for most types of the widgets
@@ -505,7 +509,7 @@ pub struct RuntimeStates {
 // macro generating similar member functions
 macro_rules! impl_as {
     ($name: ident, $prop: ident) => {
-        paste!{
+        paste! {
             pub fn $name(&mut self, id: WId) -> &mut state_rt::[< $prop State >] {
                 let rs = self.states.entry(id).or_insert(
                     state_rt::[< $prop State >]::default().into());
@@ -522,7 +526,10 @@ macro_rules! impl_as {
 
 impl RuntimeStates {
     pub fn new() -> Self {
-        RuntimeStates{states: HashMap::new(), enabled: HashMap::new()}
+        RuntimeStates {
+            states: HashMap::new(),
+            enabled: HashMap::new(),
+        }
     }
 
     pub fn get_enabled_or_default(&self, id: WId) -> bool {
@@ -561,9 +568,19 @@ pub trait WindowState {
     fn on_button_down(&mut self, wgt: &Widget, ii: &InputInfo) {}
     fn on_button_up(&mut self, wgt: &Widget, ii: &InputInfo) {}
     fn on_button_click(&mut self, wgt: &Widget, ii: &InputInfo) {}
-    fn on_button_key(&mut self, wgt: &Widget, ii: &InputInfo) -> bool { false }
+    fn on_button_key(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
+        false
+    }
     fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {}
-    fn on_text_edit_input_evt(&mut self, wgt: &Widget, ii: &InputInfo, txt: &mut String, cursor_pos: &mut i16) -> bool { false }
+    fn on_text_edit_input_evt(
+        &mut self,
+        wgt: &Widget,
+        ii: &InputInfo,
+        txt: &mut String,
+        cursor_pos: &mut i16,
+    ) -> bool {
+        false
+    }
     fn on_checkbox_toggle(&mut self, wgt: &Widget) {}
     fn on_page_control_page_change(&mut self, wgt: &Widget, new_page_idx: i16) {}
     fn on_list_box_select(&mut self, wgt: &Widget, new_sel_idx: i16) {}
@@ -574,44 +591,78 @@ pub trait WindowState {
     fn on_radio_select(&mut self, wgt: &Widget) {}
     fn on_text_box_scroll(&mut self, wgt: &Widget, new_top_line: i16) {}
     fn on_custom_widget_draw(&mut self, wgt: &Widget) {}
-    fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool { false }
-    fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool { false }
+    fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
+        false
+    }
+    fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
+        false
+    }
 
     /// common state queries
-    fn is_enabled(&self, wgt: &Widget) -> bool { true }
-    fn is_focused(&self, wgt: &Widget) -> bool { false }
-    fn is_visible(&self, wgt: &Widget) -> bool { true }
-    fn is_desktop(&self) -> bool { false }
-    fn get_focused_id(&mut self) -> WId { WIDGET_ID_NONE }
+    fn is_enabled(&self, wgt: &Widget) -> bool {
+        true
+    }
+    fn is_focused(&self, wgt: &Widget) -> bool {
+        false
+    }
+    fn is_visible(&self, wgt: &Widget) -> bool {
+        true
+    }
+    fn is_desktop(&self) -> bool {
+        false
+    }
+    fn get_focused_id(&mut self) -> WId {
+        WIDGET_ID_NONE
+    }
     fn set_focused_id(&mut self, wid: WId) {}
-    fn get_widgets(&self) -> &'static [Widget] { &[] }
+    fn get_widgets(&self) -> &'static [Widget] {
+        &[]
+    }
 
     /// widget-specific queries; all mutable params are outputs
-    fn get_window_coord(&mut self) -> Coord { Coord::cdeflt() }
-    fn get_window_size(&mut self) -> Size { Size::cdeflt() }
+    fn get_window_coord(&mut self) -> Coord {
+        Coord::cdeflt()
+    }
+    fn get_window_size(&mut self) -> Size {
+        Size::cdeflt()
+    }
     fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {}
-    fn get_checkbox_checked(&mut self, wgt: &Widget) -> bool { false }
+    fn get_checkbox_checked(&mut self, wgt: &Widget) -> bool {
+        false
+    }
     fn get_label_text(&mut self, wgt: &Widget, txt: &mut String) {}
     fn get_text_edit_text(&mut self, wgt: &Widget, txt: &mut String, edit_mode: bool) {}
-    fn get_led_lit(&mut self, wgt: &Widget) -> bool { false }
+    fn get_led_lit(&mut self, wgt: &Widget) -> bool {
+        false
+    }
     fn get_led_text(&mut self, wgt: &Widget, txt: &mut String) {}
     fn get_progress_bar_state(&mut self, wgt: &Widget, state: &mut state_rt::PgbarState) {}
-    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> i16 { 0 }
+    fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> i16 {
+        0
+    }
     fn get_list_box_state(&mut self, wgt: &Widget, state: &mut state_rt::LbxState) {}
     fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
     fn get_combo_box_state(&mut self, wgt: &Widget, state: &mut state_rt::CbbxState) {}
     fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
-    fn get_radio_index(&mut self, wgt: &Widget) -> i16 { -1 }
+    fn get_radio_index(&mut self, wgt: &Widget) -> i16 {
+        -1
+    }
     fn get_text_box_state(&mut self, wgt: &Widget, state: &mut state_rt::TxtbxState) {}
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {}
 
     /// requests
     #[inline]
-    fn invalidate(&mut self, wid: WId) { self.invalidate_many(&[wid]); }
-    fn invalidate_now(&mut self, wid: WId) { unimplemented!(); }
+    fn invalidate(&mut self, wid: WId) {
+        self.invalidate_many(&[wid]);
+    }
+    fn invalidate_now(&mut self, wid: WId) {
+        unimplemented!();
+    }
     fn invalidate_many(&mut self, wids: &[WId]) {}
     fn invalidate_clear(&mut self) {}
-    fn get_invalidated(&mut self) -> Vec<WId> { vec![] }
+    fn get_invalidated(&mut self) -> Vec<WId> {
+        vec![]
+    }
 }
 
 // ---------------------------------------------------------------------------------------------- //

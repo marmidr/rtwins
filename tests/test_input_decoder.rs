@@ -1,8 +1,8 @@
 //! # RTWins ESC inp decoder tests
 
 extern crate rtwins;
-use rtwins::input_decoder::{Decoder, InputQue};
 use rtwins::input::*;
+use rtwins::input_decoder::{Decoder, InputQue};
 use rtwins::utils;
 
 trait EasyInput {

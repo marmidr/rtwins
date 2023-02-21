@@ -5,9 +5,14 @@ extern crate rtwins;
 use rtwins::esc::*;
 
 fn count_esc(s: &str) -> u32 {
-    let n_esc = s.chars().fold(
-        0u32, |acc, item| if item == '\x1B' { acc + 1 } else { acc }
-    );
+    let n_esc = s.chars().fold(0u32, |acc, item| {
+        if item == '\x1B' {
+            acc + 1
+        }
+        else {
+            acc
+        }
+    });
     n_esc
 }
 
@@ -360,9 +365,7 @@ fn cursor_move() {
 /// Check lines manipulation
 #[test]
 fn line_insert_delete() {
-    let s = String::new()
-        + rtwins::line_insert!(1)
-        + rtwins::line_delete!(1);
+    let s = String::new() + rtwins::line_insert!(1) + rtwins::line_delete!(1);
 
     assert_eq!(count_esc(&s), 2);
 }
@@ -382,9 +385,7 @@ fn character_erase_insert() {
 /// Check screen manipulation
 #[test]
 fn screen_scroll() {
-    let s = String::new()
-        + rtwins::screen_scroll_up!(1)
-        + rtwins::screen_scroll_down!(1);
+    let s = String::new() + rtwins::screen_scroll_up!(1) + rtwins::screen_scroll_down!(1);
 
     assert_eq!(count_esc(&s), 2);
 }
