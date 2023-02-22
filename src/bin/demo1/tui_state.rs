@@ -10,7 +10,7 @@ use rtwins::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use super::tui_def;
+use super::tui_def::Id;
 
 /// State of all the DemoWindow widget dynamic properties
 pub struct DemoWndState {
@@ -21,7 +21,8 @@ pub struct DemoWndState {
     /// currently focused widget
     focused_id: WId,
     /// text of focused text edit widget
-    text_edit_txt: String,
+    text_edit1_txt: String,
+    text_edit2_txt: String,
     /// list of widgets to redraw
     invalidated: Vec<WId>,
     //
@@ -34,13 +35,44 @@ pub struct DemoWndState {
     tbx_narrow_lines: Rc<RefCell<Vec<String>>>,
 }
 
+trait StatesById {
+    fn get_state_by_id(&self, id: Id) -> Option<&state_rt::State>;
+    fn get_enabled_or_default_by_id(&self, id: Id) -> bool;
+    fn set_enabled_by_id(&mut self, id: Id, en: bool);
+    fn insert_state_by_id(&mut self, id: Id, state: state_rt::State);
+}
+
+/// Helper to avoid using `.into()`
+impl StatesById for RuntimeStates {
+    #[inline]
+    fn get_state_by_id(&self, id: Id) -> Option<&state_rt::State> {
+        self.get_state(id.into())
+    }
+
+    #[inline]
+    fn get_enabled_or_default_by_id(&self, id: Id) -> bool {
+        self.get_enabled_or_default(id.into())
+    }
+
+    #[inline]
+    fn set_enabled_by_id(&mut self, id: Id, en: bool) {
+        self.set_enabled(id.into(), en);
+    }
+
+    #[inline]
+    fn insert_state_by_id(&mut self, id: Id, state: state_rt::State) {
+        self.insert_state(id.into(), state);
+    }
+}
+
 impl DemoWndState {
     pub fn new(widgets: &'static [Widget]) -> Self {
         let mut wnd_state = DemoWndState {
             widgets,
             rs: RuntimeStates::new(),
             focused_id: WIDGET_ID_NONE,
-            text_edit_txt: String::new(),
+            text_edit1_txt: String::new(),
+            text_edit2_txt: String::new(),
             invalidated: vec![],
             radiogrp1_idx: 1,
             lbx_items: vec![],
@@ -87,30 +119,29 @@ impl DemoWndState {
 
         // setup some widgets initial properties
         use state_rt::*;
-        use tui_def::Id;
 
-        wnd_state.rs.set_enabled(Id::LabelFwVersion.into(), false);
+        wnd_state.rs.set_enabled_by_id(Id::LabelFwVersion, false);
 
         wnd_state
             .rs
-            .insert_state(Id::Prgbar1.into(), PgbarState { pos: 5, max: 10 }.into());
+            .insert_state_by_id(Id::Prgbar1, PgbarState { pos: 5, max: 10 }.into());
         wnd_state
             .rs
-            .insert_state(Id::Prgbar2.into(), PgbarState { pos: 2, max: 10 }.into());
+            .insert_state_by_id(Id::Prgbar2, PgbarState { pos: 2, max: 10 }.into());
         wnd_state
             .rs
-            .insert_state(Id::Prgbar3.into(), PgbarState { pos: 8, max: 10 }.into());
+            .insert_state_by_id(Id::Prgbar3, PgbarState { pos: 8, max: 10 }.into());
         wnd_state
             .rs
-            .insert_state(Id::LedLock.into(), LedState { lit: true }.into());
+            .insert_state_by_id(Id::LedLock, LedState { lit: true }.into());
         wnd_state
             .rs
-            .insert_state(Id::ChbxEnbl.into(), ChbxState { checked: true }.into());
+            .insert_state_by_id(Id::ChbxEnbl, ChbxState { checked: true }.into());
         wnd_state
             .rs
-            .insert_state(Id::PgControl.into(), PgctrlState { page: 0 }.into());
-        wnd_state.rs.insert_state(
-            Id::TbxWide.into(),
+            .insert_state_by_id(Id::PgControl, PgctrlState { page: 0 }.into());
+        wnd_state.rs.insert_state_by_id(
+            Id::TbxWide,
             TxtbxState {
                 top_line: 9,
                 lines: Default::default(),
@@ -147,6 +178,14 @@ impl rtwins::WindowState for DemoWndState {
         txt: &mut String,
         cursor_pos: &mut i16,
     ) -> bool {
+        if wgt.id == Id::Edt1 {
+            self.text_edit1_txt = txt.clone();
+        }
+        else if wgt.id == Id::Edt2 {
+            self.text_edit2_txt = txt.clone();
+        }
+
+        // return false, means continue default key handling
         false
     }
 
@@ -154,15 +193,14 @@ impl rtwins::WindowState for DemoWndState {
         let rs = self.rs.as_chbx(wgt.id);
         rs.checked = !rs.checked;
 
-        if wgt.id == tui_def::Id::ChbxEnbl.into() {
+        if wgt.id == Id::ChbxEnbl {
             tr_debug!("CHBX_ENBL")
         }
-        else if wgt.id == tui_def::Id::ChbxLock.into() {
+        else if wgt.id == Id::ChbxLock {
             tr_debug!("CHBX_LOCK")
         }
-        else if wgt.id == tui_def::Id::ChbxL1.into() ||
-            wgt.id == tui_def::Id::ChbxL2.into(){
-            self.invalidate(tui_def::Id::PageServ.into());
+        else if wgt.id == Id::ChbxL1 || wgt.id == Id::ChbxL2 {
+            self.invalidate(Id::PageServ.into());
         }
     }
 
@@ -240,16 +278,16 @@ impl rtwins::WindowState for DemoWndState {
             }
         }
 
-        if wgt.id == tui_def::Id::Layer1.into() {
-            if let Some(stat) = self.rs.get_state(tui_def::Id::ChbxL1.into()) {
+        if wgt.id == Id::Layer1 {
+            if let Some(stat) = self.rs.get_state_by_id(Id::ChbxL1) {
                 if let state_rt::State::Chbx(ref cbx) = stat {
                     return cbx.checked;
                 }
             }
         }
 
-        if wgt.id == tui_def::Id::Layer2.into() {
-            if let Some(stat) = self.rs.get_state(tui_def::Id::ChbxL2.into()) {
+        if wgt.id == Id::Layer2 {
+            if let Some(stat) = self.rs.get_state_by_id(Id::ChbxL2) {
                 if let state_rt::State::Chbx(ref cbx) = stat {
                     return cbx.checked;
                 }
@@ -311,15 +349,15 @@ impl rtwins::WindowState for DemoWndState {
     }
 
     fn get_label_text(&mut self, wgt: &Widget, txt: &mut String) {
-        if wgt.id == tui_def::Id::LabelDate.into() {
+        if wgt.id == Id::LabelDate {
             txt.push_str(format!("Date•{}", "<datetime>").as_str());
         }
 
-        if wgt.id == tui_def::Id::LabelAbout.into() {
+        if wgt.id == Id::LabelAbout {
             txt.push_str(url_link!("https://github.com/marmidr/rtwins", "About..."));
         }
 
-        if wgt.id == tui_def::Id::LabelMultiFmt.into() {
+        if wgt.id == Id::LabelMultiFmt {
             let _ = txt.stream()
                 << "  ▫▫▫▫▫ "
                 << esc::INVERSE_ON
@@ -345,7 +383,12 @@ impl rtwins::WindowState for DemoWndState {
     }
 
     fn get_text_edit_text(&mut self, wgt: &Widget, txt: &mut String, edit_mode: bool) {
-        *txt = self.text_edit_txt.clone();
+        if wgt.id == Id::Edt1 {
+            *txt = self.text_edit1_txt.clone();
+        }
+        else if wgt.id == Id::Edt2 {
+            *txt = self.text_edit2_txt.clone();
+        }
     }
 
     fn get_led_lit(&mut self, wgt: &Widget) -> bool {
@@ -376,7 +419,7 @@ impl rtwins::WindowState for DemoWndState {
     fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {
         let plants = ['🌷', '🌱', '🌲', '🌻'];
 
-        if wgt.id == tui_def::Id::ListBox.into() {
+        if wgt.id == Id::ListBox {
             if item_idx == 3 {
                 txt.push_str(esc::BOLD);
                 txt.push_str("Item");
@@ -413,13 +456,13 @@ impl rtwins::WindowState for DemoWndState {
         let rs = self.rs.as_txtbx(wgt.id);
         state.top_line = rs.top_line;
 
-        if wgt.id == tui_def::Id::TbxWide.into() {
+        if wgt.id == Id::TbxWide {
             if self.tbx_wide_lines.borrow().len() == 0 {
                 self.tbx_wide_lines = utils::word_wrap(wgt.size.width as usize - 2, &self.tbx_text);
             }
             state.lines = Rc::clone(&self.tbx_wide_lines);
         }
-        else if wgt.id == tui_def::Id::TbxNarrow.into() {
+        else if wgt.id == Id::TbxNarrow {
             if self.tbx_narrow_lines.borrow().len() == 0 {
                 self.tbx_narrow_lines =
                     utils::word_wrap(wgt.size.width as usize - 2, &self.tbx_text);

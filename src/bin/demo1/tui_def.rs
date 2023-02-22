@@ -7,6 +7,7 @@ use rtwins::*;
 #[allow(dead_code)]
 #[rustfmt::skip]
 #[repr(u16)]
+#[derive(Clone, Copy)]
 pub enum Id {
     WndMain = WIDGET_ID_NONE + 1,
         BtnToaster,
@@ -73,8 +74,26 @@ pub enum Id {
 
 /// Easy conversion from enum to Wid
 impl Id {
+    #[inline]
     pub const fn into(self) -> WId {
         self as WId
+    }
+}
+
+/// Helper to avoid code like this
+/// `Id::LabelMultiFmt.into() == wgt.id`
+// impl std::cmp::PartialEq<WId> for Id {
+//     #[inline]
+//     fn eq(&self, other: &WId) -> bool {
+//         *self as WId == *other
+//     }
+// }
+
+/// Helper to avoid using `.into()` in WId == Id comparison
+impl std::cmp::PartialEq<Id> for WId {
+    #[inline]
+    fn eq(&self, other: &Id) -> bool {
+        *self == *other as WId
     }
 }
 

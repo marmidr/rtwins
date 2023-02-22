@@ -7,6 +7,7 @@ use rtwins::*;
 
 #[rustfmt::skip]
 #[repr(u16)]
+#[derive(Clone, Copy)]
 enum Id {
     WndTest = WIDGET_ID_NONE + 1,
         BtnToaster,
@@ -23,9 +24,19 @@ enum Id {
         NotExistingWgt
 }
 
+// copied from tui_state.rs
 impl Id {
+    #[inline]
     pub const fn into(self) -> WId {
         self as WId
+    }
+}
+
+// copied from tui_state.rs
+impl std::cmp::PartialEq<Id> for WId {
+    #[inline]
+    fn eq(&self, other: &Id) -> bool {
+        *self == *other as WId
     }
 }
 
@@ -196,10 +207,10 @@ impl WindowState for WndTestState {
     /** common state queries **/
 
     fn is_enabled(&self, wgt: &Widget) -> bool {
-        if wgt.id == Id::WndTest.into() {
+        if wgt.id == Id::WndTest {
             self.wnd_enabled
         }
-        else if wgt.id == Id::LabelAbout.into() {
+        else if wgt.id == Id::LabelAbout {
             self.lbl_about_enabled
         }
         else {
@@ -212,10 +223,10 @@ impl WindowState for WndTestState {
     }
 
     fn is_visible(&self, wgt: &Widget) -> bool {
-        if wgt.id == Id::WndTest.into() {
+        if wgt.id == Id::WndTest {
             self.wnd_visible
         }
-        else if wgt.id == Id::LabelAbout.into() {
+        else if wgt.id == Id::LabelAbout {
             self.lbl_about_visible
         }
         else {
@@ -368,7 +379,7 @@ fn widget_at() {
         let opt_w = wgt::find_at(&mut ws, wnd_coord.col, wnd_coord.row, &mut wgt_r);
         assert!(opt_w.is_some());
         if let Some(wgt) = opt_w {
-            assert!(wgt.id == Id::WndTest.into());
+            assert!(wgt.id == Id::WndTest);
             assert!(wgt::is_parent(wgt));
         }
     }
@@ -384,7 +395,7 @@ fn widget_at() {
         let opt_b = wgt::find_at(&mut ws, btn_coord.col + 2, btn_coord.row, &mut wgt_r);
         assert!(opt_b.is_some());
         if let Some(wgt) = opt_b {
-            assert!(wgt.id == Id::BtnYes.into());
+            assert!(wgt.id == Id::BtnYes);
             assert!(!wgt::is_parent(wgt));
         }
     }
