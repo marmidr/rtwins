@@ -51,7 +51,7 @@ impl InputTty {
         itty.tty_file = match std::fs::File::open(TTY_FILE_PATH) {
             Ok(f) => Some(f),
             Err(e) => {
-                eprintln!("Cannot open tty : {:?}", e.kind());
+                eprintln!("Cannot open tty : {:?}", e);
                 None
             }
         };

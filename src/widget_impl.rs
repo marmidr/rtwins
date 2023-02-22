@@ -351,46 +351,50 @@ pub fn reset_internal_state() {
 }
 
 pub fn process_input(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
-    let mut key_processed = false;
+    let mut key_processed;
 
     // TWINS_LOG_D("---");
-    if let InputEvent::None = ii.evnt {
-        return true;
-    }
-    else if let InputEvent::Mouse(_) = ii.evnt {
-        key_processed = process_mouse(ws, ii);
-    }
-    else if let InputEvent::Key(ref key) = ii.evnt {
-        key_processed = process_key(ws, ii);
+    match ii.evnt {
+        InputEvent::None => {
+            key_processed = true;
+        }
+        InputEvent::Mouse(_) => {
+            key_processed = process_mouse(ws, ii);
+        }
+        InputEvent::Key(_) | InputEvent::Char(_) => {
+            key_processed = process_key(ws, ii);
 
-        if !key_processed && ii.kmod.has_special() {
-            WGT_STATE.with(|wgtstate| {
-                let dd_combo_id = wgtstate.borrow().drop_down_combo;
-                if dd_combo_id != WIDGET_ID_NONE {
-                    if let Some(wgt) = find_by_id(ws.get_widgets(), dd_combo_id) {
-                        combo_box_hide_list(ws, wgt);
+            if !key_processed && ii.kmod.has_special() {
+                WGT_STATE.with(|wgtstate| {
+                    let dd_combo_id = wgtstate.borrow().drop_down_combo;
+                    if dd_combo_id != WIDGET_ID_NONE {
+                        if let Some(wgt) = find_by_id(ws.get_widgets(), dd_combo_id) {
+                            combo_box_hide_list(ws, wgt);
+                        }
+                    }
+                });
+
+                if let InputEvent::Key(ref key) = ii.evnt {
+                    match *key {
+                        Key::Esc => {
+                            let curr_id = ws.get_focused_id();
+                            let new_id = get_parent_to_focus(ws, curr_id);
+                            key_processed = change_focus_to(ws, new_id);
+                        }
+                        Key::Tab => {
+                            let curr_id = ws.get_focused_id();
+                            let new_id = get_next_to_focus(ws, curr_id, !ii.kmod.has_shift());
+                            key_processed = change_focus_to(ws, new_id);
+                        }
+                        _ => {}
                     }
                 }
-            });
-
-            match *key {
-                Key::Esc => {
-                    let curr_id = ws.get_focused_id();
-                    let new_id = get_parent_to_focus(ws, curr_id);
-                    key_processed = change_focus_to(ws, new_id);
-                }
-                Key::Tab => {
-                    let curr_id = ws.get_focused_id();
-                    let new_id = get_next_to_focus(ws, curr_id, !ii.kmod.has_shift());
-                    key_processed = change_focus_to(ws, new_id);
-                }
-                _ => {}
             }
-        }
 
-        if !key_processed {
-            if let Some(wgt) = ws.get_widgets().first() {
-                key_processed = ws.on_window_unhandled_input_evt(wgt, ii);
+            if !key_processed {
+                if let Some(wgt) = ws.get_widgets().first() {
+                    key_processed = ws.on_window_unhandled_input_evt(wgt, ii);
+                }
             }
         }
     }
@@ -1018,9 +1022,7 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                     }
                     Key::Tab => {
                         // real TAB may have different widths and require extra processing
-                        te_state
-                            .txt
-                            .insert_str(cursor_pos.max(0) as usize, "    ");
+                        te_state.txt.insert_str(cursor_pos.max(0) as usize, "    ");
                         cursor_pos += 4;
                         ws.invalidate(wgt.id);
                         key_handled = true;

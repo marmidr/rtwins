@@ -6,7 +6,6 @@
         "adamwalzer.string-converter",
         "gruntfuggly.todo-tree",
         "shardulm94.trailing-spaces",
-        "swellaby.vscode-rust-test-adapter",
         "rockingskier.copy-copy-paste",
         "maptz.camelcasenavigation",
         "pkief.material-icon-theme",
@@ -16,8 +15,7 @@
         "serayuzgur.crates",
         "tamasfe.even-better-toml",
         "eamodio.gitlens",
-        "panicbit.cargo",
-        "davidanson.vscode-markdownlint",
-        "skellock.just"
+        "seven1bit.vscode-ext-ansi-color-highlight",
+        "iliazeus.vscode-ansi"
     ]
 }

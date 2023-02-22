@@ -289,7 +289,7 @@ impl rtwins::WindowState for DemoWndState {
         }
 
         if wgt.id == tui_def::Id::LabelAbout.into() {
-            txt.push_str(url_link!("https://bitbucket.org/marmidr/twins", "About..."));
+            txt.push_str(url_link!("https://github.com/marmidr/rtwins", "About..."));
         }
 
         if wgt.id == tui_def::Id::LabelMultiFmt.into() {

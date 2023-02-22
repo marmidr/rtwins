@@ -86,7 +86,7 @@ cargo t
 cargo test -- --color always --nocapture
 ```
 
-## Test coverage
+## Test coverage - `grcov`
 
 Coverage generation tools [grcov](https://github.com/mozilla/grcov) is provided by Mozzilla.
 
@@ -113,8 +113,23 @@ export LLVM_PROFILE_FILE="your_name-%p-%m.profraw"
 export CARGO_INCREMENTAL=0
 export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
 export RUSTDOCFLAGS="-Cpanic=abort"
-cargo test
-grcov . -s . --binary-path ./target/debug/ -t html --branch --ignore-not-existing -o ./target/debug/coverage/
+cargo +nightly test
+grcov . --source-dir . --binary-path ./target/debug/ -t html --branch --ignore-not-existing --ignore "tests/*" -o ./target/debug/coverage/
 ```
 
 Open the `target/debug/coverage/index.html` to see the report
+
+## Test coverage - `tarpaulin` (only Linux +x86)
+
+https://lib.rs/crates/cargo-tarpaulin
+
+```bash
+cargo install cargo-tarpaulin
+cargo tarpaulin --out Html --skip-clean
+```
+
+Cons:
+- runs `cargo clean` every time you switch between `cargo test` and `cargo tarpaulin`
+- uses source files to generate html report details on-the-fly
+- `--count` is not working
+- no branch coverage
