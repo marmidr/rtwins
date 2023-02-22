@@ -43,16 +43,17 @@ pub fn draw_widgets(term: &mut Term, ws: &mut dyn WindowState, wids: &[WId]) {
     if wids.len() == 1 && wids[0] == WIDGET_ID_ALL {
         let wnd_widgets = ws.get_widgets();
         // window is at index 0
-        let wgt = wnd_widgets.get(0).unwrap();
-        let mut dctx = DrawCtx {
-            term_cell: RefCell::new(term),
-            wgt,
-            wnd_state: ws,
-            parent_coord: Coord::cdeflt(),
-            wnd_widgets,
-            strbuff: String::with_capacity(200),
-        };
-        draw_widget_internal(&mut dctx);
+        if let Some(wnd) = wnd_widgets.first() {
+            let mut dctx = DrawCtx {
+                term_cell: RefCell::new(term),
+                wgt: wnd,
+                wnd_state: ws,
+                parent_coord: Coord::cdeflt(),
+                wnd_widgets,
+                strbuff: String::with_capacity(200),
+            };
+            draw_widget_internal(&mut dctx);
+        }
     }
     else {
         let wnd_widgets = ws.get_widgets();
@@ -68,7 +69,12 @@ pub fn draw_widgets(term: &mut Term, ws: &mut dyn WindowState, wids: &[WId]) {
                     strbuff: String::with_capacity(200),
                 };
 
+                // set parent's background color
+                dctx.term_cell
+                    .borrow_mut()
+                    .push_cl_bg(get_widget_bg_color(dctx.wgt));
                 draw_widget_internal(&mut dctx);
+                dctx.term_cell.borrow_mut().pop_cl_bg();
             }
         }
     }
@@ -1205,7 +1211,10 @@ struct DrawListParams {
     frame_size: u8,
 }
 
-fn draw_list<Cb: FnMut(i16, &mut String)>(term: &mut Term, dlp: &DrawListParams, mut get_item: Cb) {
+fn draw_list<F>(term: &mut Term, dlp: &DrawListParams, mut get_item: F)
+where
+    F: FnMut(i16, &mut String),
+{
     if dlp.items_cnt > dlp.items_visible {
         draw_list_scroll_bar_v(
             term,

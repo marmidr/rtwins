@@ -63,6 +63,7 @@ pub enum Id {
                 TbxNarrow,
             PageCombobox,
                 CbxOptions,
+                CbxColors,
                 LbxUnderoptions,
                 BtnSayYes,
                 BtnSayNo,
@@ -589,19 +590,30 @@ const PAGE_TXTBOX_CHILDREN: &[Widget] = &[
 const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
     Widget {
         id: Id::CbxOptions.into(),
-        coord: Coord { col: 10, row: 1 },
+        coord: Coord { col: 10, row: 2 },
         size: Size { width: 20, height: 1 },
         prop: prop::ComboBox {
-            fg_color: ColorFG::Black,
-            bg_color: ColorBG::GreenIntense,
+            fg_color: ColorFG::Blue,
+            bg_color: ColorBG::White,
+            drop_down_size: 4
+        }.into(),
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: Id::CbxColors.into(),
+        coord: Coord { col: 8, row: 4 },
+        size: Size { width: 24, height: 1 },
+        prop: prop::ComboBox {
+            fg_color: ColorFG::GreenIntense,
+            bg_color: ColorBG::Black,
             drop_down_size: 4
         }.into(),
         ..Widget::cdeflt()
     },
     Widget {
         id: Id::LbxUnderoptions.into(),
-        coord: Coord { col: 5, row: 4 },
-        size: Size { width: 30, height: 7 },
+        coord: Coord { col: 5, row: 6 },
+        size: Size { width: 30, height: 5 },
         prop: prop::ListBox {
             fg_color: ColorFG::Inherit,
             bg_color: ColorBG::Inherit,

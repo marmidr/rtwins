@@ -153,6 +153,17 @@ impl rtwins::WindowState for DemoWndState {
     fn on_checkbox_toggle(&mut self, wgt: &Widget) {
         let rs = self.rs.as_chbx(wgt.id);
         rs.checked = !rs.checked;
+
+        if wgt.id == tui_def::Id::ChbxEnbl.into() {
+            tr_debug!("CHBX_ENBL")
+        }
+        else if wgt.id == tui_def::Id::ChbxLock.into() {
+            tr_debug!("CHBX_LOCK")
+        }
+        else if wgt.id == tui_def::Id::ChbxL1.into() ||
+            wgt.id == tui_def::Id::ChbxL2.into(){
+            self.invalidate(tui_def::Id::PageServ.into());
+        }
     }
 
     fn on_page_control_page_change(&mut self, wgt: &Widget, new_page_idx: i16) {
@@ -225,6 +236,22 @@ impl rtwins::WindowState for DemoWndState {
                     if let state_rt::State::Pgctrl(ref pgctrl) = stat {
                         return pg_idx == pgctrl.page;
                     }
+                }
+            }
+        }
+
+        if wgt.id == tui_def::Id::Layer1.into() {
+            if let Some(stat) = self.rs.get_state(tui_def::Id::ChbxL1.into()) {
+                if let state_rt::State::Chbx(ref cbx) = stat {
+                    return cbx.checked;
+                }
+            }
+        }
+
+        if wgt.id == tui_def::Id::Layer2.into() {
+            if let Some(stat) = self.rs.get_state(tui_def::Id::ChbxL2.into()) {
+                if let state_rt::State::Chbx(ref cbx) = stat {
+                    return cbx.checked;
                 }
             }
         }
@@ -347,7 +374,25 @@ impl rtwins::WindowState for DemoWndState {
     }
 
     fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {
-        txt.push_str(format!("{:2}. {}", item_idx, self.lbx_items[item_idx as usize]).as_str());
+        let plants = ['🌷', '🌱', '🌲', '🌻'];
+
+        if wgt.id == tui_def::Id::ListBox.into() {
+            if item_idx == 3 {
+                txt.push_str(esc::BOLD);
+                txt.push_str("Item");
+                txt.push_str(esc::NORMAL);
+                txt.push_str(" 0034567890123456789*");
+            }
+            else {
+                txt.push_str(&format!(
+                    "{}Item{} {:03} {}",
+                    esc::FG_BLACK,
+                    esc::FG_BLUE,
+                    item_idx,
+                    plants[item_idx as usize & 0x03]
+                ));
+            }
+        }
     }
 
     fn get_combo_box_state(&mut self, wgt: &Widget, state: &mut state_rt::CbbxState) {
