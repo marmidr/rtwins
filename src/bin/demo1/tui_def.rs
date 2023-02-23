@@ -8,6 +8,7 @@ use rtwins::*;
 #[rustfmt::skip]
 #[repr(u16)]
 #[derive(Clone, Copy)]
+// TODO: instead of enum, use some macro defining const ID_BTN_TOASTER: WId = 1;
 pub enum Id {
     WndMain = WIDGET_ID_NONE + 1,
         BtnToaster,

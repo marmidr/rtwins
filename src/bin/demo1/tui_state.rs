@@ -149,6 +149,13 @@ impl DemoWndState {
             .into(),
         );
         wnd_state
+            .rs
+            .insert_state_by_id(Id::ChbxL1, ChbxState { checked: true }.into());
+        wnd_state
+            .rs
+            .insert_state_by_id(Id::ChbxL2, ChbxState { checked: true }.into());
+
+        wnd_state
     }
 }
 
@@ -158,18 +165,100 @@ impl rtwins::WindowState for DemoWndState {
     /** events **/
 
     fn on_button_down(&mut self, wgt: &Widget, ii: &InputInfo) {
-        // self.ctx.flush_buff();
+        if wgt.id == Id::BtnYes {
+            tr_debug!("▼ BTN_YES");
+        }
+        if wgt.id == Id::BtnNo {
+            tr_warn!("▼ BTN_NO");
+        }
+        if wgt.id == Id::BtnPopup {
+            tr_info!("▼ BTN_POPUP");
+        }
     }
 
-    fn on_button_up(&mut self, wgt: &Widget, ii: &InputInfo) {}
+    fn on_button_up(&mut self, wgt: &Widget, ii: &InputInfo) {
+        if wgt.id == Id::BtnYes {
+            tr_debug!("▲ BTN_YES");
+        }
+        if wgt.id == Id::BtnNo {
+            tr_warn!("▲ BTN_NO");
+        }
+        if wgt.id == Id::BtnPopup {
+            tr_info!("▲ BTN_POPUP");
+        }
+        if wgt.id == Id::BtnSayNo {
+            self.rs.set_enabled_by_id(
+                Id::BtnSayYes,
+                !self.rs.get_enabled_or_default_by_id(Id::BtnSayYes),
+            );
 
-    fn on_button_click(&mut self, wgt: &Widget, ii: &InputInfo) {}
+            self.invalidate(Id::BtnSayYes.into());
+
+            self.rs.set_enabled_by_id(
+                Id::Btn1p5,
+                !self.rs.get_enabled_or_default_by_id(Id::Btn1p5),
+            );
+
+            self.invalidate(Id::Btn1p5.into());
+        }
+    }
+
+    fn on_button_click(&mut self, wgt: &Widget, ii: &InputInfo) {
+        tr_debug!("BTN_CLICK");
+
+        if wgt.id == Id::BtnPopup {
+            /* TODO:
+            showPopup("Lorem Titlum",
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
+                "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+                [](twins::WID btnID) { TWINS_LOG_D(ESC_BG_DarkGreen "Choice: %d" ESC_BG_DEFAULT, btnID); },
+                "ync"
+            );
+            */
+        }
+
+        if wgt.id == Id::BtnYes {
+            // TODO:
+            // rtwins::wgt::pagectrl_select_page(ws, Id::PgControl, Id::PageTextbox);
+        }
+    }
 
     fn on_button_key(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
+        if wgt.id == Id::Btn1p5 {
+            tr_debug!("BTN_ON_KEY");
+
+            if let InputEvent::Char(ref ch) = ii.evnt {
+                if ch.utf8seq[0] == b' ' {
+                    rtwins::wgt::mark_button_down(wgt, true);
+                    self.invalidate_now(wgt.id);
+                    // wait and unpress the button
+                    //TODO: twins::glob::pal.sleep(500);
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    rtwins::wgt::mark_button_down(wgt, false);
+                    self.invalidate(wgt.id);
+                    // clear input queue as it may be full of Keyboar key events;
+                    // ... rbKeybInput is out of reach from here 🙁
+                    return true;
+                }
+            }
+
+            rtwins::wgt::mark_button_down(wgt, false);
+            self.invalidate(wgt.id);
+        }
+
         false
     }
 
-    fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {}
+    fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {
+        if wgt.id == Id::Edt1 {
+            self.text_edit1_txt = std::mem::take(txt);
+        }
+        else if wgt.id == Id::Edt2 {
+            self.text_edit2_txt = std::mem::take(txt);
+        }
+
+        tr_debug!("value: {}", txt);
+    }
 
     fn on_text_edit_input_evt(
         &mut self,
@@ -178,14 +267,13 @@ impl rtwins::WindowState for DemoWndState {
         txt: &mut String,
         cursor_pos: &mut i16,
     ) -> bool {
-        if wgt.id == Id::Edt1 {
-            self.text_edit1_txt = txt.clone();
+        /* TODO:
+        if wgt.id == Id::EDT2 {
+            return rtwins::util::numEditInputEvt(kc, str, cursorPos);
         }
-        else if wgt.id == Id::Edt2 {
-            self.text_edit2_txt = txt.clone();
-        }
+        */
 
-        // return false, means continue default key handling
+        // false means continue default key handling
         false
     }
 
@@ -194,48 +282,58 @@ impl rtwins::WindowState for DemoWndState {
         rs.checked = !rs.checked;
 
         if wgt.id == Id::ChbxEnbl {
-            tr_debug!("CHBX_ENBL")
+            tr_debug!("CHBX_ENBL");
         }
         else if wgt.id == Id::ChbxLock {
-            tr_debug!("CHBX_LOCK")
+            tr_debug!("CHBX_LOCK");
         }
         else if wgt.id == Id::ChbxL1 || wgt.id == Id::ChbxL2 {
             self.invalidate(Id::PageServ.into());
         }
+        else {
+            tr_debug!("CHBX");
+        }
     }
 
     fn on_page_control_page_change(&mut self, wgt: &Widget, new_page_idx: i16) {
+        tr_info!("NewPageIdx={}", new_page_idx);
         let rs = self.rs.as_pgctrl(wgt.id);
         rs.page = new_page_idx;
     }
 
     fn on_list_box_select(&mut self, wgt: &Widget, new_sel_idx: i16) {
+        tr_debug!("LISTBOX_SELECT={}", new_sel_idx);
         let rs = self.rs.as_lbx(wgt.id);
         rs.sel_idx = new_sel_idx;
     }
 
     fn on_list_box_change(&mut self, wgt: &Widget, new_idx: i16) {
+        tr_debug!("LISTBOX_CHANGE={}", new_idx);
         let rs = self.rs.as_lbx(wgt.id);
         rs.item_idx = new_idx;
     }
 
     fn on_combo_box_select(&mut self, wgt: &Widget, new_sel_idx: i16) {
+        tr_debug!("COMBOBOX_SELECT={}", new_sel_idx);
         let rs = self.rs.as_cbbx(wgt.id);
         rs.sel_idx = new_sel_idx;
     }
 
     fn on_combo_box_change(&mut self, wgt: &Widget, new_idx: i16) {
+        tr_debug!("COMBOBOX_CHANGE={}", new_idx);
         let rs = self.rs.as_cbbx(wgt.id);
         rs.item_idx = new_idx;
     }
 
     fn on_combo_box_drop(&mut self, wgt: &Widget, drop_state: bool) {
+        tr_debug!("COMBOBOX_DROP={}", drop_state);
         let rs = self.rs.as_cbbx(wgt.id);
         rs.drop_down = drop_state;
     }
 
     fn on_radio_select(&mut self, wgt: &Widget) {
         if let Property::Radio(ref p) = wgt.prop {
+            tr_debug!("RADIO_SELECT.radio.id={}", p.radio_id);
             self.radiogrp1_idx = p.radio_id;
         }
     }
@@ -245,20 +343,50 @@ impl rtwins::WindowState for DemoWndState {
         rs.top_line = top_line;
     }
 
-    fn on_custom_widget_draw(&mut self, wgt: &Widget) {}
+    fn on_custom_widget_draw(
+        &mut self,
+        wgt: &Widget,
+        term_cell: &std::cell::RefCell<&mut rtwins::Term>,
+    ) {
+        let coord = rtwins::wgt::get_screen_coord(wgt);
+        let sz = &wgt.size;
+        let mut term = term_cell.borrow_mut();
+
+        term.move_to(coord.col as u16, coord.row as u16);
+        term.write_char_n('-', sz.width as i16);
+        term.move_to(coord.col as u16, coord.row as u16 + sz.height as u16);
+        term.write_char_n('-', sz.width as i16);
+    }
 
     fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
-        false
+        if let InputEvent::Mouse(ref mouse) = ii.evnt {
+            if let Ok(mut term_lock) = rtwins::Term::try_lock_write() {
+                let term = &mut *term_lock;
+                term.move_to(mouse.col as u16, mouse.row as u16);
+                let mark = mouse.evt.as_mark();
+                term.write_char(mark);
+            }
+            else {
+                tr_warn!("Cannot lock the term");
+            }
+        }
+        true
     }
 
     fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
+        tr_debug!("onWindowUnhandledInputEvt={}", ii.name);
         false
     }
 
     /** common state queries **/
 
     fn is_enabled(&self, wgt: &Widget) -> bool {
-        self.rs.get_enabled_or_default(wgt.id)
+        if wgt.id == Id::ChbxC {
+            false
+        }
+        else {
+            self.rs.get_enabled_or_default(wgt.id)
+        }
     }
 
     fn is_focused(&self, wgt: &Widget) -> bool {

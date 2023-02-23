@@ -590,7 +590,8 @@ pub trait WindowState {
     fn on_combo_box_drop(&mut self, wgt: &Widget, drop_state: bool) {}
     fn on_radio_select(&mut self, wgt: &Widget) {}
     fn on_text_box_scroll(&mut self, wgt: &Widget, new_top_line: i16) {}
-    fn on_custom_widget_draw(&mut self, wgt: &Widget) {}
+    fn on_custom_widget_draw(&mut self, wgt: &Widget, term: &std::cell::RefCell<&mut crate::Term>) {
+    }
     fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
         false
     }

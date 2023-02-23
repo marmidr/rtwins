@@ -84,7 +84,7 @@ impl Default for Key {
 }
 
 /// Mouse button click events
-#[derive(PartialEq, PartialOrd, Debug, Clone)]
+#[derive(PartialEq, PartialOrd, Debug, Copy, Clone)]
 pub enum MouseEvent {
     None,
     ButtonLeft,
@@ -95,6 +95,22 @@ pub enum MouseEvent {
     ButtonReleased,
     WheelUp,
     WheelDown,
+}
+
+impl MouseEvent {
+    pub fn as_mark(&self) -> char {
+        match self {
+            Self::None => '-',
+            Self::ButtonLeft => 'L',
+            Self::ButtonMid => 'M',
+            Self::ButtonRight => 'R',
+            Self::ButtonGoBack => 'B',
+            Self::ButtonGoForward => 'F',
+            Self::ButtonReleased => 'R',
+            Self::WheelUp => 'U',
+            Self::WheelDown => 'D',
+        }
+    }
 }
 
 impl Default for MouseEvent {

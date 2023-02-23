@@ -966,7 +966,8 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox) {
 }
 
 fn draw_custom_wgt(dctx: &mut DrawCtx, _: &prop::CustomWgt) {
-    dctx.wnd_state.on_custom_widget_draw(dctx.wgt);
+    dctx.wnd_state
+        .on_custom_widget_draw(dctx.wgt, &dctx.term_cell);
 }
 
 fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
