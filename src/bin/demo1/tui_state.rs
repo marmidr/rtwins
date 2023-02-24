@@ -267,11 +267,16 @@ impl rtwins::WindowState for DemoWndState {
         txt: &mut String,
         cursor_pos: &mut i16,
     ) -> bool {
-        /* TODO:
-        if wgt.id == Id::EDT2 {
-            return rtwins::util::numEditInputEvt(kc, str, cursorPos);
+        if wgt.id == Id::Edt2 {
+            return rtwins::utils::num_edit_input_evt(
+                ii,
+                txt,
+                cursor_pos,
+                i64::MIN,
+                i64::MAX,
+                true,
+            );
         }
-        */
 
         // false means continue default key handling
         false

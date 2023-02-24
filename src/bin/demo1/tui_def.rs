@@ -45,7 +45,9 @@ pub enum Id {
                 ChbxL2,
             PageDiag,
                 PanelEdt,
+                    LblEdt1Title,
                     Edt1,
+                    LblEdt2Title,
                     Edt2,
                 CustomWgt1,
                 PanelChbx,
@@ -424,12 +426,34 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
         }.into(),
         children: &[
             Widget {
+                id: Id::LblEdt1Title.into(),
+                coord: Coord { col: 1, row: 0 },
+                size: Size { width: 30, height: 1 },
+                prop: prop::Label {
+                    title: "Text edit:",
+                    fg_color: ColorFG::WhiteIntense,
+                    bg_color: ColorBG::Inherit,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+            Widget {
                 id: Id::Edt1.into(),
                 coord: Coord { col: 1, row: 1 },
                 size: Size { width: 30, height: 1 },
                 prop: prop::TextEdit {
                     fg_color: ColorFG::Black,
                     bg_color: ColorBG::White,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+            Widget {
+                id: Id::LblEdt2Title.into(),
+                coord: Coord { col: 1, row: 2 },
+                size: Size { width: 30, height: 1 },
+                prop: prop::Label {
+                    title: "Num edit:",
+                    fg_color: ColorFG::WhiteIntense,
+                    bg_color: ColorBG::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },

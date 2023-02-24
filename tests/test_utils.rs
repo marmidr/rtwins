@@ -2,6 +2,7 @@
 
 extern crate rtwins;
 use rtwins::esc;
+use rtwins::input::*;
 use rtwins::string_ext::StringExt;
 use rtwins::utils;
 
@@ -31,4 +32,163 @@ fn word_wrap() {
         lines.get(7).unwrap(),
         String::new().append(esc::NORMAL).append("▄")
     );
+}
+
+#[test]
+fn num_edit() {
+    let mut ii = InputInfo::default();
+    let mut txt = String::new();
+    let mut cursor_pos = 0i16;
+
+    // invalid key - handled as 'rejected'
+    let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -100, 100, false);
+    assert!(!handled);
+
+    // too long number
+    {
+        txt.push_n('9', 20);
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -100, 100, false);
+        assert!(!handled);
+    }
+
+    // out of range
+    {
+        // empty or under limit
+        txt.clear();
+        ii.evnt = InputEvent::Key(Key::Enter);
+        ii.kmod.mask = KEY_MOD_SPECIAL;
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, 33, 911, false);
+        assert!(!handled);
+        assert_eq!("33", txt);
+
+        // over limit
+        txt.clear();
+        txt.append("912");
+        ii.evnt = InputEvent::Key(Key::Enter);
+        ii.kmod.mask = KEY_MOD_SPECIAL;
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, 33, 911, false);
+        assert!(!handled);
+        assert_eq!("911", txt);
+    }
+
+    // edit accept - to be handled by caller
+    {
+        txt.clear();
+        ii.evnt = InputEvent::Key(Key::Enter);
+        ii.kmod.mask = KEY_MOD_SPECIAL;
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -100, 100, false);
+        assert!(!handled);
+    }
+
+    // edit abort - to be handled by caller
+    {
+        ii.evnt = InputEvent::Key(Key::Esc);
+        ii.kmod.mask = KEY_MOD_SPECIAL;
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -100, 100, false);
+        assert!(!handled);
+    }
+
+    // UP arrow
+    {
+        txt.clear();
+        ii.evnt = InputEvent::Key(Key::Up);
+        ii.kmod.mask = KEY_MOD_SPECIAL;
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -100, 100, false);
+        assert!(handled);
+        assert_eq!("1", txt);
+
+        // Ctrl+UP
+        ii.evnt = InputEvent::Key(Key::Up);
+        ii.kmod.mask = KEY_MOD_SPECIAL | KEY_MOD_CTRL;
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -1000, 1000, false);
+        assert!(handled);
+        assert_eq!("11", txt);
+
+        // Shift+UP
+        ii.evnt = InputEvent::Key(Key::Up);
+        ii.kmod.mask = KEY_MOD_SPECIAL | KEY_MOD_SHIFT;
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -1000, 1000, false);
+        assert!(handled);
+        assert_eq!("111", txt);
+    }
+
+    // DOWN arrow
+    {
+        ii.evnt = InputEvent::Key(Key::Down);
+        ii.kmod.mask = KEY_MOD_SPECIAL;
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -1000, 1000, false);
+        assert!(handled);
+        assert_eq!("110", txt);
+
+        // Ctrl+Down
+        ii.evnt = InputEvent::Key(Key::Down);
+        ii.kmod.mask = KEY_MOD_SPECIAL | KEY_MOD_CTRL;
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -1000, 1000, false);
+        assert!(handled);
+        assert_eq!("100", txt);
+
+        // Shift+Down
+        ii.evnt = InputEvent::Key(Key::Down);
+        ii.kmod.mask = KEY_MOD_SPECIAL | KEY_MOD_SHIFT;
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -1000, 1000, false);
+        assert!(handled);
+        assert_eq!("0", txt);
+    }
+}
+
+#[test]
+fn num_edit_limited() {
+    let mut ii = InputInfo::default();
+
+    let mut txt;
+    let mut cursor_pos = 0i16;
+
+    // up, no wrap
+    ii.evnt = InputEvent::Key(Key::Up);
+    ii.kmod.mask = KEY_MOD_SPECIAL;
+
+    {
+        txt = "0".to_owned();
+
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -1, 1, false);
+        assert!(handled);
+        assert_eq!("1", txt);
+
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -1, 1, false);
+        assert!(handled);
+        assert_eq!("1", txt);
+    }
+
+    // up, wrap
+    {
+        txt = "1".to_owned();
+
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -1, 1, true);
+        assert!(handled);
+        assert_eq!("-1", txt);
+    }
+
+    // down, no wrap
+    ii.evnt = InputEvent::Key(Key::Down);
+    ii.kmod.mask = KEY_MOD_SPECIAL;
+
+    {
+        txt = "0".to_owned();
+
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -1, 1, false);
+        assert!(handled);
+        assert_eq!("-1", txt);
+
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -1, 1, false);
+        assert!(handled);
+        assert_eq!("-1", txt);
+    }
+
+    // down, wrap
+    {
+        txt = "-1".to_owned();
+        let handled = utils::num_edit_input_evt(&ii, &mut txt, &mut cursor_pos, -1, 1, true);
+        assert!(handled);
+        assert_eq!("1", txt);
+    }
 }

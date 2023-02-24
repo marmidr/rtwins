@@ -1,6 +1,8 @@
 //! # RTWins Utils
 
+use crate::input::*;
 use crate::string_ext::*;
+use std::fmt::Write;
 
 pub type StringListRc = std::rc::Rc<std::cell::RefCell<Vec<String>>>;
 
@@ -56,6 +58,84 @@ pub fn word_wrap(max_disp_w: usize, src: &str) -> StringListRc {
     let out = StringListRc::default();
     out.borrow_mut().extend(it);
     out
+}
+
+/// Custom handler for text edit - edit integer value
+///
+/// Returns true if input event was handled and needs no more processing, false otherwise.
+pub fn num_edit_input_evt(
+    ii: &InputInfo,
+    txt: &mut String,
+    cursor_pos: &mut i16,
+    limit_min: i64,
+    limit_max: i64,
+    wrap: bool,
+) -> bool {
+    if ii.kmod.is_empty() {
+        // reject non-digits and avoid too long numbers
+        // 0x7fffffffffffffff = 9223372036854775807
+        if let InputEvent::Char(ref ch) = ii.evnt {
+            if ch.utf8seq[0] < b'0' || ch.utf8seq[0] > b'9' || txt.len() >= 19 {
+                if let Ok(mut term_lock) = crate::Term::try_lock_write() {
+                    let term = &mut *term_lock;
+                    term.write_str(crate::esc::BELL);
+                    term.flush_buff();
+                }
+                return true;
+            }
+        }
+    }
+
+    if let InputEvent::Key(ref key) = ii.evnt {
+        match *key {
+            Key::Enter => {
+                let mut n: i64 = txt.parse().unwrap_or_default();
+                n = n.clamp(limit_min, limit_max);
+                txt.clear();
+                write!(txt, "{n}").unwrap();
+                return false;
+            }
+            Key::Esc => {
+                return false;
+            }
+            Key::Up | Key::Down => {
+                let mut n: i64 = txt.parse().unwrap_or_default();
+                let mut delta: i64 = if ii.kmod.has_shift() {
+                    100
+                }
+                else {
+                    if ii.kmod.has_ctrl() {
+                        10
+                    }
+                    else {
+                        1
+                    }
+                };
+
+                if *key == Key::Down {
+                    delta *= -1;
+                }
+
+                n += delta;
+
+                if n < limit_min {
+                    n = if wrap { limit_max } else { limit_min };
+                }
+
+                if n > limit_max {
+                    n = if wrap { limit_min } else { limit_max };
+                }
+
+                txt.clear();
+                write!(txt, "{n}").unwrap();
+                *cursor_pos = txt.chars().count() as i16;
+                return true;
+            }
+            _ => {}
+        }
+    }
+
+    false
 }
 
 // copied from core::str::validations.rs
