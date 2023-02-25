@@ -42,6 +42,7 @@ fn displayed_width() {
             .displayed_width()
     );
     assert_eq!(7, "-😉-🍺-".displayed_width());
+    assert_eq!(9, "Multi\nLine".displayed_width());
 }
 
 #[test]

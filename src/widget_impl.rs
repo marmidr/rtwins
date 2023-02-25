@@ -252,23 +252,25 @@ pub fn find_at(
 }
 
 pub fn get_screen_coord(wgt: &Widget) -> Coord {
-    wgt.iter_parents().skip(1).fold(wgt.coord, |mut coord, parent| {
-        if let Property::Window(ref prop) = parent.prop {
-            if prop.is_popup {
-                // TODO: for popups must be centered on parent window
+    wgt.iter_parents()
+        .skip(1)
+        .fold(wgt.coord, |mut coord, parent| {
+            if let Property::Window(ref prop) = parent.prop {
+                if prop.is_popup {
+                    // TODO: for popups must be centered on parent window
+                }
+                coord = coord + parent.coord;
             }
-            coord = coord + parent.coord;
-        }
-        else {
-            coord = coord + parent.coord;
-        }
+            else {
+                coord = coord + parent.coord;
+            }
 
-        if let Property::PageCtrl(ref prop) = parent.prop {
-            coord.col += prop.tab_width;
-        }
+            if let Property::PageCtrl(ref prop) = parent.prop {
+                coord.col += prop.tab_width;
+            }
 
-        coord
-    })
+            coord
+        })
 }
 
 /// Move cursor to the best position for given type of the widget
@@ -567,11 +569,8 @@ fn is_focusable(ws: &mut dyn WindowState, wgt: &Widget) -> bool {
             | Property::Button(_)
             | Property::ListBox(_)
             | Property::ComboBox(_)
+            | Property::TextBox(_)
     ) {
-        return true;
-    }
-
-    if let Property::TextBox(_) = wgt.prop {
         return is_enabled(ws, wgt);
     }
 
@@ -649,7 +648,7 @@ fn get_next_focusable(
         Property::Page(_) | Property::Panel(_) | Property::Layer(_) => {
             if first_parent.is_none() {
                 // it must be Panel/Page/Layer because while traversing we never step below Page level
-                tr_debug!("1st parent[%{} id:{}]", parent.prop.to_string(), parent.id);
+                tr_debug!("1st parent[{} id:{}]", parent.prop.to_string(), parent.id);
                 first_parent = Some(parent);
             }
         }
@@ -704,7 +703,7 @@ fn get_next_focusable(
     }
 
     tr_debug!(
-        "search in [{} id:{} children cnt:{}]",
+        "Search in [{} id:{} children cnt:{}]",
         parent.prop.to_string(),
         parent.id,
         child_cnt
@@ -725,6 +724,7 @@ fn get_next_focusable(
                 Property::Panel(_) | Property::Layer(_) => {
                     let parents_parent = get_parent(parent);
                     let mut brk = false;
+
                     return get_next_focusable(
                         ws,
                         parents_parent,
@@ -995,7 +995,6 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
             // user let us continue checking the key
         }
 
-        // TODO: std::mem::swap(x, y)
         te_state = tes.clone();
         false
     });
@@ -1724,7 +1723,7 @@ fn process_mouse_combo_box(
             let col = mouse.col as i16 - wgt_rect.coord.col as i16;
             let row = mouse.row as i16 - wgt_rect.coord.row as i16 - 1;
 
-            if row >=0 && row < drop_down_size {
+            if row >= 0 && row < drop_down_size {
                 let mut cbs = Default::default();
                 ws.get_combo_box_state(wgt, &mut cbs);
 

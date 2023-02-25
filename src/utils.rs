@@ -88,6 +88,9 @@ pub fn num_edit_input_evt(
 
     if let InputEvent::Key(ref key) = ii.evnt {
         match *key {
+            Key::Tab => {
+                return true;
+            }
             Key::Enter => {
                 let mut n: i64 = txt.parse().unwrap_or_default();
                 n = n.clamp(limit_min, limit_max);

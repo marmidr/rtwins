@@ -43,13 +43,13 @@ impl StringExt for String {
 
     fn set_displayed_width(&mut self, expected_disp_w: i16) {
         let disp_width = self.as_str().displayed_width();
-        let n = expected_disp_w - disp_width as i16;
+        let missing_cols = expected_disp_w - disp_width as i16;
 
-        if n > 0 {
+        if missing_cols > 0 {
             // too narrow -> append spaces
-            self.push_n(' ', n);
+            self.push_n(' ', missing_cols);
         }
-        else if n < 0 {
+        else if missing_cols < 0 {
             // too wide -> truncate + ellipsis
             let mut sum_w = 0usize;
             for (i, c) in self.char_indices() {

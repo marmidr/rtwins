@@ -250,14 +250,14 @@ impl rtwins::WindowState for DemoWndState {
     }
 
     fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {
+        tr_debug!("TXT_EDIT_CHANGE: {}", txt);
+
         if wgt.id == Id::Edt1 {
             self.text_edit1_txt = std::mem::take(txt);
         }
         else if wgt.id == Id::Edt2 {
             self.text_edit2_txt = std::mem::take(txt);
         }
-
-        tr_debug!("value: {}", txt);
     }
 
     fn on_text_edit_input_evt(
@@ -485,12 +485,10 @@ impl rtwins::WindowState for DemoWndState {
         if wgt.id == Id::LabelDate {
             txt.push_str(format!("Date•{}", "<datetime>").as_str());
         }
-
-        if wgt.id == Id::LabelAbout {
+        else if wgt.id == Id::LabelAbout {
             txt.push_str(url_link!("https://github.com/marmidr/rtwins", "About..."));
         }
-
-        if wgt.id == Id::LabelMultiFmt {
+        else if wgt.id == Id::LabelMultiFmt {
             let _ = txt.stream()
                 << "  ▫▫▫▫▫ "
                 << esc::INVERSE_ON
@@ -512,6 +510,21 @@ impl rtwins::WindowState for DemoWndState {
                 << "Enter"
                 << esc::UNDERLINE_OFF
                 << " -> select the item";
+        }
+        else if wgt.id == Id::LblWordwrap {
+            let mut tmp = String::with_capacity(100);
+            let _ = tmp.stream()
+                << esc::BOLD
+                << "Name:\n"
+                << esc::NORMAL
+                << "  20 Hits on 2\n"
+                << esc::BOLD
+                << "Description:\n"
+                << esc::NORMAL
+                << "  Latest, most lo💖ed radio hits. ";
+
+            let splitted = utils::word_wrap(wgt.size.width as usize - 2, &tmp);
+            *txt = splitted.take().join("\n");
         }
     }
 

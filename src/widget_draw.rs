@@ -1085,15 +1085,40 @@ fn draw_layer(dctx: &mut DrawCtx, _: &prop::Layer) {
 
 // ---------------------------------------------------------------------------------------------- //
 
-const FRAME_NONE: [char; 9] = [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '];
+#[rustfmt::skip]
+const FRAME_NONE: [char; 9] = [
+    ' ', ' ', ' ',
+    ' ', ' ', ' ',
+    ' ', ' ', ' '
+];
 
-const FRAME_SINGLE: [char; 9] = ['┌', '─', '┐', '│', ' ', '│', '└', '─', '┘'];
+#[rustfmt::skip]
+const FRAME_SINGLE: [char; 9] = [
+    '┌', '─', '┐',
+    '│', ' ', '│',
+    '└', '─', '┘'
+];
 
-const FRAME_LISTBOX: [char; 9] = ['┌', '─', '┐', '│', ' ', '▒', '└', '─', '┘'];
+#[rustfmt::skip]
+const FRAME_LISTBOX: [char; 9] = [
+    '┌', '─', '┐',
+    '│', ' ', '▒',
+    '└', '─', '┘'
+];
 
-const FRAME_PGCONTROL: [char; 9] = ['├', '─', '┐', '│', ' ', '│', '├', '─', '┘'];
+#[rustfmt::skip]
+const FRAME_PGCONTROL: [char; 9] = [
+    '├', '─', '┐',
+    '│', ' ', '│',
+    '├', '─', '┘'
+];
 
-const FRAME_DOUBLE: [char; 9] = ['╔', '═', '╗', '║', ' ', '║', '╚', '═', '╝'];
+#[rustfmt::skip]
+const FRAME_DOUBLE: [char; 9] = [
+    '╔', '═', '╗',
+    '║', ' ', '║',
+    '╚', '═', '╝'
+];
 
 #[allow(clippy::too_many_arguments)]
 fn draw_area(

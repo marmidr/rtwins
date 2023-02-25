@@ -451,7 +451,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 1, row: 2 },
                 size: Size { width: 30, height: 1 },
                 prop: prop::Label {
-                    title: "Num edit:",
+                    title: "Num edit: UP/DOWN + Ctr/Shift:",
                     fg_color: ColorFG::WhiteIntense,
                     bg_color: ColorBG::Inherit,
                 }.into(),
@@ -551,7 +551,7 @@ const PAGE_INACT_CHILDREN: &[Widget] = &[
             title : "Word-wrap",
             fg_color : ColorFG::Inherit,
             bg_color : ColorBG::Inherit,
-            no_frame : true,
+            no_frame : false,
         }.into(),
         children: &[
             Widget {
@@ -561,7 +561,7 @@ const PAGE_INACT_CHILDREN: &[Widget] = &[
                 prop: prop::Label {
                     title: "",
                     fg_color: ColorFG::White,
-                    bg_color: ColorBG::Blue,
+                    bg_color: ColorBG::BlueIntense,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -614,7 +614,7 @@ const PAGE_TXTBOX_CHILDREN: &[Widget] = &[
         size: Size { width: 40, height: 10 },
         prop: prop::TextBox {
             fg_color: ColorFG::White,
-            bg_color: ColorBG::Inherit,
+            bg_color: ColorBG::BlueIntense,
         }.into(),
         ..Widget::cdeflt()
     },
