@@ -107,7 +107,7 @@ const ESC_KEYS_MAP_UNSORTED : [SeqMap; 155] = [
     seq_def!("[3~",      "Del",          Key::Delete,    KEY_MOD_SPECIAL),   // vt
     seq_def!("[4~",      "End",          Key::End,       KEY_MOD_SPECIAL),   // vt
     seq_def!("[5~",      "PgUp",         Key::PgUp,      KEY_MOD_SPECIAL),   // vt
-    seq_def!("[6~",      "PdDown",       Key::PgDown,    KEY_MOD_SPECIAL),   // vt
+    seq_def!("[6~",      "PgDown",       Key::PgDown,    KEY_MOD_SPECIAL),   // vt
     seq_def!("[7~",      "Home",         Key::Home,      KEY_MOD_SPECIAL),   // vt
     seq_def!("[8~",      "End",          Key::End,       KEY_MOD_SPECIAL),   // vt
     seq_def!("OP",       "F1",           Key::F1,        KEY_MOD_SPECIAL),

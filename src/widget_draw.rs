@@ -37,6 +37,9 @@ pub fn draw_widgets(term: &mut Term, ws: &mut dyn WindowState, wids: &[WId]) {
 
     let mut fm = FontMementoManual::from_term(term);
     let focused_id = ws.get_focused_id();
+    wgt::wgt_state_with_mut(|wgtstate| {
+        wgtstate.focused_wgt = focused_id;
+    });
     term.cursor_hide();
     term.flush_buff();
 
@@ -60,21 +63,25 @@ pub fn draw_widgets(term: &mut Term, ws: &mut dyn WindowState, wids: &[WId]) {
 
         for id in wids {
             if let Some(wgt) = wgt::find_by_id(wnd_widgets, *id) {
-                let mut dctx = DrawCtx {
-                    term_cell: RefCell::new(term),
-                    wgt,
-                    wnd_state: ws,
-                    parent_coord: wgt::get_screen_coord(wgt::get_parent(wgt)),
-                    wnd_widgets,
-                    strbuff: String::with_capacity(200),
-                };
-
                 // set parent's background color
-                dctx.term_cell
-                    .borrow_mut()
-                    .push_cl_bg(get_widget_bg_color(dctx.wgt));
-                draw_widget_internal(&mut dctx);
-                dctx.term_cell.borrow_mut().pop_cl_bg();
+                term.push_cl_bg(get_widget_bg_color(wgt));
+
+                {
+                    let wgt_parent = wgt::get_parent(wgt);
+                    let mut dctx = DrawCtx {
+                        term_cell: RefCell::new(term),
+                        wgt,
+                        wnd_state: ws,
+                        parent_coord: wgt::get_screen_coord(wgt_parent),
+                        wnd_widgets,
+                        strbuff: String::with_capacity(200),
+                    };
+
+                    draw_widget_internal(&mut dctx);
+                }
+
+                // restore background color
+                term.pop_cl_bg();
             }
         }
     }
@@ -132,6 +139,7 @@ fn draw_widget_internal(dctx: &mut DrawCtx) {
         if !en {
             term.pop_attr();
         }
+
         // check if widget drawing procedure cleaned-up environment
         if term.attr_stack_len() != attr_stack_len_before {
             tr_warn!(
@@ -716,7 +724,6 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl) {
         let pgctrl = dctx.wgt;
         let cur_pg_idx = dctx.wnd_state.get_page_ctrl_page_index(pgctrl) as usize;
         let focused = dctx.wnd_state.is_focused(pgctrl);
-        dctx.parent_coord.col += prp.tab_width;
 
         for (idx, page) in pgctrl.iter_children().enumerate() {
             // check if page is below lower border
@@ -779,24 +786,32 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl) {
 }
 
 fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/) {
+    let pgctrl = wgt::get_parent(dctx.wgt);
+    let mut my_coord = dctx.parent_coord + dctx.wgt.coord;
+    let tab_width;
+
+    if let Property::PageCtrl(ref pgctrl_prp) = pgctrl.prop {
+        tab_width = pgctrl_prp.tab_width;
+        my_coord.col += tab_width;
+        dctx.parent_coord = my_coord;
+    }
+    else {
+        return;
+    }
+
     if erase_bg {
-        let pgctrl = wgt::get_parent(dctx.wgt);
+        let my_size = pgctrl.size - Size::new(tab_width, 0);
 
-        if let Property::PageCtrl(ref pgctrl_prp) = pgctrl.prop {
-            let page_coord = wgt::get_screen_coord(dctx.wgt);
-            let page_size = pgctrl.size - Size::new(pgctrl_prp.tab_width, 0);
-
-            draw_area(
-                &mut dctx.term_cell.borrow_mut(),
-                page_coord,
-                page_size,
-                ColorBG::Inherit,
-                ColorFG::Inherit,
-                FrameStyle::PgControl,
-                true,
-                false,
-            );
-        }
+        draw_area(
+            &mut dctx.term_cell.borrow_mut(),
+            my_coord,
+            my_size,
+            ColorBG::Inherit,
+            ColorFG::Inherit,
+            FrameStyle::PgControl,
+            true,
+            false,
+        );
     }
 
     // draw childrens
@@ -1225,6 +1240,9 @@ where
             dlp.sel_idx,
         );
     }
+
+    // TODO: make a small separate function using `get_item`
+    // so it will be the only one instantiated
 
     term.flush_buff();
     let mut strbuff = String::with_capacity(50);

@@ -252,24 +252,22 @@ pub fn find_at(
 }
 
 pub fn get_screen_coord(wgt: &Widget) -> Coord {
-    wgt.iter_parents().skip(1).fold(wgt.coord, |c, parent| {
-        let mut c = c;
-
+    wgt.iter_parents().skip(1).fold(wgt.coord, |mut coord, parent| {
         if let Property::Window(ref prop) = parent.prop {
             if prop.is_popup {
                 // TODO: for popups must be centered on parent window
             }
-            c = c + parent.coord;
+            coord = coord + parent.coord;
         }
         else {
-            c = c + parent.coord;
+            coord = coord + parent.coord;
         }
 
         if let Property::PageCtrl(ref prop) = parent.prop {
-            c.col += prop.tab_width;
+            coord.col += prop.tab_width;
         }
 
-        c
+        coord
     })
 }
 
@@ -820,18 +818,18 @@ fn get_parent_to_focus(ws: &mut dyn WindowState, focused_id: WId) -> WId {
 
 fn change_focus_to(ws: &mut dyn WindowState, new_id: WId) -> bool {
     let curr_id = ws.get_focused_id();
-    tr_debug!("change_focus_to() curr_id={}, new_id={}", curr_id, new_id);
+    // tr_debug!("change_focus_to() curr_id={}, new_id={}", curr_id, new_id);
 
     if new_id != curr_id {
         let prev_id = curr_id;
         ws.set_focused_id(new_id);
 
         if let Some(new_focused_wgt) = find_by_id(ws.get_widgets(), new_id) {
-            tr_debug!(
-                "new_focused_wgt: {} id={}",
-                new_focused_wgt.prop.to_string(),
-                new_focused_wgt.id
-            );
+            // tr_debug!(
+            //     "new_focused_wgt: {} id={}",
+            //     new_focused_wgt.prop.to_string(),
+            //     new_focused_wgt.id
+            // );
 
             if let Property::ListBox(_) = new_focused_wgt.prop {
                 let mut lbs = Default::default();
@@ -1011,83 +1009,81 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
     if te_state.wgt_id != WIDGET_ID_NONE {
         let mut cursor_pos = te_state.cursor_pos as isize;
 
-        if ii.kmod.has_special() {
-            if let InputEvent::Key(ref key) = ii.evnt {
-                match *key {
-                    Key::Esc => {
-                        // cancel editing
-                        te_state.wgt_id = WIDGET_ID_NONE;
-                        ws.invalidate(wgt.id);
-                        key_handled = true;
-                    }
-                    Key::Tab => {
-                        // real TAB may have different widths and require extra processing
-                        te_state.txt.insert_str(cursor_pos.max(0) as usize, "    ");
-                        cursor_pos += 4;
-                        ws.invalidate(wgt.id);
-                        key_handled = true;
-                    }
-                    Key::Enter => {
-                        // finish editing
-                        ws.on_text_edit_change(wgt, &mut te_state.txt);
-                        te_state.wgt_id = WIDGET_ID_NONE;
-                        ws.invalidate(wgt.id);
-                        key_handled = true;
-                    }
-                    Key::Backspace => {
-                        if cursor_pos > 0 {
-                            if ii.kmod.has_ctrl() {
-                                te_state.txt.erase_char_range(0, cursor_pos as usize);
-                                cursor_pos = 0;
-                            }
-                            else {
-                                te_state
-                                    .txt
-                                    .erase_char_range((cursor_pos - 1).max(0) as usize, 1);
-                                cursor_pos -= 1;
-                            }
-                            ws.invalidate(wgt.id);
-                        }
-                        key_handled = true;
-                    }
-                    Key::Delete => {
+        if let InputEvent::Key(ref key) = ii.evnt {
+            match *key {
+                Key::Esc => {
+                    // cancel editing
+                    te_state.wgt_id = WIDGET_ID_NONE;
+                    ws.invalidate(wgt.id);
+                    key_handled = true;
+                }
+                Key::Tab => {
+                    // real TAB may have different widths and require extra processing
+                    te_state.txt.insert_str(cursor_pos.max(0) as usize, "    ");
+                    cursor_pos += 4;
+                    ws.invalidate(wgt.id);
+                    key_handled = true;
+                }
+                Key::Enter => {
+                    // finish editing
+                    ws.on_text_edit_change(wgt, &mut te_state.txt);
+                    te_state.wgt_id = WIDGET_ID_NONE;
+                    ws.invalidate(wgt.id);
+                    key_handled = true;
+                }
+                Key::Backspace => {
+                    if cursor_pos > 0 {
                         if ii.kmod.has_ctrl() {
-                            te_state.txt.trim_at_char_idx(cursor_pos as usize);
+                            te_state.txt.erase_char_range(0, cursor_pos as usize);
+                            cursor_pos = 0;
                         }
                         else {
-                            te_state.txt.erase_char_range(cursor_pos as usize, 1);
-                        }
-
-                        key_handled = true;
-                        ws.invalidate(wgt.id);
-                    }
-                    Key::Up | Key::Down => {}
-                    Key::Left => {
-                        if cursor_pos > 0 {
+                            te_state
+                                .txt
+                                .erase_char_range((cursor_pos - 1).max(0) as usize, 1);
                             cursor_pos -= 1;
-                            ws.invalidate(wgt.id);
                         }
-                        key_handled = true;
-                    }
-                    Key::Right => {
-                        if cursor_pos < te_state.txt.chars().count() as isize {
-                            cursor_pos += 1;
-                            ws.invalidate(wgt.id);
-                        }
-                        key_handled = true;
-                    }
-                    Key::Home => {
-                        cursor_pos = 0;
                         ws.invalidate(wgt.id);
-                        key_handled = true;
                     }
-                    Key::End => {
-                        cursor_pos = te_state.txt.chars().count() as isize;
-                        ws.invalidate(wgt.id);
-                        key_handled = true;
-                    }
-                    _ => {}
+                    key_handled = true;
                 }
+                Key::Delete => {
+                    if ii.kmod.has_ctrl() {
+                        te_state.txt.trim_at_char_idx(cursor_pos as usize);
+                    }
+                    else {
+                        te_state.txt.erase_char_range(cursor_pos as usize, 1);
+                    }
+
+                    key_handled = true;
+                    ws.invalidate(wgt.id);
+                }
+                Key::Up | Key::Down => {}
+                Key::Left => {
+                    if cursor_pos > 0 {
+                        cursor_pos -= 1;
+                        ws.invalidate(wgt.id);
+                    }
+                    key_handled = true;
+                }
+                Key::Right => {
+                    if cursor_pos < te_state.txt.chars().count() as isize {
+                        cursor_pos += 1;
+                        ws.invalidate(wgt.id);
+                    }
+                    key_handled = true;
+                }
+                Key::Home => {
+                    cursor_pos = 0;
+                    ws.invalidate(wgt.id);
+                    key_handled = true;
+                }
+                Key::End => {
+                    cursor_pos = te_state.txt.chars().count() as isize;
+                    ws.invalidate(wgt.id);
+                    key_handled = true;
+                }
+                _ => {}
             }
         }
         else if let InputEvent::Char(ref ch) = ii.evnt {
@@ -1728,7 +1724,7 @@ fn process_mouse_combo_box(
             let col = mouse.col as i16 - wgt_rect.coord.col as i16;
             let row = mouse.row as i16 - wgt_rect.coord.row as i16 - 1;
 
-            if row < drop_down_size {
+            if row >=0 && row < drop_down_size {
                 let mut cbs = Default::default();
                 ws.get_combo_box_state(wgt, &mut cbs);
 
@@ -1797,7 +1793,7 @@ fn process_mouse_combo_box(
             ws.invalidate(wgt.id);
         }
         else if mouse.evt == MouseEvent::ButtonMid {
-            let btn_left = InputInfo {
+            let evnt_btn_left = InputInfo {
                 evnt: InputEvent::Mouse(MouseInfo {
                     evt: MouseEvent::ButtonLeft,
                     col: mouse.col,
@@ -1806,7 +1802,7 @@ fn process_mouse_combo_box(
                 kmod: ii.kmod,
                 name: "",
             };
-            process_mouse_combo_box(ws, wgt, wgt_rect, &btn_left);
+            process_mouse_combo_box(ws, wgt, wgt_rect, &evnt_btn_left);
 
             let mut cbs = Default::default();
             ws.get_combo_box_state(wgt, &mut cbs);

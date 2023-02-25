@@ -14,7 +14,7 @@ alias br := build-rel
 alias r  := run-dbg
 alias rr := run-rel
 alias t  := test
-alias xt := nxtest
+alias nx := nxtest
 
 # build debug; eg: `just build-dbg -v`
 build-dbg *ARGS:
@@ -28,17 +28,21 @@ build-rel *ARGS:
 
 #
 run-dbg:
+    clear
     cargo run
 
 run-rel:
+    clear
     cargo run --release
 
 # default tests runner
 test:
+    clear
     cargo test
 
 # run tests using `nextest`
 nxtest:
+    clear
     cargo nextest run
 
 # code coverage using tarpaulin
