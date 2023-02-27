@@ -12,6 +12,17 @@ use crate::*;
 
 // ---------------------------------------------------------------------------------------------- //
 
+macro_rules! tetrary {
+    ($cond:expr, $then:expr, $else:expr) => {
+        if $cond {
+            $then
+        }
+        else {
+            $else
+        }
+    };
+}
+
 /// State object for current top window.
 // using WId instead of references will solve lifetime problems
 #[derive(Default)]
@@ -468,7 +479,7 @@ pub fn pagectrl_select_next_page(ws: &mut dyn WindowState, pgctrl_id: WId, next:
 /// Mark internal clicked widget id
 pub fn mark_button_down(btn: &Widget, is_down: bool) {
     WGT_STATE.with(|wgstate| {
-        wgstate.borrow_mut().mouse_down_wgt = if is_down { btn.id } else { WIDGET_ID_NONE }
+        wgstate.borrow_mut().mouse_down_wgt = tetrary!(is_down, btn.id, WIDGET_ID_NONE)
     });
 }
 
@@ -666,7 +677,7 @@ fn get_next_focusable(
 
     if focused_id == WIDGET_ID_NONE {
         // get first/last of the children ID
-        child_idx = if forward { 0 } else { child_cnt as usize - 1 };
+        child_idx = tetrary!(forward, 0, child_cnt as usize - 1);
         let child = &children[child_idx];
 
         if is_focusable(ws, child) && is_visible(ws, child) {
@@ -871,7 +882,7 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
 
     let pgidx = {
         let mut idx = ws.get_page_ctrl_page_index(pgctrl) as i16;
-        idx += if next { 1 } else { -1 };
+        idx += tetrary!(next, 1, -1);
         if idx < 0 {
             idx = pgctrl.link.children_cnt as i16 - 1;
         }
@@ -1219,36 +1230,16 @@ fn process_key_list_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
                 return true;
             }
             Key::Up => {
-                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
-                    -1
-                }
-                else {
-                    0
-                };
+                delta = tetrary!(ii.kmod.mask == KEY_MOD_SPECIAL, -1, 0);
             }
             Key::Down => {
-                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
-                    1
-                }
-                else {
-                    0
-                };
+                delta = tetrary!(ii.kmod.mask == KEY_MOD_SPECIAL, 1, 0);
             }
             Key::PgUp => {
-                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
-                    -items_visible
-                }
-                else {
-                    0
-                };
+                delta = tetrary!(ii.kmod.mask == KEY_MOD_SPECIAL, -items_visible, 0);
             }
             Key::PgDown => {
-                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
-                    items_visible
-                }
-                else {
-                    0
-                };
+                delta = tetrary!(ii.kmod.mask == KEY_MOD_SPECIAL, items_visible, 0);
             }
             _ => {}
         }
@@ -1361,38 +1352,10 @@ fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
         let lines_visible = wgt.size.height as i16 - 2;
 
         match *key {
-            Key::Up => {
-                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
-                    -1
-                }
-                else {
-                    0
-                }
-            }
-            Key::Down => {
-                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
-                    1
-                }
-                else {
-                    0
-                }
-            }
-            Key::PgUp => {
-                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
-                    -lines_visible
-                }
-                else {
-                    0
-                }
-            }
-            Key::PgDown => {
-                delta = if ii.kmod.mask == KEY_MOD_SPECIAL {
-                    lines_visible
-                }
-                else {
-                    0
-                }
-            }
+            Key::Up => delta = tetrary!(ii.kmod.mask == KEY_MOD_SPECIAL, -1, 0),
+            Key::Down => delta = tetrary!(ii.kmod.mask == KEY_MOD_SPECIAL, 1, 0),
+            Key::PgUp => delta = tetrary!(ii.kmod.mask == KEY_MOD_SPECIAL, -lines_visible, 0),
+            Key::PgDown => delta = tetrary!(ii.kmod.mask == KEY_MOD_SPECIAL, lines_visible, 0),
             _ => {}
         }
 
@@ -1679,12 +1642,7 @@ fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
                 return;
             }
 
-            let mut delta = if mouse.evt == MouseEvent::WheelUp {
-                -1
-            }
-            else {
-                1
-            };
+            let mut delta = tetrary!(mouse.evt == MouseEvent::WheelUp, -1, 1);
             if ii.kmod.has_ctrl() {
                 delta *= items_visible;
             }
@@ -1767,12 +1725,7 @@ fn process_mouse_combo_box(
                 return;
             }
 
-            let mut delta = if mouse.evt == MouseEvent::WheelUp {
-                -1
-            }
-            else {
-                1
-            };
+            let mut delta = tetrary!(mouse.evt == MouseEvent::WheelUp, -1, 1);
 
             if ii.kmod.has_ctrl() {
                 delta *= drop_down_size;
@@ -1836,12 +1789,7 @@ fn process_mouse_text_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
             let lines = tbs.lines.borrow();
 
             if !lines.is_empty() {
-                let mut delta = if mouse.evt == MouseEvent::WheelUp {
-                    -1
-                }
-                else {
-                    1
-                };
+                let mut delta = tetrary!(mouse.evt == MouseEvent::WheelUp, -1, 1);
                 let lines_visible = wgt.size.height as i16 - 2;
                 if ii.kmod.has_ctrl() {
                     delta *= lines_visible;

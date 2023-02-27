@@ -2,8 +2,9 @@
 # Web: https://github.com/casey/just
 # Man: https://just.systems/man/en/
 #
-# Bash: put the completion script under ~/.local/share/bash-completion/completions/
-#
+# Generate Bash completion script:
+# `just --completions bash > ~/.local/share/bash-completion/completions/just`
+# and reload console
 
 # by default (no params), list the recipes
 default:
@@ -19,12 +20,12 @@ alias nx := nxtest
 # build debug; eg: `just build-dbg -v`
 build-dbg *ARGS:
     cargo build
-    ls -hsk target/debug/eva
+    ls -hsk target/debug/demo1
 
 # build release
 build-rel *ARGS:
     cargo build --release {{ARGS}}
-    ls -hsk target/release/eva
+    ls -hsk target/release/demo1
 
 #
 run-dbg:
@@ -57,3 +58,16 @@ audit:
 # format using nightly (due to unstable rustfmt options)
 fmt:
     cargo +nightly fmt
+
+# debug locally
+gdb:
+    # rust-gdb -tui -ex "b main" target/debug/demo1 -ex "r"
+    cgdb -ex "b main" target/debug/demo1 -ex "r"
+
+# debug remote
+gdbremote:
+    rust-gdb -tui -ex "target remote :6789" -ex "b main" -ex "c"
+
+# gdb server
+gdbserve:
+    gdbserver :6789 target/debug/demo1
