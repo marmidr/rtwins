@@ -1,8 +1,9 @@
 //! Simple widget-based interface definition as const
 
 use rtwins::colors::{ColorBG, ColorFG};
-use rtwins::prop;
-use rtwins::*;
+use rtwins::common::*;
+use rtwins::wgt::prop;
+use rtwins::wgt::*;
 
 #[allow(dead_code)]
 #[rustfmt::skip]

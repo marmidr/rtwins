@@ -1,10 +1,10 @@
 //! # RTWins demo app
 
-#![allow(unused_variables)]
-
 extern crate rtwins;
-use rtwins::WindowState;
-use rtwins::*; // to use trait implementation
+use rtwins::wgt;
+use rtwins::wgt::WindowState;
+use rtwins::Term;
+use rtwins::TraceBuffer;
 
 use std::io::Write;
 
@@ -97,7 +97,7 @@ fn tui_demo() {
     // create Demo window state
     let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN_ARRAY[..]);
     // replace default PAL with our own:
-    rtwins::Term::lock_write().pal = Box::new(DemoPal::new());
+    Term::lock_write().pal = Box::new(DemoPal::new());
     let mut mouse_on = true;
     // let mut wm = WndManager::new();
 
@@ -109,7 +109,7 @@ fn tui_demo() {
 
     // configure terminal, draw window
     {
-        let mut term = rtwins::Term::lock_write();
+        let mut term = Term::lock_write();
         term.trace_row = {
             let coord = dws.get_window_coord();
             let sz = dws.get_window_size();
@@ -125,7 +125,7 @@ fn tui_demo() {
     rtwins::tr_warn!("WARN MACRO 1");
     rtwins::tr_err!("ERR MACRO 1");
     rtwins::tr_debug!("DEBUG MACRO: X={} N={}", 42, "Warduna");
-    rtwins::tr_flush!(&mut rtwins::Term::lock_write());
+    rtwins::tr_flush!(&mut Term::lock_write());
 
     let mut itty = rtwins::input_tty::InputTty::new(1000);
     let mut ique = rtwins::input_decoder::InputQue::new();
@@ -168,15 +168,15 @@ fn tui_demo() {
                 use rtwins::input::Key;
 
                 // pass key to top-window
-                // let key_handled =  rtwins::wgt::process_input(rtwins::glob::wMngr.topWndWidgets(), &ii);
-                let key_handled = rtwins::wgt::process_input(&mut dws, &ii);
+                // let key_handled =  wgt::process_input(rtwins::glob::wMngr.topWndWidgets(), &ii);
+                let _key_handled = wgt::process_input(&mut dws, &ii);
 
                 // input debug info
                 match ii.evnt {
-                    InputEvent::Char(ref cb) => {
-                        rtwins::tr_debug!("char='{}'", cb.utf8str());
+                    InputEvent::Char(ref ch) => {
+                        rtwins::tr_debug!("char='{}'", ch.utf8str());
                     }
-                    InputEvent::Key(ref k) => {
+                    InputEvent::Key(ref _k) => {
                         rtwins::tr_debug!("key={}", ii.name);
                     }
                     InputEvent::Mouse(ref m) => {
@@ -207,12 +207,12 @@ fn tui_demo() {
                             Id::WndMain.into(),
                             !dws.rs.get_enabled_or_default(Id::WndMain.into()),
                         );
-                        dws.invalidate(rtwins::WIDGET_ID_ALL);
+                        dws.invalidate(wgt::WIDGET_ID_ALL);
                     }
                     else if *key == Key::F4 {
                         mouse_on = !mouse_on;
                         rtwins::tr_info!("Mouse {}", if mouse_on { "ON" } else { "OFF" });
-                        let mut term = rtwins::Term::lock_write();
+                        let mut term = Term::lock_write();
                         term.mouse_mode(if mouse_on {
                             rtwins::MouseMode::M2
                         }
@@ -222,7 +222,7 @@ fn tui_demo() {
                         term.flush_buff();
                     }
                     else if *key == Key::F5 {
-                        let mut term = rtwins::Term::lock_write();
+                        let mut term = Term::lock_write();
                         term.screen_clr_all();
                         // draw windows from bottom to top
                         // TODO: wm.redraw_all();
@@ -230,12 +230,12 @@ fn tui_demo() {
                         term.flush_buff();
                     }
                     else if *key == Key::F6 {
-                        let mut term = rtwins::Term::lock_write();
+                        let mut term = Term::lock_write();
                         term.trace_area_clear();
                     }
                     else if ii.kmod.has_ctrl() && (*key == Key::PgUp || *key == Key::PgDown) {
                         // if wm.is_top_wnd(&dws) {
-                        rtwins::wgt::pagectrl_select_next_page(
+                        wgt::pagectrl_select_next_page(
                             &mut dws,
                             Id::PgControl.into(),
                             *key == Key::PgDown,
@@ -245,7 +245,7 @@ fn tui_demo() {
                     }
                     else if *key == Key::F9 || *key == Key::F10 {
                         // if wm.is_top_wnd(&dws) {
-                        rtwins::wgt::pagectrl_select_next_page(
+                        wgt::pagectrl_select_next_page(
                             &mut dws,
                             Id::PgControl.into(),
                             *key == Key::F10,
@@ -255,17 +255,17 @@ fn tui_demo() {
                     }
                 }
 
-                rtwins::Term::lock_write().draw_invalidated(&mut dws);
+                Term::lock_write().draw_invalidated(&mut dws);
             } // decode_input_seq
         }
 
         // flush the trace logs on every loop
-        rtwins::tr_flush!(&mut rtwins::Term::lock_write());
+        rtwins::tr_flush!(&mut Term::lock_write());
     }
 
     // epilogue
     {
-        let mut term = rtwins::Term::lock_write();
+        let mut term = Term::lock_write();
         rtwins::tr_flush!(&mut term);
         term.mouse_mode(rtwins::MouseMode::Off);
         term.trace_area_clear();
@@ -279,6 +279,8 @@ fn tui_demo() {
 
 #[test]
 fn test_esc_codes() {
+    use rtwins::esc;
+
     println!(
         "** {}{}{} ** demo; lib v{}{}{}",
         esc::BOLD,
@@ -310,7 +312,7 @@ fn test_property_access() {
         );
     }
 
-    println!("sizeof Widget: {}", std::mem::size_of::<rtwins::Widget>());
-    println!("sizeof Type: {}", std::mem::size_of::<rtwins::Property>());
+    println!("sizeof Widget: {}", std::mem::size_of::<wgt::Widget>());
+    println!("sizeof Type: {}", std::mem::size_of::<wgt::Property>());
     println!("sizeof Id: {}", std::mem::size_of::<tui_def::Id>());
 }

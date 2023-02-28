@@ -4,6 +4,8 @@ use crate::esc::*;
 use num_enum::TryFromPrimitive;
 use std::convert::TryFrom;
 
+// ---------------------------------------------------------------------------------------------- //
+
 /// Foreground colors
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, TryFromPrimitive)]
 #[repr(u8)]

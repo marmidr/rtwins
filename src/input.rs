@@ -1,5 +1,7 @@
 //! # RTWins terminal input constants and structures
 
+// ---------------------------------------------------------------------------------------------- //
+
 #![allow(dead_code)]
 
 /// ANSI control codes

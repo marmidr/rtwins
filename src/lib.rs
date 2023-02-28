@@ -11,7 +11,6 @@ pub const VER: &str = env!("CARGO_PKG_VERSION");
 // public modules
 pub mod colors;
 pub mod common;
-pub mod debug_trace;
 pub mod esc;
 pub mod input;
 pub mod input_decoder;
@@ -22,6 +21,7 @@ pub mod string_ext;
 pub mod utils;
 
 // private modules
+mod debug_trace;
 mod terminal;
 mod widget_def;
 mod widget_draw;
@@ -29,12 +29,13 @@ mod widget_impl;
 
 // import common definition into library's namespace
 pub use crate::common::*;
-pub use crate::debug_trace::*;
-pub use crate::terminal::*;
-pub use crate::widget_def::*;
+pub use crate::debug_trace::TraceBuffer;
+pub use crate::terminal::PalBox;
+pub use crate::terminal::Term;
 
 // group widget public code under single namespace
 pub mod wgt {
+    pub use crate::widget_def::*;
     pub use crate::widget_draw::*;
     pub use crate::widget_impl::*;
 }

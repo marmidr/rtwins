@@ -5,10 +5,9 @@
 
 use crate::common::*;
 use crate::input::*;
-use crate::string_ext::StrExt;
-use crate::string_ext::StringExt;
+use crate::string_ext::*;
 use crate::widget_def::*;
-use crate::*;
+use crate::*; // tr_info
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -865,7 +864,7 @@ fn change_focus_to(ws: &mut dyn WindowState, new_id: WId) -> bool {
                 }
             }
 
-            if let Ok(mut term_lock) = crate::Term::try_lock_write() {
+            if let Ok(mut term_lock) = Term::try_lock_write() {
                 let term = &mut *term_lock;
                 set_cursor_at(term, ws, new_focused_wgt);
             }
@@ -916,7 +915,7 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
         // tr_debug!("focused id={} ({})", focused.id, focused.prop);
         WGT_STATE.with(|wgstate| wgstate.borrow_mut().focused_wgt = focused.id);
 
-        if let Ok(mut term_lock) = crate::Term::try_lock_write() {
+        if let Ok(mut term_lock) = Term::try_lock_write() {
             wgt::set_cursor_at(&mut term_lock, ws, focused);
         }
         else {
@@ -926,7 +925,7 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
     else {
         WGT_STATE.with(|wgstate| wgstate.borrow_mut().focused_wgt = WIDGET_ID_NONE);
 
-        if let Ok(mut term_lock) = crate::Term::try_lock_write() {
+        if let Ok(mut term_lock) = Term::try_lock_write() {
             term_lock.move_to_home();
         }
         else {
@@ -1195,7 +1194,7 @@ fn process_key_button(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) ->
             ws.on_button_down(wgt, ii);
             ws.instant_redraw(wgt.id);
 
-            if let Ok(term_lock) = crate::Term::try_lock_read() {
+            if let Ok(term_lock) = Term::try_lock_read() {
                 term_lock.pal.sleep(200);
             }
 
@@ -1498,7 +1497,7 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
                     Property::CustomWgt(_) => process_mouse_custom_wgt(ws, wgt, &rct, ii),
                     Property::TextBox(_) => process_mouse_text_box(ws, wgt, &rct, ii),
                     _ => {
-                        if let Ok(mut term_lock) = crate::Term::try_lock_write() {
+                        if let Ok(mut term_lock) = Term::try_lock_write() {
                             let term = &mut *term_lock;
                             term.move_to_home();
                         }

@@ -2,8 +2,8 @@
 
 extern crate rtwins;
 use rtwins::colors::*;
-use rtwins::wgt;
-use rtwins::*;
+use rtwins::common::*;
+use rtwins::wgt::{self, *};
 
 #[rustfmt::skip]
 #[repr(u16)]

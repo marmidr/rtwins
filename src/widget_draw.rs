@@ -6,10 +6,14 @@
 use std::borrow::Borrow;
 use std::cell::RefCell;
 
+use crate::colors;
 use crate::colors::*;
+use crate::common::*;
+use crate::esc;
 use crate::string_ext::*;
-use crate::widget_def::*;
-use crate::*;
+use crate::wgt;
+use crate::wgt::*;
+use crate::*; // tr_info
 
 // ---------------------------------------------------------------------------------------------- //
 

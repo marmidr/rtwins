@@ -4,6 +4,8 @@ use std::fmt::Write;
 use std::ops::Shl;
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
+// ---------------------------------------------------------------------------------------------- //
+
 /// Trait extending base `String` functionality
 pub trait StringExt {
     /// Push ANSI escape sequence, replacing `{0}` with the `val`
@@ -41,6 +43,7 @@ impl StringExt for String {
         }
     }
 
+    #[allow(clippy::comparison_chain)]
     fn set_displayed_width(&mut self, expected_disp_w: i16) {
         let disp_width = self.as_str().displayed_width();
         let missing_cols = expected_disp_w - disp_width as i16;
@@ -78,9 +81,7 @@ impl StringExt for String {
     }
 
     fn erase_char_range(&mut self, ch_from: usize, len: usize) {
-        let mut char_idx = 0;
-
-        for (byte_idx, _) in self.char_indices() {
+        for (char_idx, (byte_idx, _)) in self.char_indices().enumerate() {
             if char_idx == ch_from {
                 (0..len).for_each(|_| {
                     if byte_idx < self.len() {
@@ -89,31 +90,24 @@ impl StringExt for String {
                 });
                 break;
             }
-            char_idx += 1;
         }
     }
 
     fn trim_at_char_idx(&mut self, ch_idx: usize) {
-        let mut char_idx = 0;
-
-        for (byte_idx, _) in self.char_indices() {
+        for (char_idx, (byte_idx, _)) in self.char_indices().enumerate() {
             if char_idx == ch_idx {
                 self.truncate(byte_idx);
                 break;
             }
-            char_idx += 1;
         }
     }
 
     fn split_at_char_idx(&self, ch_idx: usize) -> &str {
-        let mut char_idx = 0;
-
-        for (byte_idx, _) in self.char_indices() {
+        for (char_idx, (byte_idx, _)) in self.char_indices().enumerate() {
             if char_idx == ch_idx {
                 let (_, trailing) = self.split_at(byte_idx);
                 return trailing;
             }
-            char_idx += 1;
         }
 
         ""

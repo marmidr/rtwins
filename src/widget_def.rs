@@ -3,11 +3,12 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
+use paste::paste;
 use std::collections::HashMap;
 
+use crate::common::*;
 use crate::input::*;
-use crate::*;
-use paste::paste;
+use crate::wgt;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -408,7 +409,7 @@ impl Link {
 // ---------------------------------------------------------------------------------------------- //
 
 /// Widget RunTime state
-pub mod state_rt {
+pub mod rstate {
 
     use crate::utils::StringListRc;
 
@@ -501,7 +502,7 @@ pub mod state_rt {
 #[derive(Default)]
 pub struct RuntimeStates {
     // widget type state
-    states: HashMap<WId, state_rt::State>,
+    states: HashMap<WId, rstate::State>,
     // applies to every widget
     enabled: HashMap<WId, bool>,
 }
@@ -510,11 +511,11 @@ pub struct RuntimeStates {
 macro_rules! impl_as {
     ($name: ident, $prop: ident) => {
         paste! {
-            pub fn $name(&mut self, id: WId) -> &mut state_rt::[< $prop State >] {
+            pub fn $name(&mut self, id: WId) -> &mut rstate::[< $prop State >] {
                 let rs = self.states.entry(id).or_insert(
-                    state_rt::[< $prop State >]::default().into());
+                    rstate::[< $prop State >]::default().into());
 
-                if let state_rt::State::$prop(ref mut stat) = rs {
+                if let rstate::State::$prop(ref mut stat) = rs {
                     return stat;
                 }
 
@@ -541,11 +542,11 @@ impl RuntimeStates {
         *self.enabled.entry(id).or_insert(true) = en;
     }
 
-    pub fn insert_state(&mut self, id: WId, state: state_rt::State) {
+    pub fn insert_state(&mut self, id: WId, state: rstate::State) {
         self.states.insert(id, state);
     }
 
-    pub fn get_state(&self, id: WId) -> Option<&state_rt::State> {
+    pub fn get_state(&self, id: WId) -> Option<&rstate::State> {
         self.states.get(&id)
     }
 
@@ -590,7 +591,11 @@ pub trait WindowState {
     fn on_combo_box_drop(&mut self, wgt: &Widget, drop_state: bool) {}
     fn on_radio_select(&mut self, wgt: &Widget) {}
     fn on_text_box_scroll(&mut self, wgt: &Widget, new_top_line: i16) {}
-    fn on_custom_widget_draw(&mut self, wgt: &Widget, term: &std::cell::RefCell<&mut crate::Term>) {
+    fn on_custom_widget_draw(
+        &mut self,
+        wgt: &Widget,
+        term: &std::cell::RefCell<&mut crate::terminal::Term>,
+    ) {
     }
     fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
         false
@@ -637,18 +642,18 @@ pub trait WindowState {
         false
     }
     fn get_led_text(&mut self, wgt: &Widget, txt: &mut String) {}
-    fn get_progress_bar_state(&mut self, wgt: &Widget, state: &mut state_rt::PgbarState) {}
+    fn get_progress_bar_state(&mut self, wgt: &Widget, state: &mut rstate::PgbarState) {}
     fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> i16 {
         0
     }
-    fn get_list_box_state(&mut self, wgt: &Widget, state: &mut state_rt::LbxState) {}
+    fn get_list_box_state(&mut self, wgt: &Widget, state: &mut rstate::LbxState) {}
     fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
-    fn get_combo_box_state(&mut self, wgt: &Widget, state: &mut state_rt::CbbxState) {}
+    fn get_combo_box_state(&mut self, wgt: &Widget, state: &mut rstate::CbbxState) {}
     fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
     fn get_radio_index(&mut self, wgt: &Widget) -> i16 {
         -1
     }
-    fn get_text_box_state(&mut self, wgt: &Widget, state: &mut state_rt::TxtbxState) {}
+    fn get_text_box_state(&mut self, wgt: &Widget, state: &mut rstate::TxtbxState) {}
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {}
 
     /// requests

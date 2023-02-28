@@ -6,6 +6,8 @@ use std::os::unix::io::AsRawFd;
 
 const TTY_FILE_PATH: &str = "/dev/tty";
 
+// ---------------------------------------------------------------------------------------------- //
+
 pub struct InputTty {
     tty_file: Option<std::fs::File>,
     c_lflag_bkp: libc::tcflag_t,
