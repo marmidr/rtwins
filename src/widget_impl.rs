@@ -362,20 +362,20 @@ pub fn reset_internal_state() {
 }
 
 pub fn process_input(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
-    let mut key_processed;
+    let mut input_handled;
 
     // TWINS_LOG_D("---");
     match ii.evnt {
         InputEvent::None => {
-            key_processed = true;
+            input_handled = true;
         }
         InputEvent::Mouse(_) => {
-            key_processed = process_mouse(ws, ii);
+            input_handled = process_mouse(ws, ii);
         }
         InputEvent::Key(_) | InputEvent::Char(_) => {
-            key_processed = process_key(ws, ii);
+            input_handled = process_key(ws, ii);
 
-            if !key_processed && ii.kmod.has_special() {
+            if !input_handled && ii.kmod.has_special() {
                 WGT_STATE.with(|wgtstate| {
                     let dd_combo_id = wgtstate.borrow().drop_down_combo;
                     if dd_combo_id != WIDGET_ID_NONE {
@@ -390,27 +390,27 @@ pub fn process_input(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
                         Key::Esc => {
                             let curr_id = ws.get_focused_id();
                             let new_id = get_parent_to_focus(ws, curr_id);
-                            key_processed = change_focus_to(ws, new_id);
+                            input_handled = change_focus_to(ws, new_id);
                         }
                         Key::Tab => {
                             let curr_id = ws.get_focused_id();
                             let new_id = get_next_to_focus(ws, curr_id, !ii.kmod.has_shift());
-                            key_processed = change_focus_to(ws, new_id);
+                            input_handled = change_focus_to(ws, new_id);
                         }
                         _ => {}
                     }
                 }
             }
 
-            if !key_processed {
+            if !input_handled {
                 if let Some(wgt) = ws.get_widgets().first() {
-                    key_processed = ws.on_window_unhandled_input_evt(wgt, ii);
+                    input_handled = ws.on_window_unhandled_input_evt(wgt, ii);
                 }
             }
         }
     }
 
-    key_processed
+    input_handled
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -435,12 +435,22 @@ pub fn page_page_idx(page: &Widget) -> Option<i16> {
 /// Returns WId of page at PageCtrl pages index
 pub fn pagectrl_page_wid(pgctrl: &Widget, page_idx: i16) -> WId {
     if let Property::PageCtrl(_) = pgctrl.prop {
-        if let Some(pg) = pgctrl.iter_children().skip(page_idx as usize).next() {
+        if let Some(pg) = pgctrl.iter_children().nth(page_idx as usize) {
             return pg.id;
         }
     }
 
     WIDGET_ID_NONE
+}
+
+/// Returns PageCtrl pages count
+pub fn pagectrl_page_count(widgets: &[Widget], pgctrl_id: WId) -> u16 {
+    if let Some(pgctrl) = find_by_id(widgets, pgctrl_id) {
+        pgctrl.link.children_cnt
+    }
+    else {
+        0
+    }
 }
 
 /// checks both `pgctrl` widget type and if `page_id` is one of its pages
@@ -673,7 +683,11 @@ fn get_next_focusable(
         parent.prop.to_string(),
         parent.id,
         focused_id
-    ); //crate::sleepMs(200);
+    );
+
+    // if let Ok(term_lock) = crate::Term::try_lock_read() {
+    //     term_lock.pal.sleep(200);
+    // }
 
     if focused_id == WIDGET_ID_NONE {
         // get first/last of the children ID
@@ -1179,8 +1193,12 @@ fn process_key_button(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) ->
             });
 
             ws.on_button_down(wgt, ii);
-            ws.invalidate_now(wgt.id);
-            // TODO: sleepMs(50);
+            ws.instant_redraw(wgt.id);
+
+            if let Ok(term_lock) = crate::Term::try_lock_read() {
+                term_lock.pal.sleep(200);
+            }
+
             WGT_STATE.with(|wgtstate| {
                 wgtstate.borrow_mut().mouse_down_wgt = WIDGET_ID_NONE;
             });
@@ -1273,6 +1291,7 @@ fn process_key_list_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
 fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
     let mut cbs = Default::default();
     ws.get_combo_box_state(wgt, &mut cbs);
+    let mut input_handled = false;
 
     if let InputEvent::Char(ref ch) = ii.evnt {
         if ch.utf8seq[0] == b' ' && cbs.items_cnt > 0 {
@@ -1288,13 +1307,18 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
             else {
                 combo_box_hide_list(ws, wgt);
             }
+
+            input_handled = true;
         }
     }
     else if let InputEvent::Key(ref key) = ii.evnt {
         if *key == Key::Esc {
             combo_box_hide_list(ws, wgt);
+            input_handled = true;
         }
         else if cbs.drop_down {
+            input_handled = true;
+
             if *key == Key::Up {
                 cbs.sel_idx -= 1;
                 if cbs.sel_idx < 0 {
@@ -1334,16 +1358,16 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                 combo_box_hide_list(ws, wgt);
             }
             else {
-                return false;
+                input_handled = false;
             }
         }
     }
-    else {
-        return false;
+
+    if input_handled {
+        ws.invalidate(wgt.id);
     }
 
-    ws.invalidate(wgt.id);
-    true
+    input_handled
 }
 
 fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
@@ -1376,7 +1400,6 @@ fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
 
             ws.on_text_box_scroll(wgt, tbs.top_line);
             ws.invalidate(wgt.id);
-
             return true;
         }
     }

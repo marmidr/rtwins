@@ -656,7 +656,7 @@ pub trait WindowState {
     fn invalidate(&mut self, wid: WId) {
         self.invalidate_many(&[wid]);
     }
-    fn invalidate_now(&mut self, wid: WId) {}
+    fn instant_redraw(&mut self, wid: WId) {}
     fn invalidate_many(&mut self, wids: &[WId]) {}
     fn invalidate_clear(&mut self) {}
     fn get_invalidated(&mut self) -> Vec<WId> {

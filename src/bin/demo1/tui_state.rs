@@ -18,8 +18,8 @@ pub struct DemoWndState {
     widgets: &'static [Widget],
     /// widgets runtime state
     pub rs: RuntimeStates,
-    /// currently focused widget
-    focused_id: WId,
+    /// currently focused widget, for each pagecontrol page
+    focused_ids: Vec<WId>,
     /// text of focused text edit widget
     text_edit1_txt: String,
     text_edit2_txt: String,
@@ -70,7 +70,7 @@ impl DemoWndState {
         let mut wnd_state = DemoWndState {
             widgets,
             rs: RuntimeStates::new(),
-            focused_id: WIDGET_ID_NONE,
+            focused_ids: vec![],
             text_edit1_txt: String::new(),
             text_edit2_txt: String::new(),
             invalidated: vec![],
@@ -80,6 +80,12 @@ impl DemoWndState {
             tbx_wide_lines: Rc::new(RefCell::new(vec![])),
             tbx_narrow_lines: Rc::new(RefCell::new(vec![])),
         };
+
+        // initial tsate of focused id for each page
+        wnd_state.focused_ids.resize(
+            rtwins::wgt::pagectrl_page_count(widgets, Id::PgControl.into()) as usize,
+            WIDGET_ID_NONE,
+        );
 
         wnd_state.lbx_items.extend_from_slice(&[
             "Black",
@@ -218,7 +224,7 @@ impl rtwins::WindowState for DemoWndState {
         }
 
         if wgt.id == Id::BtnYes {
-            // TODO:
+            // TODO: use command pattern to solve the missing ws ?
             // rtwins::wgt::pagectrl_select_page(ws, Id::PgControl, Id::PageTextbox);
         }
     }
@@ -230,10 +236,9 @@ impl rtwins::WindowState for DemoWndState {
             if let InputEvent::Char(ref ch) = ii.evnt {
                 if ch.utf8seq[0] == b' ' {
                     rtwins::wgt::mark_button_down(wgt, true);
-                    self.invalidate_now(wgt.id);
+                    self.instant_redraw(wgt.id);
                     // wait and unpress the button
-                    //TODO: twins::glob::pal.sleep(500);
-                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    std::thread::sleep(std::time::Duration::from_millis(200));
                     rtwins::wgt::mark_button_down(wgt, false);
                     self.invalidate(wgt.id);
                     // clear input queue as it may be full of Keyboar key events;
@@ -395,7 +400,16 @@ impl rtwins::WindowState for DemoWndState {
     }
 
     fn is_focused(&self, wgt: &Widget) -> bool {
-        self.focused_id == wgt.id
+        self.rs
+            .get_state(Id::PgControl.into())
+            .map_or(false, |state| {
+                if let rtwins::state_rt::State::Pgctrl(ref rs) = state {
+                    self.focused_ids[rs.page as usize] == wgt.id
+                }
+                else {
+                    false
+                }
+            })
     }
 
     fn is_visible(&self, wgt: &Widget) -> bool {
@@ -412,19 +426,23 @@ impl rtwins::WindowState for DemoWndState {
         }
 
         if wgt.id == Id::Layer1 {
-            if let Some(stat) = self.rs.get_state_by_id(Id::ChbxL1) {
-                if let state_rt::State::Chbx(ref cbx) = stat {
-                    return cbx.checked;
+            return self.rs.get_state_by_id(Id::ChbxL1).map_or(true, |state| {
+                if let state_rt::State::Chbx(ref cbx) = state {
+                    cbx.checked
+                } else {
+                    true
                 }
-            }
+            });
         }
 
         if wgt.id == Id::Layer2 {
-            if let Some(stat) = self.rs.get_state_by_id(Id::ChbxL2) {
-                if let state_rt::State::Chbx(ref cbx) = stat {
-                    return cbx.checked;
+            return self.rs.get_state_by_id(Id::ChbxL2).map_or(true, |state| {
+                if let state_rt::State::Chbx(ref cbx) = state {
+                    cbx.checked
+                } else {
+                    true
                 }
-            }
+            });
         }
 
         true
@@ -435,11 +453,13 @@ impl rtwins::WindowState for DemoWndState {
     }
 
     fn get_focused_id(&mut self) -> WId {
-        self.focused_id
+        let rs = self.rs.as_pgctrl(Id::PgControl.into());
+        self.focused_ids[rs.page as usize]
     }
 
     fn set_focused_id(&mut self, wid: WId) {
-        self.focused_id = wid;
+        let rs = self.rs.as_pgctrl(Id::PgControl.into());
+        self.focused_ids[rs.page as usize] = wid;
     }
 
     fn get_widgets(&self) -> &'static [Widget] {
@@ -625,9 +645,14 @@ impl rtwins::WindowState for DemoWndState {
         self.invalidated.extend(wids.iter());
     }
 
-    fn invalidate_now(&mut self, wid: WId) {
-        // TODO:
-        self.invalidate(wid);
+    fn instant_redraw(&mut self, wid: WId) {
+        if let Ok(mut term_lock) = crate::Term::try_lock_write() {
+            term_lock.draw(self, &[wid]);
+            term_lock.flush_buff();
+        }
+        else {
+            tr_warn!("Cannot lock the term");
+        }
     }
 
     fn invalidate_clear(&mut self) {

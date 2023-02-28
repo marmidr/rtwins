@@ -48,7 +48,7 @@ impl rtwins::pal::Pal for DemoPal {
     fn flush_buff(&mut self) {
         std::io::stdout()
             .lock()
-            .write(self.line_buff.as_bytes())
+            .write_all(self.line_buff.as_bytes())
             .expect("Error writing to stdout");
 
         std::io::stdout()

@@ -106,13 +106,11 @@ pub fn num_edit_input_evt(
                 let mut delta: i64 = if ii.kmod.has_shift() {
                     100
                 }
+                else if ii.kmod.has_ctrl() {
+                    10
+                }
                 else {
-                    if ii.kmod.has_ctrl() {
-                        10
-                    }
-                    else {
-                        1
-                    }
+                    1
                 };
 
                 if *key == Key::Down {

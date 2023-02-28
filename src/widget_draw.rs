@@ -954,20 +954,20 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox) {
         }
     }
 
-    #[allow(clippy::field_reassign_with_default)]
     if cbs.drop_down {
-        let mut dlp = DrawListParams::default();
-        dlp.coord = my_coord;
-        dlp.coord.row += 1;
-        dlp.item_idx = cbs.item_idx;
-        dlp.sel_idx = cbs.sel_idx;
-        dlp.item_idx = cbs.items_cnt;
-        dlp.frame_size = 0;
-        dlp.items_cnt = cbs.items_cnt;
-        dlp.items_visible = prp.drop_down_size as i16;
+        let mut dlp = DrawListParams {
+            coord: my_coord,
+            item_idx: cbs.item_idx,
+            sel_idx: cbs.sel_idx,
+            items_cnt: cbs.items_cnt,
+            items_visible: prp.drop_down_size as i16,
+            focused,
+            wgt_width: dctx.wgt.size.width,
+            ..DrawListParams::default()
+        };
+
         dlp.top_item = (dlp.sel_idx / dlp.items_visible) * dlp.items_visible;
-        dlp.focused = focused;
-        dlp.wgt_width = dctx.wgt.size.width;
+        dlp.coord.row += 1;
 
         // in 2021 edition, we can use entire struct in the closure
         // and see no borrowchecker error
@@ -1266,8 +1266,9 @@ where
         );
     }
 
-    // TODO: make a small separate function using `get_item`
-    // so it will be the only one instantiated
+    let mut get_list_item = |idx: i16, strbuff: &mut String| {
+        get_item(idx, strbuff);
+    };
 
     term.flush_buff();
     let mut strbuff = String::with_capacity(50);
@@ -1287,7 +1288,7 @@ where
 
         strbuff.clear();
         if dlp.top_item + i < dlp.items_cnt {
-            get_item(dlp.top_item + i, &mut strbuff);
+            get_list_item(dlp.top_item + i, &mut strbuff);
             strbuff.insert(0, if is_current_item { '►' } else { ' ' });
             strbuff.set_displayed_width(dlp.wgt_width as i16 - 1 - dlp.frame_size as i16);
         }
