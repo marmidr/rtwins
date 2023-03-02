@@ -6,7 +6,6 @@
 use std::borrow::Borrow;
 use std::cell::RefCell;
 
-use crate::colors;
 use crate::colors::*;
 use crate::common::*;
 use crate::esc;
@@ -367,9 +366,7 @@ fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit) {
     dctx.strbuff.append("[^]");
 
     let focused = dctx.wnd_state.is_focused(dctx.wgt);
-    let clbg = get_widget_bg_color(dctx.wgt);
-    //TODO: intensifyClIf(focused, clbg);
-
+    let clbg = get_widget_bg_color(dctx.wgt).intensify_if(focused);
     let _fm = FontMemento::new(&dctx.term_cell);
     let mut term = dctx.term_cell.borrow_mut();
     term.move_to(
@@ -417,16 +414,7 @@ fn draw_checkbox(dctx: &mut DrawCtx, prp: &prop::CheckBox) {
         "[ ] "
     };
     let focused = dctx.wnd_state.is_focused(dctx.wgt);
-    let clfg = {
-        let cl = get_widget_fg_color(dctx.wgt);
-        if focused {
-            intensify_cl_fg(cl)
-        }
-        else {
-            cl
-        }
-    };
-
+    let clfg = get_widget_fg_color(dctx.wgt).intensify_if(focused);
     let _fm = FontMemento::new(&dctx.term_cell);
     let mut term = dctx.term_cell.borrow_mut();
     term.move_to(
@@ -453,16 +441,7 @@ fn draw_radio(dctx: &mut DrawCtx, prp: &prop::Radio) {
     };
 
     let focused = dctx.wnd_state.is_focused(dctx.wgt);
-    let clfg = {
-        let cl = get_widget_fg_color(dctx.wgt);
-        if focused {
-            colors::intensify_cl_fg(cl)
-        }
-        else {
-            cl
-        }
-    };
-
+    let clfg = get_widget_fg_color(dctx.wgt).intensify_if(focused);
     let _fm = FontMemento::new(&dctx.term_cell);
     let mut term = dctx.term_cell.borrow_mut();
     term.move_to(
@@ -483,16 +462,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button) {
         return dctx.wgt.id == wgtstate.borrow().mouse_down_wgt;
     });
 
-    let clfg = {
-        let cl = get_widget_fg_color(dctx.wgt);
-        if focused {
-            intensify_cl_fg(cl)
-        }
-        else {
-            cl
-        }
-    };
-
+    let clfg = get_widget_fg_color(dctx.wgt).intensify_if(focused);
     let mut txt = String::new();
     if !prp.text.is_empty() {
         txt.push_str(prp.text);
@@ -607,7 +577,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button) {
         let clparbg = get_widget_bg_color(wgt::get_parent(dctx.wgt));
         let bnt_len = 2 + txt.displayed_width() as i16;
         let scl_shadow = crate::bg_color!(233);
-        let scl_bg2fg = transcode_cl_bg_2_fg(encode_cl_bg(clbg));
+        let scl_bg2fg = clbg.transcode_2_fg();
 
         {
             let mut term = dctx.term_cell.borrow_mut();
@@ -1180,7 +1150,7 @@ fn draw_area(
         // trailing shadow
         strbuff.push_str(esc::FG_BLACK);
         strbuff.push('█');
-        strbuff.push_str(colors::encode_cl_fg(cl_fg));
+        strbuff.push_str(cl_fg.encode());
     }
 
     for r in coord.row + 1..coord.row + size.height - 1 {
@@ -1210,7 +1180,7 @@ fn draw_area(
         // trailing shadow
         draw_line(&mut strbuff, '█', size.width + 2);
         term.write_str(strbuff.as_str());
-        term.write_str(colors::encode_cl_fg(cl_fg));
+        term.write_str(cl_fg.encode());
         term.flush_buff();
     }
 

@@ -5,11 +5,38 @@ use rtwins::common::*;
 use rtwins::wgt::prop;
 use rtwins::wgt::*;
 
+/*
+macro_rules! generate_ids {
+    ($($id: ident)+) => (
+        $(
+            const $id: WId = 0; // how to make it autoincremental?
+        )+
+    )
+}
+
+#[allow(dead_code)]
+mod id {
+    use super::WId;
+
+    #[rustfmt::skip]
+    generate_ids!(
+        WND_MAIN
+            BTN_TOASTER
+            PG_CONTROL
+                PAGE_VER
+                    PANEL_VERSIONS
+                        LABEL_FW_VERSION
+                        LABEL_DATE
+                        LABEL_ABOUT
+                    PANEL_STATE
+    );
+}
+*/
+
 #[allow(dead_code)]
 #[rustfmt::skip]
 #[repr(u16)]
 #[derive(Clone, Copy)]
-// TODO: instead of enum, use some macro defining const ID_BTN_TOASTER: WId = 1;
 pub enum Id {
     WndMain = WIDGET_ID_NONE + 1,
         BtnToaster,
@@ -83,15 +110,6 @@ impl Id {
         self as WId
     }
 }
-
-/// Helper to avoid code like this
-/// `Id::LabelMultiFmt.into() == wgt.id`
-// impl std::cmp::PartialEq<WId> for Id {
-//     #[inline]
-//     fn eq(&self, other: &WId) -> bool {
-//         *self as WId == *other
-//     }
-// }
 
 /// Helper to avoid using `.into()` in WId == Id comparison
 impl std::cmp::PartialEq<Id> for WId {

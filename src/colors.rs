@@ -100,30 +100,6 @@ const MAP_CL_BG: [&str; 18] = [
 
 // -----------------------------------------------------------------------------
 
-/// Convert color identifier to ANSI escape code
-pub fn encode_cl_fg(cl: ColorFG) -> &'static str {
-    if (cl as usize) < MAP_CL_FG.len() {
-        return MAP_CL_FG[cl as usize];
-    }
-
-    // if (INRANGE(cl, ColorFG::ThemeBegin, ColorFG::ThemeEnd))
-    //     return encodeClTheme(cl);
-
-    ""
-}
-
-/// Convert color identifier to ANSI escape code
-pub fn encode_cl_bg(cl: ColorBG) -> &'static str {
-    if (cl as usize) < MAP_CL_BG.len() {
-        return MAP_CL_BG[cl as usize];
-    }
-
-    // if (INRANGE(cl, ColorBG::ThemeBegin, ColorBG::ThemeEnd))
-    //     return encodeClTheme(cl);
-
-    ""
-}
-
 // implemented in user code:
 // const char* encodeClTheme(ColorFG cl);
 // const char* encodeClTheme(ColorBG cl);
@@ -157,46 +133,105 @@ pub fn transcode_cl_bg_2_fg(bg_color_code: &str) -> String {
     out
 }
 
-/// Convert Normal into Intense color
-pub fn intensify_cl_fg(cl: ColorFG) -> ColorFG {
-    if cl > ColorFG::Default && cl < ColorFG::WhiteIntense {
-        let cl_next_val = (cl as u8) + 1;
-        // intensified has odd value
-        if cl_next_val & 0x01 != 0 {
-            let cl_new = ColorFG::try_from(cl_next_val).unwrap_or(cl);
-            return cl_new;
+// ---------------------------------------------------------------------------------------------- //
+
+impl ColorFG {
+    /// Converts Normal into Intense color
+    pub fn intensify(self) -> Self {
+        if self > ColorFG::Default && self < ColorFG::WhiteIntense {
+            let cl_next_val = (self as u8) + 1;
+            // intensified has odd value
+            if cl_next_val & 0x01 != 0 {
+                let cl_new = ColorFG::try_from(cl_next_val).unwrap_or(self);
+                return cl_new;
+            }
         }
-    }
-    else if cl == ColorFG::Default {
-        // force something bright
-        return ColorFG::WhiteIntense;
+        else if self == ColorFG::Default {
+            // force something bright
+            return ColorFG::WhiteIntense;
+        }
+
+        /*
+            if (INRANGE(self, ColorFG::ThemeBegin, ColorFG::ThemeEnd))
+                return intensifyClTheme(self);
+        */
+        self
     }
 
-    /*
-        if (INRANGE(cl, ColorFG::ThemeBegin, ColorFG::ThemeEnd))
-            return intensifyClTheme(cl);
-    */
-    cl
+    #[inline]
+    /// Conditionally converts Normal into Intense color
+    pub fn intensify_if(self, cond: bool) -> Self {
+        if cond {
+            self.intensify()
+        }
+        else {
+            self
+        }
+    }
+
+    /// Converts color identifier to ANSI escape code
+    pub fn encode(self) -> &'static str {
+        if (self as usize) < MAP_CL_FG.len() {
+            return MAP_CL_FG[self as usize];
+        }
+
+        // if (INRANGE(self, ColorFG::ThemeBegin, ColorFG::ThemeEnd))
+        //     return encodeClTheme(self);
+
+        ""
+    }
 }
 
-/// Convert Normal into Intense color
-pub fn intensify_cl_bg(cl: ColorBG) -> ColorBG {
-    if cl > ColorBG::Default && cl < ColorBG::WhiteIntense {
-        let cl_next_val = (cl as u8) + 1;
-        // intensified has odd value
-        if cl_next_val & 0x01 != 0 {
-            let cl_new = ColorBG::try_from(cl_next_val).unwrap_or(cl);
-            return cl_new;
+impl ColorBG {
+    /// Converts Normal into Intense color
+    pub fn intensify(self) -> Self {
+        if self > ColorBG::Default && self < ColorBG::WhiteIntense {
+            let cl_next_val = (self as u8) + 1;
+            // intensified has odd value
+            if cl_next_val & 0x01 != 0 {
+                let cl_new = ColorBG::try_from(cl_next_val).unwrap_or(self);
+                return cl_new;
+            }
         }
-    }
-    else if cl == ColorBG::Default {
-        // force something bright
-        return ColorBG::WhiteIntense;
+        else if self == ColorBG::Default {
+            // force something bright
+            return ColorBG::WhiteIntense;
+        }
+
+        /*
+            if (INRANGE(self, ColorBG::ThemeBegin, ColorBG::ThemeEnd))
+                return intensifyClTheme(self);
+        */
+        self
     }
 
-    /*
-        if (INRANGE(cl, ColorBG::ThemeBegin, ColorBG::ThemeEnd))
-            return intensifyClTheme(cl);
-    */
-    cl
+    #[inline]
+    /// Conditionally converts Normal into Intense color
+    pub fn intensify_if(self, cond: bool) -> Self {
+        if cond {
+            self.intensify()
+        }
+        else {
+            self
+        }
+    }
+
+    /// Converts color identifier to ANSI escape code
+    pub fn encode(self) -> &'static str {
+        if (self as usize) < MAP_CL_BG.len() {
+            return MAP_CL_BG[self as usize];
+        }
+
+        // if (INRANGE(self, ColorBG::ThemeBegin, ColorBG::ThemeEnd))
+        //     return encodeClTheme(self);
+
+        ""
+    }
+
+    #[inline]
+    /// Returns matching foreground color sequence string
+    pub fn transcode_2_fg(self) -> String {
+        let bg_color_code = self.encode();
+        transcode_cl_bg_2_fg(bg_color_code)
+    }
 }

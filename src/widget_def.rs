@@ -469,14 +469,16 @@ pub mod rstate {
 
     // Implements into() for all properties
     macro_rules! impl_into {
-    ($($prop: ident)*) => ($(
-        impl paste!{ [< $prop State >]} {
-            pub fn into(self) -> State {
-                State::$prop(self)
-            }
-        }
-    )*)
-}
+        ($($prop: ident)*) => (
+            $(
+                impl paste!{ [< $prop State >]} {
+                    pub fn into(self) -> State {
+                        State::$prop(self)
+                    }
+                }
+            )*
+        )
+    }
 
     impl_into! {Chbx Led Lbx Cbbx Pgbar Txtbx Pgctrl}
 

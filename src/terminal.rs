@@ -260,7 +260,7 @@ impl Term {
     pub fn push_cl_fg(&mut self, cl: ColorFG) {
         self.stack_cl_fg.push(self.current_cl_fg);
         self.current_cl_fg = cl;
-        self.write_str(encode_cl_fg(self.current_cl_fg));
+        self.write_str(self.current_cl_fg.encode());
     }
 
     /// Restore current-n foreground color from the stack
@@ -270,7 +270,7 @@ impl Term {
             n -= 1;
         }
 
-        self.write_str(encode_cl_fg(self.current_cl_fg));
+        self.write_str(self.current_cl_fg.encode());
     }
 
     /// Restore previous foreground color
@@ -290,7 +290,7 @@ impl Term {
     pub fn push_cl_bg(&mut self, cl: ColorBG) {
         self.stack_cl_bg.push(self.current_cl_bg);
         self.current_cl_bg = cl;
-        self.write_str(encode_cl_bg(self.current_cl_bg));
+        self.write_str(self.current_cl_bg.encode());
     }
 
     /// Restore current-n background color from the stack
@@ -300,7 +300,7 @@ impl Term {
             n -= 1;
         }
 
-        self.write_str(encode_cl_bg(self.current_cl_bg));
+        self.write_str(self.current_cl_bg.encode());
     }
 
     /// Restore previous background color
