@@ -1042,7 +1042,7 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
             if let Some(line) = lines.get(i) {
                 // iterate over all ESC sequences in the line
                 for it in line.bytes().enumerate() {
-                    if it.1 == b'\x1B' {
+                    if it.1 == crate::esc::ESC_U8 {
                         let esc = line.as_str();
                         // get the sequence and push it to the output stream
                         let esc = &esc[it.0..esc.len()];
@@ -1278,22 +1278,19 @@ where
     let mut strbuff = String::with_capacity(50);
 
     for i in 0..dlp.items_visible {
-        let is_current_item = if dlp.items_cnt > 0 {
-            dlp.top_item + i == dlp.item_idx
-        }
-        else {
-            false
-        };
+        let is_current_item = tetrary!(dlp.items_cnt > 0, dlp.top_item + i == dlp.item_idx, false);
         let is_sel_item = dlp.top_item + i == dlp.sel_idx;
+
         term.move_to(
             dlp.coord.col as u16 + dlp.frame_size as u16,
             dlp.coord.row as u16 + i as u16 + dlp.frame_size as u16,
         );
 
         strbuff.clear();
+
         if dlp.top_item + i < dlp.items_cnt {
+            strbuff.push(tetrary!(is_current_item, '►', ' '));
             get_list_item(dlp.top_item + i, &mut strbuff);
-            strbuff.insert(0, if is_current_item { '►' } else { ' ' });
             strbuff.set_displayed_width(dlp.wgt_width as i16 - 1 - dlp.frame_size as i16);
         }
         else {
@@ -1307,7 +1304,9 @@ where
         if is_current_item {
             term.push_attr(FontAttrib::Underline);
         }
+
         term.write_str(strbuff.as_str());
+
         if is_current_item {
             term.pop_attr();
         }

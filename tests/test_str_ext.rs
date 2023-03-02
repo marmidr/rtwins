@@ -9,6 +9,10 @@ use pretty_assertions::assert_eq;
 #[test]
 fn esc_len() {
     assert_eq!(0, "".esc_seq_len());
+    // Bold
+    assert_eq!(3, "\x1B1m".esc_seq_len());
+    // Normal
+    assert_eq!(4, "\x1B22m".esc_seq_len());
     // Up prefixed with space
     assert_eq!(0, " \x1B[A".esc_seq_len());
     // Up
@@ -50,7 +54,6 @@ fn str_stream() {
     let mut s = String::from("Hello");
 
     let _ = s.stream() << " darkness" << ',' << ' ' << "my old friend. " << ('*', 3);
-
     assert_eq!("Hello darkness, my old friend. ***", s.as_str());
 }
 
@@ -145,6 +148,52 @@ fn set_displayed_width() {
         let mut s = String::from("**😁");
         s.set_displayed_width(3);
         assert_eq!("**…", s);
+    }
+}
+
+#[test]
+fn set_displayed_width_with_esc() {
+    // expand with ESC sentences
+    {
+        let mut s = String::new();
+        s.push_str(esc::BOLD);
+        s.push_str("Item");
+        s.push_str(esc::NORMAL);
+        s.push_str("#");
+
+        let mut s_exppected = s.clone();
+        s_exppected.push_str("  ");
+        s.set_displayed_width(7);
+        assert_eq!(s_exppected, s);
+    }
+
+    // shrink with ESC sentences
+    {
+        let mut s = String::new();
+        s.push_str(esc::BOLD);
+        s.push_str("Item");
+        s.push_str(esc::NORMAL);
+
+        let mut s_exppected = s.clone();
+        s.push_str(" 0034567890123456789*");
+        s.set_displayed_width(16);
+
+        s_exppected.push_str(" 0034567890…");
+        assert_eq!(s_exppected, s);
+    }
+
+    // shrink with ESC sentences
+    {
+        let mut s = String::new();
+        s.push_str(esc::BOLD);
+        let mut s_exppected = s.clone();
+
+        s.push_str("Item");
+        s.push_str(esc::NORMAL);
+        s.set_displayed_width(1);
+
+        s_exppected.push_str("…");
+        assert_eq!(s_exppected, s);
     }
 }
 

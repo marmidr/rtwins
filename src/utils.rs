@@ -8,6 +8,18 @@ pub type StringListRc = std::rc::Rc<std::cell::RefCell<Vec<String>>>;
 
 // ---------------------------------------------------------------------------------------------- //
 
+#[macro_export]
+macro_rules! tetrary {
+    ($cond:expr, $then:expr, $else:expr) => {
+        if $cond {
+            $then
+        }
+        else {
+            $else
+        }
+    };
+}
+
 /// Splits given string into lines so that each line is not wider than `max_disp_w`.
 ///
 /// Display width is calculated using Unicode data to determine if character is single or double width.

@@ -6,6 +6,7 @@
 
 /// ANSI control codes
 #[derive(PartialEq)]
+#[repr(u8)]
 pub enum AnsiCodes {
     NUL = 0x00, // Null
     SOH = 0x01, // Start of Header
@@ -108,7 +109,7 @@ impl MouseEvent {
             Self::ButtonRight => 'R',
             Self::ButtonGoBack => 'B',
             Self::ButtonGoForward => 'F',
-            Self::ButtonReleased => 'R',
+            Self::ButtonReleased => '^',
             Self::WheelUp => 'U',
             Self::WheelDown => 'D',
         }
@@ -200,6 +201,7 @@ impl CharBuff {
     pub fn utf8str(&self) -> &str {
         let leading_seq = self.utf8seq.split_at(self.utf8sl as usize).0;
         let res = std::str::from_utf8(leading_seq);
+
         if let Ok(s) = res {
             s
         }

@@ -203,6 +203,9 @@ macro_rules! attributes_default {
     };
 }
 
+pub const ESC: char = '\x1B';
+pub const ESC_U8: u8 = b'\x1B';
+
 pub const BOLD: &str = bold!();
 pub const FAINT: &str = faint!();
 pub const NORMAL: &str = normal!();

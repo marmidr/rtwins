@@ -55,17 +55,28 @@ impl StringExt for String {
         else if missing_cols < 0 {
             // too wide -> truncate + ellipsis
             let mut sum_w = 0usize;
-            for (i, c) in self.char_indices() {
-                if let Some(cw) = c.width() {
-                    sum_w += cw;
-                }
+            let mut ignore_until_byte_idx = 0usize;
 
-                if sum_w >= expected_disp_w as usize {
-                    self.truncate(i);
-                    if expected_disp_w > 0 {
-                        self.push('…');
+            for (byte_idx, ch) in self.char_indices() {
+                if byte_idx >= ignore_until_byte_idx {
+                    if ch == crate::esc::ESC {
+                        // detect and skip ESC sequence
+                        let sl = str::esc_seq_len(&self[byte_idx..]);
+                        ignore_until_byte_idx = byte_idx + sl;
+                        continue;
                     }
-                    break;
+
+                    if let Some(cw) = ch.width() {
+                        sum_w += cw;
+                    }
+
+                    if sum_w >= expected_disp_w as usize {
+                        self.truncate(byte_idx);
+                        if expected_disp_w > 0 {
+                            self.push('…');
+                        }
+                        break;
+                    }
                 }
             }
         }
@@ -131,7 +142,7 @@ impl StrExt for str {
         // ESC_BG_RGB(r,g,b)    \e[48;2;255;255;255m
         const ESC_MAX_SEQ_LEN: usize = 20;
 
-        if self.starts_with('\x1B') {
+        if self.as_bytes().starts_with(&[crate::esc::ESC_U8]) {
             let seq_len = if self.len() < ESC_MAX_SEQ_LEN {
                 self.len()
             }
@@ -142,10 +153,12 @@ impl StrExt for str {
             let mut seq_idx = 1;
 
             while seq_idx < seq_len {
-                let c = *it.next().unwrap() as char;
+                let ch = *it.next().unwrap() as char;
 
-                match c {
-                    '@' | '^' | '~' => return seq_idx + 1,
+                match ch {
+                    '@' | '^' | '~' => {
+                        return seq_idx + 1;
+                    }
                     'M' => {
                         if seq_len >= 6 && self.len() >= 6 {
                             return 6;
@@ -155,10 +168,10 @@ impl StrExt for str {
                         };
                     }
                     _ => {
-                        if ('A'..='Z').contains(&c) && c != 'O' {
+                        if ('A'..='Z').contains(&ch) && ch != 'O' {
                             return seq_idx + 1;
                         }
-                        if ('a'..='z').contains(&c) {
+                        if ('a'..='z').contains(&ch) {
                             return seq_idx + 1;
                         }
                     }
@@ -173,11 +186,9 @@ impl StrExt for str {
 
     fn displayed_width(&self) -> usize {
         let mut disp_width = UnicodeWidthStr::width(self) as i32;
-        let mut it = self.char_indices();
 
-        #[allow(clippy::while_let_on_iterator)]
-        while let Some((idx, _)) = it.next() {
-            let esc_len = self[idx..].esc_seq_len() as i32;
+        for (byte_idx, _) in self.char_indices() {
+            let esc_len = self[byte_idx..].esc_seq_len() as i32;
             if esc_len > 0 {
                 // UnicodeWidthStr::width() returns 0 for \e, thus, esc_len decreased by 1
                 disp_width -= esc_len - 1;

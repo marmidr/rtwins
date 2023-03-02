@@ -11,17 +11,6 @@ use crate::*; // tr_info
 
 // ---------------------------------------------------------------------------------------------- //
 
-macro_rules! tetrary {
-    ($cond:expr, $then:expr, $else:expr) => {
-        if $cond {
-            $then
-        }
-        else {
-            $else
-        }
-    };
-}
-
 /// State object for current top window.
 // using WId instead of references will solve lifetime problems
 #[derive(Default)]

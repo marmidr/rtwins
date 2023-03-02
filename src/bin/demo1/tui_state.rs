@@ -650,7 +650,14 @@ impl rtwins::wgt::WindowState for DemoWndState {
         }
     }
 
-    fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {}
+    fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {
+        if wgt.id == Id::BtnToaster {
+            txt.push_str("  🐸  📢  ");
+        }
+        else if wgt.id == Id::Btn1p5 {
+            txt.push_str("1.5 🍋 Height");
+        }
+    }
 
     /* */
 
