@@ -5,6 +5,7 @@ It provides basic facilities required by interactive applications such as screen
 
 ![example 1](assets/sshot1.png)
 ![example 2](assets/sshot2.png)
+![example 3](assets/sshot3.png)
 
 ## References
 
@@ -36,13 +37,13 @@ Implementation is based on:
   * [x] panel
   * [x] static label / led
   * [x] check box
-  * [ ] edit field (text/number)
+  * [x] text edit (text/number)
   * [x] radio button
   * [x] page control
   * [x] progress bar
   * [x] list box
   * [x] combo box
-  * [ ] scrollable text box
+  * [x] scrollable text box
   * [ ] custom widget base
   * [x] scrollbar
   * [ ] horizontal page control
@@ -50,17 +51,19 @@ Implementation is based on:
   * [x] layers - to control visibility of groups of widgets
   * [ ] password input
 * navigation
-  * [ ] widgets navigation by Tab/Esc key
-  * [ ] render focused widget state
-  * [ ] blinking cursor instead of inversed colors
-  * [ ] select widget by mouse
+  * [x] widgets navigation by Tab/Esc key
+  * [x] render focused widget state
+  * [x] blinking cursor instead of inversed colors
+  * [x] select widget by mouse
 * notifications
-  * [ ] notify event per widget type (button clicked, checkbox toggled)
+  * [x] notify event per widget type (button clicked, checkbox toggled)
 * [ ] color theme for window
-* [ ] keyboard handler returns if key was handled by active widget
-* [ ] support for mouse click
+* [x] keyboard handler returns if key was handled by active widget
+* [x] support for mouse click
 * [x] double-width character support (emoticons 😁)
 * [x] multiline solid button
+
+---
 
 ## Prerequisites
 
@@ -73,18 +76,26 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ### Build and run GUI demo
 
 ```bash
+# standard runner
 cargo r
 # with fast_fill enabled:
 cargo r --features=fast_fill
+# using justfile
+just r
 ```
 
 ## How to build and run unit tests
 
 ```bash
+# standard test runner
 cargo t
 # to show println! messages from tests:
 cargo test -- --color always --nocapture
+# test using nextest (https://nexte.st/)
+just nx
 ```
+
+---
 
 ## Test coverage - `grcov`
 
@@ -119,6 +130,8 @@ grcov . --source-dir . --binary-path ./target/debug/ -t html --branch --ignore-n
 
 Open the `target/debug/coverage/index.html` to see the report
 
+---
+
 ## Test coverage - `tarpaulin` (only Linux +x86)
 
 https://lib.rs/crates/cargo-tarpaulin
@@ -129,7 +142,23 @@ cargo tarpaulin --out Html --skip-clean
 ```
 
 Cons:
-- runs `cargo clean` every time you switch between `cargo test` and `cargo tarpaulin`
-- uses source files to generate html report details on-the-fly
-- `--count` is not working
-- no branch coverage
+
+* runs `cargo clean` every time you switch between `cargo test` and `cargo tarpaulin`
+* uses source files to generate html report details on-the-fly
+* `--count` is not working
+* no branch coverage
+
+---
+
+## `nextest` - faster test runner for Rust
+
+cargo-nextest, a next-generation test runner for Rust projects
+
+https://nexte.st/book/pre-built-binaries.html
+
+
+## `just` - convenient commands
+
+Package comes with the `Justfile` - make-like collection of useful commands.
+
+https://github.com/casey/just
