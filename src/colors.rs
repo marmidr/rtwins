@@ -28,7 +28,38 @@ pub enum ColorFG {
     CyanIntense,
     White,
     WhiteIntense,
-    // Theme,
+    //
+    Theme0,
+    Theme1,
+    Theme2,
+    Theme3,
+    Theme4,
+    Theme5,
+    Theme6,
+    Theme7,
+    Theme8,
+    Theme9,
+    Theme10,
+    Theme11,
+    Theme12,
+    Theme13,
+    Theme14,
+    Theme15,
+    Theme16,
+    Theme17,
+    Theme18,
+    Theme19,
+    Theme20,
+    Theme21,
+    Theme22,
+    Theme23,
+    Theme24,
+    Theme25,
+    Theme26,
+    Theme27,
+    Theme28,
+    Theme29,
+    ThemeEnd,
 }
 
 /// Background colors
@@ -53,7 +84,38 @@ pub enum ColorBG {
     CyanIntense,
     White,
     WhiteIntense,
-    // Theme,
+    //
+    Theme0,
+    Theme1,
+    Theme2,
+    Theme3,
+    Theme4,
+    Theme5,
+    Theme6,
+    Theme7,
+    Theme8,
+    Theme9,
+    Theme10,
+    Theme11,
+    Theme12,
+    Theme13,
+    Theme14,
+    Theme15,
+    Theme16,
+    Theme17,
+    Theme18,
+    Theme19,
+    Theme20,
+    Theme21,
+    Theme22,
+    Theme23,
+    Theme24,
+    Theme25,
+    Theme26,
+    Theme27,
+    Theme28,
+    Theme29,
+    ThemeEnd,
 }
 
 const MAP_CL_FG: [&str; 18] = [
@@ -133,6 +195,26 @@ pub fn transcode_cl_bg_2_fg(bg_color_code: &str) -> String {
     out
 }
 
+// -----------------------------------------------------------------------------
+
+// stub function
+fn encode_fg(_: ColorFG) -> &'static str {
+    ""
+}
+
+// stub function
+fn encode_bg(_: ColorBG) -> &'static str {
+    ""
+}
+
+// pointers to user provided function encoding theme colors
+thread_local!(
+    static CL_FG_THEME: std::cell::Cell<fn(ColorFG) -> &'static str> =
+        std::cell::Cell::new(encode_fg);
+    static CL_BG_THEME: std::cell::Cell<fn(ColorBG) -> &'static str> =
+        std::cell::Cell::new(encode_bg);
+);
+
 // ---------------------------------------------------------------------------------------------- //
 
 impl ColorFG {
@@ -150,16 +232,15 @@ impl ColorFG {
             // force something bright
             return ColorFG::WhiteIntense;
         }
+        else if self >= Self::Theme0 && self < Self::ThemeEnd {
+            // TODO: return intensifyClTheme(self);
+        }
 
-        /*
-            if (INRANGE(self, ColorFG::ThemeBegin, ColorFG::ThemeEnd))
-                return intensifyClTheme(self);
-        */
         self
     }
 
-    #[inline]
     /// Conditionally converts Normal into Intense color
+    #[inline]
     pub fn intensify_if(self, cond: bool) -> Self {
         if cond {
             self.intensify()
@@ -174,11 +255,20 @@ impl ColorFG {
         if (self as usize) < MAP_CL_FG.len() {
             return MAP_CL_FG[self as usize];
         }
+        else if self >= Self::Theme0 && self < Self::ThemeEnd {
+            let seq = CL_FG_THEME.with(|cell| cell.get()(self));
 
-        // if (INRANGE(self, ColorFG::ThemeBegin, ColorFG::ThemeEnd))
-        //     return encodeClTheme(self);
+            return seq;
+        }
 
         ""
+    }
+
+    /// Sets encoder function for theme colors
+    pub fn set_theme_encoder(encoder: fn(ColorFG) -> &'static str) {
+        CL_FG_THEME.with(|cell| {
+            cell.set(encoder);
+        });
     }
 }
 
@@ -197,16 +287,15 @@ impl ColorBG {
             // force something bright
             return ColorBG::WhiteIntense;
         }
+        else if self >= Self::Theme0 && self < Self::ThemeEnd {
+            // TODO: return intensifyClTheme(self);
+        }
 
-        /*
-            if (INRANGE(self, ColorBG::ThemeBegin, ColorBG::ThemeEnd))
-                return intensifyClTheme(self);
-        */
         self
     }
 
-    #[inline]
     /// Conditionally converts Normal into Intense color
+    #[inline]
     pub fn intensify_if(self, cond: bool) -> Self {
         if cond {
             self.intensify()
@@ -221,17 +310,26 @@ impl ColorBG {
         if (self as usize) < MAP_CL_BG.len() {
             return MAP_CL_BG[self as usize];
         }
+        else if self >= Self::Theme0 && self < Self::ThemeEnd {
+            let seq = CL_BG_THEME.with(|cell| cell.get()(self));
 
-        // if (INRANGE(self, ColorBG::ThemeBegin, ColorBG::ThemeEnd))
-        //     return encodeClTheme(self);
+            return seq;
+        }
 
         ""
     }
 
-    #[inline]
     /// Returns matching foreground color sequence string
+    #[inline]
     pub fn transcode_2_fg(self) -> String {
         let bg_color_code = self.encode();
         transcode_cl_bg_2_fg(bg_color_code)
+    }
+
+    /// Sets encoder function for theme colors
+    pub fn set_theme_encoder(encoder: fn(ColorBG) -> &'static str) {
+        CL_BG_THEME.with(|cell| {
+            cell.set(encoder);
+        });
     }
 }

@@ -8,15 +8,26 @@ pub type StringListRc = std::rc::Rc<std::cell::RefCell<Vec<String>>>;
 
 // ---------------------------------------------------------------------------------------------- //
 
+// mimics C++: cond ? a : b;
 #[macro_export]
 macro_rules! tetrary {
-    ($cond:expr, $then:expr, $else:expr) => {
+    ($cond: expr, $then: expr, $else: expr) => {
         if $cond {
             $then
         }
         else {
             $else
         }
+    };
+}
+
+// https://internals.rust-lang.org/t/nicer-static-assertions/15986
+// see also: https://crates.io/crates/static_assertions
+#[macro_export]
+macro_rules! static_assert {
+    ($cond: expr) => {
+        #[allow(dead_code)]
+        const _: () = assert!($cond);
     };
 }
 

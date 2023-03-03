@@ -29,6 +29,7 @@ Implementation is based on:
 * [x] buffered terminal output
 * [x] platform abstraction layer (PAL) to ease porting
 * [ ] command line interface with history (CLI)
+* [ ] #![no_std]
 
 ## Secondary goals
 
@@ -57,7 +58,7 @@ Implementation is based on:
   * [x] select widget by mouse
 * notifications
   * [x] notify event per widget type (button clicked, checkbox toggled)
-* [ ] color theme for window
+* [x] color theme for window
 * [x] keyboard handler returns if key was handled by active widget
 * [x] support for mouse click
 * [x] double-width character support (emoticons 😁)

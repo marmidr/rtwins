@@ -2,8 +2,156 @@
 
 use rtwins::colors::{ColorBG, ColorFG};
 use rtwins::common::*;
+use rtwins::esc;
 use rtwins::wgt::prop;
 use rtwins::wgt::*;
+
+// RGB color values: https://en.wikipedia.org/wiki/Web_colors
+
+#[allow(dead_code)]
+#[repr(u8)]
+pub enum ColorFgTheme {
+    // double-state colors
+    Checkbox = ColorFG::Theme0 as u8,
+    CheckboxIntense,
+    Radio,
+    RadioIntense,
+    // single-state colors
+    Window,
+    Label,
+    Listbox,
+    Button,
+    ButtonGreen,
+    ButtonRed,
+    ButtonOrange,
+    PanelChbox,
+    //
+    ThemeEnd,
+}
+
+#[allow(dead_code)]
+#[repr(u8)]
+pub enum ColorBgTheme {
+    Window = ColorBG::Theme0 as u8,
+    Listbox,
+    Button,
+    ButtonGreen,
+    ButtonRed,
+    ButtonOrange,
+    PanelChbox,
+    PanelVer,
+    PanelKeyCodes,
+    PanelLeds,
+    LabelBlue,
+    Edit1,
+    Edit1Intense,
+    Edit2,
+    Edit2Intense,
+    LabelFtr,
+    //
+    ThemeEnd,
+}
+
+rtwins::static_assert!((ColorFgTheme::ThemeEnd as u8) <= ColorFG::ThemeEnd as u8);
+rtwins::static_assert!((ColorBgTheme::ThemeEnd as u8) <= ColorBG::ThemeEnd as u8);
+
+impl ColorFgTheme {
+    pub const fn into(self) -> ColorFG {
+        // SAFETY: static_assert() assure that the self value is within correct ColorFG range
+        unsafe { std::mem::transmute::<ColorFgTheme, ColorFG>(self) }
+    }
+
+    pub const fn from(cl: ColorFG) -> ColorFgTheme {
+        // SAFETY: static_assert() assure that the self value is within correct ColorFG range
+        unsafe { std::mem::transmute::<ColorFG, ColorFgTheme>(cl) }
+    }
+}
+
+impl ColorBgTheme {
+    pub const fn into(self) -> ColorBG {
+        // SAFETY: static_assert() assure that the self value is within correct ColorBG range
+        unsafe { std::mem::transmute::<ColorBgTheme, ColorBG>(self) }
+    }
+
+    pub const fn from(cl: ColorBG) -> ColorBgTheme {
+        // SAFETY: static_assert() assure that the self value is within correct ColorBG range
+        unsafe { std::mem::transmute::<ColorBG, ColorBgTheme>(cl) }
+    }
+}
+
+fn color_fg_theme_encode(cl: ColorFG) -> &'static str {
+    let cl = ColorFgTheme::from(cl);
+    match cl {
+        // double-state colors
+        ColorFgTheme::Checkbox => esc::FG_YELLOW,
+        ColorFgTheme::CheckboxIntense => esc::FG_YELLOW_INTENSE,
+        ColorFgTheme::Radio => esc::FG_GREEN,
+        ColorFgTheme::RadioIntense => esc::FG_GREEN_INTENSE,
+        // single-state colors
+        ColorFgTheme::Window => rtwins::fg_color!(158),
+        ColorFgTheme::Label => esc::FG_WHITE,
+        ColorFgTheme::Listbox => esc::FG_GREEN,
+        ColorFgTheme::Button => esc::FG_BLACK,
+        ColorFgTheme::ButtonGreen => esc::FG_WHITE,
+        ColorFgTheme::ButtonRed => esc::FG_WHITE,
+        ColorFgTheme::ButtonOrange => esc::FG_DARK_RED,
+        ColorFgTheme::PanelChbox => esc::FG_MEDIUM_BLUE,
+        _ => esc::FG_DEFAULT,
+    }
+}
+
+fn color_bg_theme_encode(cl: ColorBG) -> &'static str {
+    let cl = ColorBgTheme::from(cl);
+
+    match cl {
+        ColorBgTheme::Window => esc::BG_MIDNIGHT_BLUE,
+        ColorBgTheme::Listbox => esc::BG_WHITE,
+        ColorBgTheme::Button => esc::BG_BLACK_INTENSE,
+        ColorBgTheme::ButtonGreen => esc::BG_OLIVE_DRAB,
+        ColorBgTheme::ButtonRed => esc::BG_RED,
+        ColorBgTheme::ButtonOrange => esc::BG_ORANGE,
+        ColorBgTheme::PanelChbox => esc::BG_GAINSBORO,
+        ColorBgTheme::PanelVer => rtwins::bg_color!(106),
+        ColorBgTheme::PanelKeyCodes => rtwins::bg_color!(169),
+        ColorBgTheme::PanelLeds => esc::BG_LIGHT_BLUE,
+        ColorBgTheme::LabelBlue => esc::BG_DARK_BLUE,
+        ColorBgTheme::Edit1 => esc::BG_CYAN,
+        ColorBgTheme::Edit1Intense => esc::BG_CYAN_INTENSE,
+        ColorBgTheme::Edit2 => esc::BG_GREEN,
+        ColorBgTheme::Edit2Intense => esc::BG_GREEN_INTENSE,
+        ColorBgTheme::LabelFtr => esc::BG_NAVY,
+        _ => esc::BG_DEFAULT,
+    }
+}
+
+/*
+ColorFG color_fg_theme_intensify(ColorFG cl)
+{
+    switch (cl)
+    {
+    case ColorFG::Checkbox:         return ColorFG::CheckboxIntense;
+    case ColorFG::Radio:            return ColorFG::RadioIntense;
+    default:                        return cl;
+    }
+}
+
+ColorBG color_bg_theme_intensify(ColorBG cl)
+{
+    switch (cl)
+    {
+    case ColorBG::Edit1:            return ColorBG::Edit1Intense;
+    case ColorBG::Edit2:            return ColorBG::Edit2Intense;
+    default:                        return cl;
+    }
+}
+*/
+
+pub fn init() {
+    ColorFG::set_theme_encoder(color_fg_theme_encode);
+    ColorBG::set_theme_encoder(color_bg_theme_encode);
+}
+
+// ---------------------------------------------------------------------------------------------- //
 
 /*
 macro_rules! generate_ids {
@@ -168,7 +316,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         prop: prop::Panel {
             title: "VER 🍁",
             fg_color: ColorFG::White,
-            bg_color: ColorBG::Green,
+            bg_color: ColorBgTheme::PanelVer.into(),
             no_frame: false,
         }.into(),
         children: &[
@@ -214,7 +362,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         prop: prop::Panel {
             title: "STATE: Leds",
             fg_color: ColorFG::Blue,
-            bg_color: ColorBG::White,
+            bg_color: ColorBgTheme::PanelLeds.into(),
             no_frame: false,
         }.into(),
         children: PNL_STATE_CHILDREN
@@ -227,7 +375,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         prop: prop::Panel {
             title: "KEY-CODES",
             fg_color: ColorFG::White,
-            bg_color: ColorBG::Magenta,
+            bg_color: ColorBgTheme::PanelKeyCodes.into(),
             no_frame: false,
         }.into(),
         children: &[
@@ -279,7 +427,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         prop: prop::Button {
             text: "YES",
             fg_color: ColorFG::White,
-            bg_color: ColorBG::Green,
+            bg_color: ColorBgTheme::ButtonGreen.into(),
             style: ButtonStyle::Solid
         }.into(),
         ..Widget::cdeflt()
@@ -289,8 +437,8 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         coord: Coord { col: 38, row: 7 },
         prop: prop::Button {
             text: "NO",
-            fg_color: ColorFG::White,
-            bg_color: ColorBG::Red,
+            fg_color: ColorFgTheme::ButtonOrange.into(),
+            bg_color: ColorBgTheme::ButtonOrange.into(),
             style: ButtonStyle::Solid
         }.into(),
         ..Widget::cdeflt()
@@ -503,8 +651,8 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
         size: Size { width: 22, height: 10 },
         prop: prop::Panel {
             title : "",
-            fg_color : ColorFG::White,
-            bg_color : ColorBG::BlueIntense,
+            fg_color : ColorFgTheme::PanelChbox.into(),
+            bg_color : ColorBgTheme::PanelChbox.into(),
             no_frame : false,
         }.into(),
         children: &[
@@ -712,7 +860,7 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         prop: prop::Button {
             text: "   ????   ",
             fg_color: ColorFG::White,
-            bg_color: ColorBG::GreenIntense,
+            bg_color: ColorBgTheme::ButtonGreen.into(),
             style: ButtonStyle::Solid1p5
         }.into(),
         ..Widget::cdeflt()
@@ -729,8 +877,8 @@ const WINDOW_MAIN: Widget = Widget {
     size: Size { width: 80, height: 15 },
     prop: prop::Window {
         title: "",
-        fg_color: ColorFG::White,
-        bg_color: ColorBG::Blue,
+        fg_color: ColorFgTheme::Window.into(),
+        bg_color: ColorBgTheme::Window.into(),
         is_popup: false,
     }.into(),
     children: &[

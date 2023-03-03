@@ -86,14 +86,7 @@ impl rtwins::pal::Pal for DemoPal {
 // -----------------------------------------------------------------------------------------------
 
 fn main() {
-    // test_esc_codes();
-    // test_property_access();
-    // rtwins::input_decoder::print_seq();
-
-    tui_demo();
-}
-
-fn tui_demo() {
+    tui_def::init();
     // create Demo window state
     let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN_ARRAY[..]);
     // replace default PAL with our own:
