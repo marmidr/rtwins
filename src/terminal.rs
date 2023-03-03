@@ -28,12 +28,12 @@ lazy_static! {
 pub struct Term {
     pub pal: PalBox,
     pub trace_row: u16,
-    current_cl_fg: ColorFG,
-    current_cl_bg: ColorBG,
+    current_cl_fg: ColorFg,
+    current_cl_bg: ColorBg,
     attr_faint: i8,
     _log_raw_font_memento: FontMementoManual,
-    pub(crate) stack_cl_fg: Vec<ColorFG>,
-    pub(crate) stack_cl_bg: Vec<ColorBG>,
+    pub(crate) stack_cl_fg: Vec<ColorFg>,
+    pub(crate) stack_cl_bg: Vec<ColorBg>,
     pub(crate) stack_attr: Vec<FontAttrib>,
 }
 
@@ -60,8 +60,8 @@ impl Term {
         Term {
             pal: p,
             trace_row: 0,
-            current_cl_fg: ColorFG::Default,
-            current_cl_bg: ColorBG::Default,
+            current_cl_fg: ColorFg::Default,
+            current_cl_bg: ColorBg::Default,
             attr_faint: 0,
             _log_raw_font_memento: FontMementoManual::new(),
             stack_cl_fg: vec![],
@@ -104,7 +104,7 @@ impl Term {
         self.pal.flush_buff();
         self.cursor_save_pos();
         self.move_to(0, self.trace_row);
-        self.push_cl_bg(ColorBG::Default);
+        self.push_cl_bg(ColorBg::Default);
         self.pal.write_str(esc::FG_DEFAULT);
         self.insert_lines(1);
 
@@ -257,7 +257,7 @@ impl Term {
     // Foreground color stack
 
     /// Set new foreground color, put current color on stack
-    pub fn push_cl_fg(&mut self, cl: ColorFG) {
+    pub fn push_cl_fg(&mut self, cl: ColorFg) {
         self.stack_cl_fg.push(self.current_cl_fg);
         self.current_cl_fg = cl;
         self.write_str(self.current_cl_fg.encode());
@@ -287,7 +287,7 @@ impl Term {
     // Background color stack
 
     /// Set new background color, put current color on stack
-    pub fn push_cl_bg(&mut self, cl: ColorBG) {
+    pub fn push_cl_bg(&mut self, cl: ColorBg) {
         self.stack_cl_bg.push(self.current_cl_bg);
         self.current_cl_bg = cl;
         self.write_str(self.current_cl_bg.encode());

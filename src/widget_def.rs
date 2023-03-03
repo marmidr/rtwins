@@ -31,8 +31,8 @@ pub mod prop {
     #[derive(Copy, Clone)]
     pub struct Window {
         pub title: &'static str,
-        pub fg_color: ColorFG,
-        pub bg_color: ColorBG,
+        pub fg_color: ColorFg,
+        pub bg_color: ColorBg,
         pub is_popup: bool,
         // get_state: fn() -> &IWindowState
     }
@@ -46,8 +46,8 @@ pub mod prop {
     #[derive(Copy, Clone)]
     pub struct Panel {
         pub title: &'static str,
-        pub fg_color: ColorFG,
-        pub bg_color: ColorBG,
+        pub fg_color: ColorFg,
+        pub bg_color: ColorBg,
         pub no_frame: bool,
     }
 
@@ -60,8 +60,8 @@ pub mod prop {
     #[derive(Copy, Clone)]
     pub struct Label {
         pub title: &'static str,
-        pub fg_color: ColorFG,
-        pub bg_color: ColorBG,
+        pub fg_color: ColorFg,
+        pub bg_color: ColorBg,
     }
 
     impl Label {
@@ -72,8 +72,8 @@ pub mod prop {
 
     #[derive(Copy, Clone)]
     pub struct TextEdit {
-        pub fg_color: ColorFG,
-        pub bg_color: ColorBG,
+        pub fg_color: ColorFg,
+        pub bg_color: ColorBg,
     }
 
     impl TextEdit {
@@ -85,7 +85,7 @@ pub mod prop {
     #[derive(Copy, Clone)]
     pub struct CheckBox {
         pub text: &'static str,
-        pub fg_color: ColorFG,
+        pub fg_color: ColorFg,
     }
 
     impl CheckBox {
@@ -97,7 +97,7 @@ pub mod prop {
     #[derive(Copy, Clone)]
     pub struct Radio {
         pub text: &'static str,
-        pub fg_color: ColorFG,
+        pub fg_color: ColorFg,
         pub group_id: u16,
         pub radio_id: i16,
     }
@@ -111,8 +111,8 @@ pub mod prop {
     #[derive(Copy, Clone)]
     pub struct Button {
         pub text: &'static str,
-        pub fg_color: ColorFG,
-        pub bg_color: ColorBG,
+        pub fg_color: ColorFg,
+        pub bg_color: ColorBg,
         pub style: ButtonStyle,
     }
 
@@ -125,9 +125,9 @@ pub mod prop {
     #[derive(Copy, Clone)]
     pub struct Led {
         pub text: &'static str,
-        pub fg_color: ColorFG,
-        pub bg_color_off: ColorBG,
-        pub bg_color_on: ColorBG,
+        pub fg_color: ColorFg,
+        pub bg_color_off: ColorBg,
+        pub bg_color_on: ColorBg,
     }
 
     impl Led {
@@ -151,7 +151,7 @@ pub mod prop {
     #[derive(Copy, Clone)]
     pub struct Page {
         pub title: &'static str,
-        pub fg_color: ColorFG,
+        pub fg_color: ColorFg,
     }
 
     impl Page {
@@ -162,7 +162,7 @@ pub mod prop {
 
     #[derive(Copy, Clone)]
     pub struct ProgressBar {
-        pub fg_color: ColorFG,
+        pub fg_color: ColorFg,
         pub style: PgBarStyle,
     }
 
@@ -174,8 +174,8 @@ pub mod prop {
 
     #[derive(Copy, Clone)]
     pub struct ListBox {
-        pub fg_color: ColorFG,
-        pub bg_color: ColorBG,
+        pub fg_color: ColorFg,
+        pub bg_color: ColorBg,
         pub no_frame: bool,
     }
 
@@ -187,8 +187,8 @@ pub mod prop {
 
     #[derive(Copy, Clone)]
     pub struct ComboBox {
-        pub fg_color: ColorFG,
-        pub bg_color: ColorBG,
+        pub fg_color: ColorFg,
+        pub bg_color: ColorBg,
         pub drop_down_size: u8,
     }
 
@@ -209,8 +209,8 @@ pub mod prop {
 
     #[derive(Copy, Clone)]
     pub struct TextBox {
-        pub fg_color: ColorFG,
-        pub bg_color: ColorBG,
+        pub fg_color: ColorFg,
+        pub bg_color: ColorBg,
     }
 
     impl TextBox {

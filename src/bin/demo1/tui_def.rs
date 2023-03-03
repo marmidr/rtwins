@@ -1,6 +1,6 @@
 //! Simple widget-based interface definition as const
 
-use rtwins::colors::{ColorBG, ColorFG};
+use rtwins::colors::{ColorBg, ColorFg};
 use rtwins::common::*;
 use rtwins::esc;
 use rtwins::wgt::prop;
@@ -12,7 +12,7 @@ use rtwins::wgt::*;
 #[repr(u8)]
 pub enum ColorFgTheme {
     // double-state colors
-    Checkbox = ColorFG::Theme0 as u8,
+    Checkbox = ColorFg::Theme0 as u8,
     CheckboxIntense,
     Radio,
     RadioIntense,
@@ -32,7 +32,7 @@ pub enum ColorFgTheme {
 #[allow(dead_code)]
 #[repr(u8)]
 pub enum ColorBgTheme {
-    Window = ColorBG::Theme0 as u8,
+    Window = ColorBg::Theme0 as u8,
     Listbox,
     Button,
     ButtonGreen,
@@ -52,34 +52,34 @@ pub enum ColorBgTheme {
     ThemeEnd,
 }
 
-rtwins::static_assert!((ColorFgTheme::ThemeEnd as u8) <= ColorFG::ThemeEnd as u8);
-rtwins::static_assert!((ColorBgTheme::ThemeEnd as u8) <= ColorBG::ThemeEnd as u8);
+rtwins::static_assert!((ColorFgTheme::ThemeEnd as u8) <= ColorFg::ThemeEnd as u8);
+rtwins::static_assert!((ColorBgTheme::ThemeEnd as u8) <= ColorBg::ThemeEnd as u8);
 
 impl ColorFgTheme {
-    pub const fn into(self) -> ColorFG {
+    pub const fn into(self) -> ColorFg {
         // SAFETY: static_assert() assure that the self value is within correct ColorFG range
-        unsafe { std::mem::transmute::<ColorFgTheme, ColorFG>(self) }
+        unsafe { std::mem::transmute::<ColorFgTheme, ColorFg>(self) }
     }
 
-    pub const fn from(cl: ColorFG) -> ColorFgTheme {
+    pub const fn from(cl: ColorFg) -> ColorFgTheme {
         // SAFETY: static_assert() assure that the self value is within correct ColorFG range
-        unsafe { std::mem::transmute::<ColorFG, ColorFgTheme>(cl) }
+        unsafe { std::mem::transmute::<ColorFg, ColorFgTheme>(cl) }
     }
 }
 
 impl ColorBgTheme {
-    pub const fn into(self) -> ColorBG {
+    pub const fn into(self) -> ColorBg {
         // SAFETY: static_assert() assure that the self value is within correct ColorBG range
-        unsafe { std::mem::transmute::<ColorBgTheme, ColorBG>(self) }
+        unsafe { std::mem::transmute::<ColorBgTheme, ColorBg>(self) }
     }
 
-    pub const fn from(cl: ColorBG) -> ColorBgTheme {
+    pub const fn from(cl: ColorBg) -> ColorBgTheme {
         // SAFETY: static_assert() assure that the self value is within correct ColorBG range
-        unsafe { std::mem::transmute::<ColorBG, ColorBgTheme>(cl) }
+        unsafe { std::mem::transmute::<ColorBg, ColorBgTheme>(cl) }
     }
 }
 
-fn color_fg_theme_encode(cl: ColorFG) -> &'static str {
+fn color_fg_theme_encode(cl: ColorFg) -> &'static str {
     let cl = ColorFgTheme::from(cl);
     match cl {
         // double-state colors
@@ -100,7 +100,7 @@ fn color_fg_theme_encode(cl: ColorFG) -> &'static str {
     }
 }
 
-fn color_bg_theme_encode(cl: ColorBG) -> &'static str {
+fn color_bg_theme_encode(cl: ColorBg) -> &'static str {
     let cl = ColorBgTheme::from(cl);
 
     match cl {
@@ -147,8 +147,8 @@ ColorBG color_bg_theme_intensify(ColorBG cl)
 */
 
 pub fn init() {
-    ColorFG::set_theme_encoder(color_fg_theme_encode);
-    ColorBG::set_theme_encoder(color_bg_theme_encode);
+    ColorFg::set_theme_encoder(color_fg_theme_encode);
+    ColorBg::set_theme_encoder(color_bg_theme_encode);
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -276,9 +276,9 @@ const PNL_STATE_CHILDREN: &[Widget] = &[
         coord: Coord { col: 2, row: 1 },
         prop: prop::Led {
             text: "(BATT)",
-            fg_color: ColorFG::Black,
-            bg_color_off: ColorBG::White,
-            bg_color_on: ColorBG::Magenta,
+            fg_color: ColorFg::Black,
+            bg_color_off: ColorBg::White,
+            bg_color_on: ColorBg::Magenta,
         }.into(),
         ..Widget::cdeflt()
     },
@@ -287,9 +287,9 @@ const PNL_STATE_CHILDREN: &[Widget] = &[
         coord: Coord { col: 9, row: 1 },
         prop: prop::Led {
             text: "(LOCK)",
-            fg_color: ColorFG::Black,
-            bg_color_off: ColorBG::White,
-            bg_color_on: ColorBG::Green,
+            fg_color: ColorFg::Black,
+            bg_color_off: ColorBg::White,
+            bg_color_on: ColorBg::Green,
         }.into(),
         ..Widget::cdeflt()
     },
@@ -298,9 +298,9 @@ const PNL_STATE_CHILDREN: &[Widget] = &[
         coord: Coord { col: 16, row: 1 },
         prop: prop::Led {
             text: "(PUMP)",
-            fg_color: ColorFG::Red,
-            bg_color_off: ColorBG::White,
-            bg_color_on: ColorBG::Yellow,
+            fg_color: ColorFg::Red,
+            bg_color_off: ColorBg::White,
+            bg_color_on: ColorBg::Yellow,
         }.into(),
         ..Widget::cdeflt()
     },
@@ -315,7 +315,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         size: Size { width: 21, height: 5 },
         prop: prop::Panel {
             title: "VER 🍁",
-            fg_color: ColorFG::White,
+            fg_color: ColorFg::White,
             bg_color: ColorBgTheme::PanelVer.into(),
             no_frame: false,
         }.into(),
@@ -325,8 +325,8 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 2, row: 1 },
                 prop: prop::Label {
                     title: "FwVer: 1.1",
-                    fg_color: ColorFG::Blue,
-                    bg_color: ColorBG::Inherit,
+                    fg_color: ColorFg::Blue,
+                    bg_color: ColorBg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -336,8 +336,8 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
                 size: Size { width: 18, height: 1 },
                 prop: prop::Label {
                     title: "",
-                    fg_color: ColorFG::Black,
-                    bg_color: ColorBG::White,
+                    fg_color: ColorFg::Black,
+                    bg_color: ColorBg::White,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -347,8 +347,8 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
                 size: Size { width: 0, height: 1 },
                 prop: prop::Label {
                     title: "",
-                    fg_color: ColorFG::White,
-                    bg_color: ColorBG::Inherit,
+                    fg_color: ColorFg::White,
+                    bg_color: ColorBg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -361,7 +361,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         size: Size { width: 25, height: 3 },
         prop: prop::Panel {
             title: "STATE: Leds",
-            fg_color: ColorFG::Blue,
+            fg_color: ColorFg::Blue,
             bg_color: ColorBgTheme::PanelLeds.into(),
             no_frame: false,
         }.into(),
@@ -374,7 +374,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         size: Size { width: 26, height: 4 },
         prop: prop::Panel {
             title: "KEY-CODES",
-            fg_color: ColorFG::White,
+            fg_color: ColorFg::White,
             bg_color: ColorBgTheme::PanelKeyCodes.into(),
             no_frame: false,
         }.into(),
@@ -385,8 +385,8 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
                 size: Size { width: 22, height: 1 },
                 prop: prop::Label {
                     title: "",
-                    fg_color: ColorFG::White,
-                    bg_color: ColorBG::Inherit,
+                    fg_color: ColorFg::White,
+                    bg_color: ColorBg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -396,8 +396,8 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
                 size: Size { width: 17, height: 1 },
                 prop: prop::Label {
                     title: "",
-                    fg_color: ColorFG::White,
-                    bg_color: ColorBG::Inherit,
+                    fg_color: ColorFg::White,
+                    bg_color: ColorBg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -408,7 +408,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         coord: Coord { col: 30, row: 5 },
         prop: prop::CheckBox {
             text: "Enable",
-            fg_color: ColorFG::White,
+            fg_color: ColorFg::White,
         }.into(),
         ..Widget::cdeflt()
     },
@@ -417,7 +417,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         coord: Coord { col: 45, row: 5 },
         prop: prop::CheckBox {
             text: "Lock",
-            fg_color: ColorFG::Inherit,
+            fg_color: ColorFg::Inherit,
         }.into(),
         ..Widget::cdeflt()
     },
@@ -426,7 +426,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         coord: Coord { col: 30, row: 7 },
         prop: prop::Button {
             text: "YES",
-            fg_color: ColorFG::White,
+            fg_color: ColorFg::White,
             bg_color: ColorBgTheme::ButtonGreen.into(),
             style: ButtonStyle::Solid
         }.into(),
@@ -448,8 +448,8 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         coord: Coord { col: 45, row: 7 },
         prop: prop::Button {
             text: "POPUP",
-            fg_color: ColorFG::White,
-            bg_color: ColorBG::Inherit,
+            fg_color: ColorFg::White,
+            bg_color: ColorBg::Inherit,
             style: ButtonStyle::Simple
         }.into(),
         ..Widget::cdeflt()
@@ -459,7 +459,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         coord: Coord { col: 30, row: 9 },
         size: Size { width: 25, height: 1 },
         prop: prop::ProgressBar {
-            fg_color: ColorFG::Yellow,
+            fg_color: ColorFg::Yellow,
             style: PgBarStyle::Hash
         }.into(),
         ..Widget::cdeflt()
@@ -469,7 +469,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         coord: Coord { col: 30, row: 10 },
         size: Size { width: 12, height: 1 },
         prop: prop::ProgressBar {
-            fg_color: ColorFG::White,
+            fg_color: ColorFg::White,
             style: PgBarStyle::Shade
         }.into(),
         ..Widget::cdeflt()
@@ -479,7 +479,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         coord: Coord { col: 43, row: 10 },
         size: Size { width: 12, height: 1 },
         prop: prop::ProgressBar {
-            fg_color: ColorFG::Black,
+            fg_color: ColorFg::Black,
             style: PgBarStyle::Rectangle
         }.into(),
         ..Widget::cdeflt()
@@ -499,8 +499,8 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
                 size: Size { width: 35, height: 4 },
                 prop: prop::Label {
                     title: "",
-                    fg_color: ColorFG::YellowIntense,
-                    bg_color: ColorBG::BlueIntense,
+                    fg_color: ColorFg::YellowIntense,
+                    bg_color: ColorBg::BlueIntense,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -509,8 +509,8 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 2, row: 2 },
                 size: Size { width: 20, height: 8 },
                 prop: prop::ListBox {
-                    fg_color: ColorFG::Green,
-                    bg_color: ColorBG::White,
+                    fg_color: ColorFg::Green,
+                    bg_color: ColorBg::White,
                     no_frame: false
                 }.into(),
                 ..Widget::cdeflt()
@@ -528,7 +528,7 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 25, row: 7 },
                 prop: prop::Radio {
                     text : "YES",
-                    fg_color : ColorFG::GreenIntense,
+                    fg_color : ColorFg::GreenIntense,
                     group_id : 1,
                     radio_id : 0,
                 }.into(),
@@ -539,7 +539,7 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 35, row: 7 },
                 prop: prop::Radio {
                     text : "NO",
-                    fg_color : ColorFG::Yellow,
+                    fg_color : ColorFg::Yellow,
                     group_id : 1,
                     radio_id : 1,
                 }.into(),
@@ -550,7 +550,7 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 44, row: 7 },
                 prop: prop::Radio {
                     text : "Don't know",
-                    fg_color : ColorFG::Inherit,
+                    fg_color : ColorFg::Inherit,
                     group_id : 1,
                     radio_id : 3,
                 }.into(),
@@ -564,7 +564,7 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
         coord: Coord { col: 25, row: 9 },
         prop: prop::CheckBox {
             text : "Layer 1",
-            fg_color : ColorFG::Inherit,
+            fg_color : ColorFg::Inherit,
         }.into(),
         ..Widget::cdeflt()
     },
@@ -573,7 +573,7 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
         coord: Coord { col: 40, row: 9 },
         prop: prop::CheckBox {
             text : "Layer 2",
-            fg_color : ColorFG::Inherit,
+            fg_color : ColorFg::Inherit,
         }.into(),
         ..Widget::cdeflt()
     },
@@ -587,8 +587,8 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
         size: Size { width: 32, height: 5 },
         prop: prop::Panel {
             title : "",
-            fg_color : ColorFG::White,
-            bg_color : ColorBG::BlackIntense,
+            fg_color : ColorFg::White,
+            bg_color : ColorBg::BlackIntense,
             no_frame : true,
         }.into(),
         children: &[
@@ -598,8 +598,8 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 size: Size { width: 30, height: 1 },
                 prop: prop::Label {
                     title: "Text edit:",
-                    fg_color: ColorFG::WhiteIntense,
-                    bg_color: ColorBG::Inherit,
+                    fg_color: ColorFg::WhiteIntense,
+                    bg_color: ColorBg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -608,8 +608,8 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 1, row: 1 },
                 size: Size { width: 30, height: 1 },
                 prop: prop::TextEdit {
-                    fg_color: ColorFG::Black,
-                    bg_color: ColorBG::White,
+                    fg_color: ColorFg::Black,
+                    bg_color: ColorBg::White,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -619,8 +619,8 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 size: Size { width: 30, height: 1 },
                 prop: prop::Label {
                     title: "Num edit: UP/DOWN + Ctr/Shift:",
-                    fg_color: ColorFG::WhiteIntense,
-                    bg_color: ColorBG::Inherit,
+                    fg_color: ColorFg::WhiteIntense,
+                    bg_color: ColorBg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -629,8 +629,8 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 1, row: 3 },
                 size: Size { width: 30, height: 1 },
                 prop: prop::TextEdit {
-                    fg_color: ColorFG::Black,
-                    bg_color: ColorBG::Yellow,
+                    fg_color: ColorFg::Black,
+                    bg_color: ColorBg::Yellow,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -662,8 +662,8 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 size: Size { width: 14, height: 1 },
                 prop: prop::Label {
                     title: "Check list:", // concat!(bold!(), "Check list:", normal!()),
-                    fg_color: ColorFG::WhiteIntense,
-                    bg_color: ColorBG::Inherit,
+                    fg_color: ColorFg::WhiteIntense,
+                    bg_color: ColorBg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -672,7 +672,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 2, row: 4 },
                 prop: prop::CheckBox {
                     text : "Check A ",
-                    fg_color : ColorFG::YellowIntense,
+                    fg_color : ColorFg::YellowIntense,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -681,7 +681,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 2, row: 5 },
                 prop: prop::CheckBox {
                     text : "Check B ",
-                    fg_color : ColorFG::Inherit,
+                    fg_color : ColorFg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -690,7 +690,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 2, row: 6 },
                 prop: prop::CheckBox {
                     text : "Check C ",
-                    fg_color : ColorFG::Inherit,
+                    fg_color : ColorFg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -699,7 +699,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 2, row: 7 },
                 prop: prop::CheckBox {
                     text : "Check D ",
-                    fg_color : ColorFG::Inherit,
+                    fg_color : ColorFg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -716,8 +716,8 @@ const PAGE_INACT_CHILDREN: &[Widget] = &[
         size: Size { width: 20, height: 10 },
         prop: prop::Panel {
             title : "Word-wrap",
-            fg_color : ColorFG::Inherit,
-            bg_color : ColorBG::Inherit,
+            fg_color : ColorFg::Inherit,
+            bg_color : ColorBg::Inherit,
             no_frame : false,
         }.into(),
         children: &[
@@ -727,8 +727,8 @@ const PAGE_INACT_CHILDREN: &[Widget] = &[
                 size: Size { width: 16, height: 6 },
                 prop: prop::Label {
                     title: "",
-                    fg_color: ColorFG::White,
-                    bg_color: ColorBG::BlueIntense,
+                    fg_color: ColorFg::White,
+                    bg_color: ColorBg::BlueIntense,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -737,8 +737,8 @@ const PAGE_INACT_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 5, row: 8 },
                 prop: prop::Button {
                     text: "...",
-                    fg_color: ColorFG::White,
-                    bg_color: ColorBG::Inherit,
+                    fg_color: ColorFg::White,
+                    bg_color: ColorBg::Inherit,
                     style: ButtonStyle::Simple
                 }.into(),
                 ..Widget::cdeflt()
@@ -752,8 +752,8 @@ const PAGE_INACT_CHILDREN: &[Widget] = &[
         size: Size { width: 12, height: 10 },
         prop: prop::Panel {
             title : "...",
-            fg_color : ColorFG::Inherit,
-            bg_color : ColorBG::Inherit,
+            fg_color : ColorFg::Inherit,
+            bg_color : ColorBg::Inherit,
             no_frame : false,
         }.into(),
         children: &[
@@ -763,8 +763,8 @@ const PAGE_INACT_CHILDREN: &[Widget] = &[
                 size: Size { width: 1, height: 1 },
                 prop: prop::Label {
                     title: "---",
-                    fg_color: ColorFG::Inherit,
-                    bg_color: ColorBG::Inherit,
+                    fg_color: ColorFg::Inherit,
+                    bg_color: ColorBg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -780,8 +780,8 @@ const PAGE_TXTBOX_CHILDREN: &[Widget] = &[
         coord: Coord { col: 3, row: 1 },
         size: Size { width: 40, height: 10 },
         prop: prop::TextBox {
-            fg_color: ColorFG::White,
-            bg_color: ColorBG::BlueIntense,
+            fg_color: ColorFg::White,
+            bg_color: ColorBg::BlueIntense,
         }.into(),
         ..Widget::cdeflt()
     },
@@ -790,8 +790,8 @@ const PAGE_TXTBOX_CHILDREN: &[Widget] = &[
         coord: Coord { col: 46, row: 1 },
         size: Size { width: 12, height: 10 },
         prop: prop::TextBox {
-            fg_color: ColorFG::White,
-            bg_color: ColorBG::BlueIntense,
+            fg_color: ColorFg::White,
+            bg_color: ColorBg::BlueIntense,
         }.into(),
         ..Widget::cdeflt()
     },
@@ -804,8 +804,8 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         coord: Coord { col: 10, row: 2 },
         size: Size { width: 20, height: 1 },
         prop: prop::ComboBox {
-            fg_color: ColorFG::Blue,
-            bg_color: ColorBG::White,
+            fg_color: ColorFg::Blue,
+            bg_color: ColorBg::White,
             drop_down_size: 4
         }.into(),
         ..Widget::cdeflt()
@@ -815,8 +815,8 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         coord: Coord { col: 8, row: 4 },
         size: Size { width: 24, height: 1 },
         prop: prop::ComboBox {
-            fg_color: ColorFG::GreenIntense,
-            bg_color: ColorBG::Black,
+            fg_color: ColorFg::GreenIntense,
+            bg_color: ColorBg::Black,
             drop_down_size: 4
         }.into(),
         ..Widget::cdeflt()
@@ -826,8 +826,8 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         coord: Coord { col: 5, row: 6 },
         size: Size { width: 30, height: 5 },
         prop: prop::ListBox {
-            fg_color: ColorFG::Inherit,
-            bg_color: ColorBG::Inherit,
+            fg_color: ColorFg::Inherit,
+            bg_color: ColorBg::Inherit,
             no_frame: false
         }.into(),
         ..Widget::cdeflt()
@@ -837,8 +837,8 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         coord: Coord { col: 38, row: 2 },
         prop: prop::Button {
             text: "Say YES",
-            fg_color: ColorFG::White,
-            bg_color: ColorBG::Green,
+            fg_color: ColorFg::White,
+            bg_color: ColorBg::Green,
             style: ButtonStyle::Simple
         }.into(),
         ..Widget::cdeflt()
@@ -848,8 +848,8 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         coord: Coord { col: 38, row: 4 },
         prop: prop::Button {
             text: "Say NO",
-            fg_color: ColorFG::White,
-            bg_color: ColorBG::Red,
+            fg_color: ColorFg::White,
+            bg_color: ColorBg::Red,
             style: ButtonStyle::Simple
         }.into(),
         ..Widget::cdeflt()
@@ -859,7 +859,7 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         coord: Coord { col: 38, row: 7 },
         prop: prop::Button {
             text: "   ????   ",
-            fg_color: ColorFG::White,
+            fg_color: ColorFg::White,
             bg_color: ColorBgTheme::ButtonGreen.into(),
             style: ButtonStyle::Solid1p5
         }.into(),
@@ -888,8 +888,8 @@ const WINDOW_MAIN: Widget = Widget {
             size: Size { width: 14, height: 1 },
             prop: prop::Button {
                 text: "",
-                fg_color: ColorFG::Yellow,
-                bg_color: ColorBG::Inherit,
+                fg_color: ColorFg::Yellow,
+                bg_color: ColorBg::Inherit,
                 style: ButtonStyle::Simple
             }.into(),
             ..Widget::cdeflt()
@@ -907,7 +907,7 @@ const WINDOW_MAIN: Widget = Widget {
                     id: Id::PageVer.into(),
                     prop: prop::Page {
                         title: "Version",
-                        fg_color: ColorFG::Yellow,
+                        fg_color: ColorFg::Yellow,
                     }.into(),
                     children: PAGE_VER_CHILDREN,
                     ..Widget::cdeflt()
@@ -916,7 +916,7 @@ const WINDOW_MAIN: Widget = Widget {
                     id: Id::PageServ.into(),
                     prop: prop::Page {
                         title: "Service ∑",
-                        fg_color: ColorFG::White,
+                        fg_color: ColorFg::White,
                     }.into(),
                     children: PAGE_SERV_CHILDREN,
                     ..Widget::cdeflt()
@@ -925,7 +925,7 @@ const WINDOW_MAIN: Widget = Widget {
                     id: Id::PageDiag.into(),
                     prop: prop::Page {
                         title: "Diagnostics",
-                        fg_color: ColorFG::Yellow,
+                        fg_color: ColorFg::Yellow,
                     }.into(),
                     children: PAGE_DIAG_CHILDREN,
                     ..Widget::cdeflt()
@@ -934,7 +934,7 @@ const WINDOW_MAIN: Widget = Widget {
                     id: Id::PageInactiv.into(),
                     prop: prop::Page {
                         title: "Inactiv 🍀",
-                        fg_color: ColorFG::White,
+                        fg_color: ColorFg::White,
                     }.into(),
                     children: PAGE_INACT_CHILDREN,
                     ..Widget::cdeflt()
@@ -943,7 +943,7 @@ const WINDOW_MAIN: Widget = Widget {
                     id: Id::PageTextbox.into(),
                     prop: prop::Page {
                         title: "Text Box",
-                        fg_color: ColorFG::White,
+                        fg_color: ColorFg::White,
                     }.into(),
                     children: PAGE_TXTBOX_CHILDREN,
                     ..Widget::cdeflt()
@@ -952,7 +952,7 @@ const WINDOW_MAIN: Widget = Widget {
                     id: Id::PageCombobox.into(),
                     prop: prop::Page {
                         title: "Combo Box",
-                        fg_color: ColorFG::White,
+                        fg_color: ColorFg::White,
                     }.into(),
                     children: PAGE_CMBBOX_CHILDREN,
                     ..Widget::cdeflt()
@@ -976,8 +976,8 @@ const WINDOW_MAIN: Widget = Widget {
                     "F9/F10 Page • ",
                     "\u{2581}\u{2582}\u{2583}\u{2584}\u{2585}\u{2586}\u{2587}\u{2588}\u{1F569}"
                 ),
-                fg_color: ColorFG::White,
-                bg_color: ColorBG::BlueIntense,
+                fg_color: ColorFg::White,
+                bg_color: ColorBg::BlueIntense,
             }.into(),
             ..Widget::cdeflt()
         },

@@ -49,8 +49,8 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         size: Size { width: 21, height: 5 },
         prop: prop::Panel {
             title: "VER 🍁",
-            fg_color: ColorFG::White,
-            bg_color: ColorBG::Green,
+            fg_color: ColorFg::White,
+            bg_color: ColorBg::Green,
             no_frame: false,
         }.into(),
         children: &[
@@ -59,8 +59,8 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 2, row: 1 },
                 prop: prop::Label {
                     title: "FwVer: 1.1",
-                    fg_color: ColorFG::YellowIntense,
-                    bg_color: ColorBG::Inherit,
+                    fg_color: ColorFg::YellowIntense,
+                    bg_color: ColorBg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -70,8 +70,8 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
                 size: Size { width: 0, height: 1 },
                 prop: prop::Label {
                     title: "",
-                    fg_color: ColorFG::Blue,
-                    bg_color: ColorBG::Inherit,
+                    fg_color: ColorFg::Blue,
+                    bg_color: ColorBg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -82,8 +82,8 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         coord: Coord { col: 30, row: 7 },
         prop: prop::Button {
             text: "YES",
-            fg_color: ColorFG::White,
-            bg_color: ColorBG::Green,
+            fg_color: ColorFg::White,
+            bg_color: ColorBg::Green,
             style: ButtonStyle::Solid
         }.into(),
         ..Widget::cdeflt()
@@ -93,8 +93,8 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         coord: Coord { col: 38, row: 7 },
         prop: prop::Button {
             text: "NO",
-            fg_color: ColorFG::White,
-            bg_color: ColorBG::Red,
+            fg_color: ColorFg::White,
+            bg_color: ColorBg::Red,
             style: ButtonStyle::Solid
         }.into(),
         ..Widget::cdeflt()
@@ -109,8 +109,8 @@ const WINDOW_TEST: Widget = Widget {
     size: Size { width: 80, height: 15 },
     prop: prop::Window {
         title: "",
-        fg_color: ColorFG::White,
-        bg_color: ColorBG::Blue,
+        fg_color: ColorFg::White,
+        bg_color: ColorBg::Blue,
         is_popup: false,
     }.into(),
     children: &[
@@ -120,8 +120,8 @@ const WINDOW_TEST: Widget = Widget {
             size: Size { width: 14, height: 1 },
             prop: prop::Button {
                 text: "",
-                fg_color: ColorFG::Yellow,
-                bg_color: ColorBG::Inherit,
+                fg_color: ColorFg::Yellow,
+                bg_color: ColorBg::Inherit,
                 style: ButtonStyle::Simple
             }.into(),
             ..Widget::cdeflt()
@@ -139,7 +139,7 @@ const WINDOW_TEST: Widget = Widget {
                     id: Id::PageVer.into(),
                     prop: prop::Page {
                         title: "Version",
-                        fg_color: ColorFG::Yellow,
+                        fg_color: ColorFg::Yellow,
                     }.into(),
                     children: &PAGE_VER_CHILDREN,
                     ..Widget::cdeflt()
@@ -148,7 +148,7 @@ const WINDOW_TEST: Widget = Widget {
                     id: Id::PageServ.into(),
                     prop: prop::Page {
                         title: "Service ∑",
-                        fg_color: ColorFG::White,
+                        fg_color: ColorFg::White,
                     }.into(),
                     children: &[
                         Widget {
@@ -156,7 +156,7 @@ const WINDOW_TEST: Widget = Widget {
                             coord: Coord { col: 30, row: 5 },
                             prop: prop::CheckBox {
                                 text: "Enable",
-                                fg_color: ColorFG::White,
+                                fg_color: ColorFg::White,
                             }.into(),
                             ..Widget::cdeflt()
                         },
@@ -165,7 +165,7 @@ const WINDOW_TEST: Widget = Widget {
                             coord: Coord { col: 45, row: 5 },
                             prop: prop::CheckBox {
                                 text: "Lock",
-                                fg_color: ColorFG::Inherit,
+                                fg_color: ColorFg::Inherit,
                             }.into(),
                             ..Widget::cdeflt()
                         },

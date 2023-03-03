@@ -663,8 +663,8 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl) {
         &mut dctx.term_cell.borrow_mut(),
         my_coord + Coord::new(prp.tab_width, 0),
         dctx.wgt.size - Size::new(prp.tab_width, 0),
-        ColorBG::Inherit,
-        ColorFG::Inherit,
+        ColorBg::Inherit,
+        ColorFg::Inherit,
         FrameStyle::PgControl,
         true,
         false,
@@ -726,7 +726,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl) {
             // for Page we do not want inherit after it's title color
             {
                 let mut clfg = page_prp.fg_color;
-                if clfg == ColorFG::Inherit {
+                if clfg == ColorFg::Inherit {
                     clfg = get_widget_fg_color(page);
                 }
                 let mut term = dctx.term_cell.borrow_mut();
@@ -780,8 +780,8 @@ fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/) {
             &mut dctx.term_cell.borrow_mut(),
             my_coord,
             my_size,
-            ColorBG::Inherit,
-            ColorFG::Inherit,
+            ColorBg::Inherit,
+            ColorFg::Inherit,
             FrameStyle::PgControl,
             true,
             false,
@@ -1099,8 +1099,8 @@ fn draw_area(
     term: &mut Term,
     coord: Coord,
     size: Size,
-    cl_bg: ColorBG,
-    cl_fg: ColorFG,
+    cl_bg: ColorBg,
+    cl_fg: ColorFg,
     style: FrameStyle,
     filled: bool,
     shadow: bool,
@@ -1116,10 +1116,10 @@ fn draw_area(
     };
 
     // background and frame color
-    if cl_bg != ColorBG::Inherit {
+    if cl_bg != ColorBg::Inherit {
         term.push_cl_bg(cl_bg);
     }
-    if cl_fg != ColorFG::Inherit {
+    if cl_fg != ColorFg::Inherit {
         term.push_cl_fg(cl_fg);
     }
 
@@ -1286,7 +1286,7 @@ where
     }
 }
 
-fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
+fn get_widget_bg_color(wgt: &Widget) -> ColorBg {
     let mut cl = match wgt.prop {
         Property::Window(ref p) => p.bg_color,
         Property::Panel(ref p) => p.bg_color,
@@ -1296,10 +1296,10 @@ fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
         Property::ListBox(ref p) => p.bg_color,
         Property::ComboBox(ref p) => p.bg_color,
         Property::TextBox(ref p) => p.bg_color,
-        _ => ColorBG::Inherit,
+        _ => ColorBg::Inherit,
     };
 
-    if cl == ColorBG::Inherit {
+    if cl == ColorBg::Inherit {
         let parent = wgt::get_parent(wgt);
         if parent.id != wgt.id {
             cl = get_widget_bg_color(parent);
@@ -1309,7 +1309,7 @@ fn get_widget_bg_color(wgt: &Widget) -> ColorBG {
     cl
 }
 
-fn get_widget_fg_color(wgt: &Widget) -> ColorFG {
+fn get_widget_fg_color(wgt: &Widget) -> ColorFg {
     let mut cl = match wgt.prop {
         Property::Window(ref p) => p.fg_color,
         Property::Panel(ref p) => p.fg_color,
@@ -1324,10 +1324,10 @@ fn get_widget_fg_color(wgt: &Widget) -> ColorFG {
         Property::ListBox(ref p) => p.fg_color,
         Property::ComboBox(ref p) => p.fg_color,
         Property::TextBox(ref p) => p.fg_color,
-        _ => ColorFG::Inherit,
+        _ => ColorFg::Inherit,
     };
 
-    if cl == ColorFG::Inherit {
+    if cl == ColorFg::Inherit {
         let parent = wgt::get_parent(wgt);
         if parent.id != wgt.id {
             cl = get_widget_fg_color(parent);

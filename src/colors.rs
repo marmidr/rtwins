@@ -9,7 +9,7 @@ use std::convert::TryFrom;
 /// Foreground colors
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, TryFromPrimitive)]
 #[repr(u8)]
-pub enum ColorFG {
+pub enum ColorFg {
     Inherit,
     Default, // Reset to terminal default
     Black,
@@ -65,7 +65,7 @@ pub enum ColorFG {
 /// Background colors
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, TryFromPrimitive)]
 #[repr(u8)]
-pub enum ColorBG {
+pub enum ColorBg {
     Inherit,
     Default, // Reset to terminal default
     Black,
@@ -198,39 +198,39 @@ pub fn transcode_cl_bg_2_fg(bg_color_code: &str) -> String {
 // -----------------------------------------------------------------------------
 
 // stub function
-fn encode_fg(_: ColorFG) -> &'static str {
+fn encode_fg(_: ColorFg) -> &'static str {
     ""
 }
 
 // stub function
-fn encode_bg(_: ColorBG) -> &'static str {
+fn encode_bg(_: ColorBg) -> &'static str {
     ""
 }
 
 // pointers to user provided function encoding theme colors
 thread_local!(
-    static CL_FG_THEME: std::cell::Cell<fn(ColorFG) -> &'static str> =
+    static CL_FG_THEME: std::cell::Cell<fn(ColorFg) -> &'static str> =
         std::cell::Cell::new(encode_fg);
-    static CL_BG_THEME: std::cell::Cell<fn(ColorBG) -> &'static str> =
+    static CL_BG_THEME: std::cell::Cell<fn(ColorBg) -> &'static str> =
         std::cell::Cell::new(encode_bg);
 );
 
 // ---------------------------------------------------------------------------------------------- //
 
-impl ColorFG {
+impl ColorFg {
     /// Converts Normal into Intense color
     pub fn intensify(self) -> Self {
-        if self > ColorFG::Default && self < ColorFG::WhiteIntense {
+        if self > ColorFg::Default && self < ColorFg::WhiteIntense {
             let cl_next_val = (self as u8) + 1;
             // intensified has odd value
             if cl_next_val & 0x01 != 0 {
-                let cl_new = ColorFG::try_from(cl_next_val).unwrap_or(self);
+                let cl_new = ColorFg::try_from(cl_next_val).unwrap_or(self);
                 return cl_new;
             }
         }
-        else if self == ColorFG::Default {
+        else if self == ColorFg::Default {
             // force something bright
-            return ColorFG::WhiteIntense;
+            return ColorFg::WhiteIntense;
         }
         else if self >= Self::Theme0 && self < Self::ThemeEnd {
             // TODO: return intensifyClTheme(self);
@@ -265,27 +265,27 @@ impl ColorFG {
     }
 
     /// Sets encoder function for theme colors
-    pub fn set_theme_encoder(encoder: fn(ColorFG) -> &'static str) {
+    pub fn set_theme_encoder(encoder: fn(ColorFg) -> &'static str) {
         CL_FG_THEME.with(|cell| {
             cell.set(encoder);
         });
     }
 }
 
-impl ColorBG {
+impl ColorBg {
     /// Converts Normal into Intense color
     pub fn intensify(self) -> Self {
-        if self > ColorBG::Default && self < ColorBG::WhiteIntense {
+        if self > ColorBg::Default && self < ColorBg::WhiteIntense {
             let cl_next_val = (self as u8) + 1;
             // intensified has odd value
             if cl_next_val & 0x01 != 0 {
-                let cl_new = ColorBG::try_from(cl_next_val).unwrap_or(self);
+                let cl_new = ColorBg::try_from(cl_next_val).unwrap_or(self);
                 return cl_new;
             }
         }
-        else if self == ColorBG::Default {
+        else if self == ColorBg::Default {
             // force something bright
-            return ColorBG::WhiteIntense;
+            return ColorBg::WhiteIntense;
         }
         else if self >= Self::Theme0 && self < Self::ThemeEnd {
             // TODO: return intensifyClTheme(self);
@@ -327,7 +327,7 @@ impl ColorBG {
     }
 
     /// Sets encoder function for theme colors
-    pub fn set_theme_encoder(encoder: fn(ColorBG) -> &'static str) {
+    pub fn set_theme_encoder(encoder: fn(ColorBg) -> &'static str) {
         CL_BG_THEME.with(|cell| {
             cell.set(encoder);
         });
