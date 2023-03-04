@@ -263,10 +263,10 @@ impl rtwins::wgt::WindowState for DemoWndState {
     fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {
         rtwins::tr_debug!("TXT_EDIT_CHANGE: {}", txt);
 
-        if wgt.id == Id::Edt1 {
+        if wgt.id == Id::Edit1 {
             self.text_edit1_txt = std::mem::take(txt);
         }
-        else if wgt.id == Id::Edt2 {
+        else if wgt.id == Id::Edit2 {
             self.text_edit2_txt = std::mem::take(txt);
         }
     }
@@ -278,7 +278,7 @@ impl rtwins::wgt::WindowState for DemoWndState {
         txt: &mut String,
         cursor_pos: &mut i16,
     ) -> bool {
-        if wgt.id == Id::Edt2 {
+        if wgt.id == Id::Edit2 {
             return rtwins::utils::num_edit_input_evt(
                 ii,
                 txt,
@@ -556,10 +556,10 @@ impl rtwins::wgt::WindowState for DemoWndState {
     }
 
     fn get_text_edit_text(&mut self, wgt: &Widget, txt: &mut String, edit_mode: bool) {
-        if wgt.id == Id::Edt1 {
+        if wgt.id == Id::Edit1 {
             *txt = self.text_edit1_txt.clone();
         }
-        else if wgt.id == Id::Edt2 {
+        else if wgt.id == Id::Edit2 {
             *txt = self.text_edit2_txt.clone();
         }
     }

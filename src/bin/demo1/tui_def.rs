@@ -12,15 +12,10 @@ use rtwins::wgt::*;
 #[repr(u8)]
 pub enum ColorFgTheme {
     // double-state colors
-    Checkbox = ColorFg::Theme0 as u8,
+    Checkbox = ColorFg::Theme00 as u8,
     CheckboxIntense,
-    Radio,
-    RadioIntense,
     // single-state colors
     Window,
-    Label,
-    Listbox,
-    Button,
     ButtonGreen,
     ButtonRed,
     ButtonOrange,
@@ -32,9 +27,7 @@ pub enum ColorFgTheme {
 #[allow(dead_code)]
 #[repr(u8)]
 pub enum ColorBgTheme {
-    Window = ColorBg::Theme0 as u8,
-    Listbox,
-    Button,
+    Window = ColorBg::Theme00 as u8,
     ButtonGreen,
     ButtonRed,
     ButtonOrange,
@@ -42,7 +35,6 @@ pub enum ColorBgTheme {
     PanelVer,
     PanelKeyCodes,
     PanelLeds,
-    LabelBlue,
     Edit1,
     Edit1Intense,
     Edit2,
@@ -81,17 +73,13 @@ impl ColorBgTheme {
 
 fn color_fg_theme_encode(cl: ColorFg) -> &'static str {
     let cl = ColorFgTheme::from(cl);
+
     match cl {
         // double-state colors
-        ColorFgTheme::Checkbox => esc::FG_YELLOW,
-        ColorFgTheme::CheckboxIntense => esc::FG_YELLOW_INTENSE,
-        ColorFgTheme::Radio => esc::FG_GREEN,
-        ColorFgTheme::RadioIntense => esc::FG_GREEN_INTENSE,
+        ColorFgTheme::Checkbox => esc::FG_DARK_CYAN,
+        ColorFgTheme::CheckboxIntense => esc::FG_DARK_TURQUOISE,
         // single-state colors
         ColorFgTheme::Window => rtwins::fg_color!(158),
-        ColorFgTheme::Label => esc::FG_WHITE,
-        ColorFgTheme::Listbox => esc::FG_GREEN,
-        ColorFgTheme::Button => esc::FG_BLACK,
         ColorFgTheme::ButtonGreen => esc::FG_WHITE,
         ColorFgTheme::ButtonRed => esc::FG_WHITE,
         ColorFgTheme::ButtonOrange => esc::FG_DARK_RED,
@@ -105,8 +93,6 @@ fn color_bg_theme_encode(cl: ColorBg) -> &'static str {
 
     match cl {
         ColorBgTheme::Window => esc::BG_MIDNIGHT_BLUE,
-        ColorBgTheme::Listbox => esc::BG_WHITE,
-        ColorBgTheme::Button => esc::BG_BLACK_INTENSE,
         ColorBgTheme::ButtonGreen => esc::BG_OLIVE_DRAB,
         ColorBgTheme::ButtonRed => esc::BG_RED,
         ColorBgTheme::ButtonOrange => esc::BG_ORANGE,
@@ -114,7 +100,6 @@ fn color_bg_theme_encode(cl: ColorBg) -> &'static str {
         ColorBgTheme::PanelVer => rtwins::bg_color!(106),
         ColorBgTheme::PanelKeyCodes => rtwins::bg_color!(169),
         ColorBgTheme::PanelLeds => esc::BG_LIGHT_BLUE,
-        ColorBgTheme::LabelBlue => esc::BG_DARK_BLUE,
         ColorBgTheme::Edit1 => esc::BG_CYAN,
         ColorBgTheme::Edit1Intense => esc::BG_CYAN_INTENSE,
         ColorBgTheme::Edit2 => esc::BG_GREEN,
@@ -124,31 +109,30 @@ fn color_bg_theme_encode(cl: ColorBg) -> &'static str {
     }
 }
 
-/*
-ColorFG color_fg_theme_intensify(ColorFG cl)
-{
-    switch (cl)
-    {
-    case ColorFG::Checkbox:         return ColorFG::CheckboxIntense;
-    case ColorFG::Radio:            return ColorFG::RadioIntense;
-    default:                        return cl;
-    }
+fn color_fg_theme_intensify(cl: ColorFg) -> ColorFg {
+    let cl = match ColorFgTheme::from(cl) {
+        ColorFgTheme::Checkbox => ColorFgTheme::CheckboxIntense,
+        other => other,
+    };
+
+    cl.into()
 }
 
-ColorBG color_bg_theme_intensify(ColorBG cl)
-{
-    switch (cl)
-    {
-    case ColorBG::Edit1:            return ColorBG::Edit1Intense;
-    case ColorBG::Edit2:            return ColorBG::Edit2Intense;
-    default:                        return cl;
-    }
+fn color_bg_theme_intensify(cl: ColorBg) -> ColorBg {
+    let cl = match ColorBgTheme::from(cl) {
+        ColorBgTheme::Edit1 => ColorBgTheme::Edit1Intense,
+        ColorBgTheme::Edit2 => ColorBgTheme::Edit2Intense,
+        other => other,
+    };
+
+    cl.into()
 }
-*/
 
 pub fn init() {
     ColorFg::set_theme_encoder(color_fg_theme_encode);
+    ColorFg::set_theme_intensifier(color_fg_theme_intensify);
     ColorBg::set_theme_encoder(color_bg_theme_encode);
+    ColorBg::set_theme_intensifier(color_bg_theme_intensify);
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -222,9 +206,9 @@ pub enum Id {
             PageDiag,
                 PanelEdt,
                     LblEdt1Title,
-                    Edt1,
+                    Edit1,
                     LblEdt2Title,
-                    Edt2,
+                    Edit2,
                 CustomWgt1,
                 PanelChbx,
                     LblChbxTitle,
@@ -604,12 +588,12 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: Id::Edt1.into(),
+                id: Id::Edit1.into(),
                 coord: Coord { col: 1, row: 1 },
                 size: Size { width: 30, height: 1 },
                 prop: prop::TextEdit {
                     fg_color: ColorFg::Black,
-                    bg_color: ColorBg::White,
+                    bg_color: ColorBgTheme::Edit1.into(),
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -625,12 +609,12 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: Id::Edt2.into(),
+                id: Id::Edit2.into(),
                 coord: Coord { col: 1, row: 3 },
                 size: Size { width: 30, height: 1 },
                 prop: prop::TextEdit {
                     fg_color: ColorFg::Black,
-                    bg_color: ColorBg::Yellow,
+                    bg_color: ColorBgTheme::Edit2.into(),
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -662,7 +646,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 size: Size { width: 14, height: 1 },
                 prop: prop::Label {
                     title: "Check list:", // concat!(bold!(), "Check list:", normal!()),
-                    fg_color: ColorFg::WhiteIntense,
+                    fg_color: ColorFg::Blue,
                     bg_color: ColorBg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
@@ -672,7 +656,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 2, row: 4 },
                 prop: prop::CheckBox {
                     text : "Check A ",
-                    fg_color : ColorFg::YellowIntense,
+                    fg_color : ColorFg::Green,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -681,7 +665,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 2, row: 5 },
                 prop: prop::CheckBox {
                     text : "Check B ",
-                    fg_color : ColorFg::Inherit,
+                    fg_color : ColorFgTheme::Checkbox.into(),
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -690,7 +674,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 2, row: 6 },
                 prop: prop::CheckBox {
                     text : "Check C ",
-                    fg_color : ColorFg::Inherit,
+                    fg_color : ColorFgTheme::Checkbox.into(),
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -699,7 +683,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 coord: Coord { col: 2, row: 7 },
                 prop: prop::CheckBox {
                     text : "Check D ",
-                    fg_color : ColorFg::Inherit,
+                    fg_color : ColorFgTheme::Checkbox.into(),
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -837,7 +821,7 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         coord: Coord { col: 38, row: 2 },
         prop: prop::Button {
             text: "Say YES",
-            fg_color: ColorFg::White,
+            fg_color: ColorFgTheme::ButtonGreen.into(),
             bg_color: ColorBg::Green,
             style: ButtonStyle::Simple
         }.into(),
@@ -848,7 +832,7 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         coord: Coord { col: 38, row: 4 },
         prop: prop::Button {
             text: "Say NO",
-            fg_color: ColorFg::White,
+            fg_color: ColorFgTheme::ButtonRed.into(),
             bg_color: ColorBg::Red,
             style: ButtonStyle::Simple
         }.into(),
@@ -977,7 +961,7 @@ const WINDOW_MAIN: Widget = Widget {
                     "\u{2581}\u{2582}\u{2583}\u{2584}\u{2585}\u{2586}\u{2587}\u{2588}\u{1F569}"
                 ),
                 fg_color: ColorFg::White,
-                bg_color: ColorBg::BlueIntense,
+                bg_color: ColorBgTheme::LabelFtr.into(),
             }.into(),
             ..Widget::cdeflt()
         },

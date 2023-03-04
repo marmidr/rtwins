@@ -29,16 +29,16 @@ pub enum ColorFg {
     White,
     WhiteIntense,
     //
-    Theme0,
-    Theme1,
-    Theme2,
-    Theme3,
-    Theme4,
-    Theme5,
-    Theme6,
-    Theme7,
-    Theme8,
-    Theme9,
+    Theme00,
+    Theme01,
+    Theme02,
+    Theme03,
+    Theme04,
+    Theme05,
+    Theme06,
+    Theme07,
+    Theme08,
+    Theme09,
     Theme10,
     Theme11,
     Theme12,
@@ -85,16 +85,16 @@ pub enum ColorBg {
     White,
     WhiteIntense,
     //
-    Theme0,
-    Theme1,
-    Theme2,
-    Theme3,
-    Theme4,
-    Theme5,
-    Theme6,
-    Theme7,
-    Theme8,
-    Theme9,
+    Theme00,
+    Theme01,
+    Theme02,
+    Theme03,
+    Theme04,
+    Theme05,
+    Theme06,
+    Theme07,
+    Theme08,
+    Theme09,
     Theme10,
     Theme11,
     Theme12,
@@ -198,21 +198,35 @@ pub fn transcode_cl_bg_2_fg(bg_color_code: &str) -> String {
 // -----------------------------------------------------------------------------
 
 // stub function
-fn encode_fg(_: ColorFg) -> &'static str {
+fn encode_theme_fg(_: ColorFg) -> &'static str {
     ""
 }
 
 // stub function
-fn encode_bg(_: ColorBg) -> &'static str {
+fn encode_theme_bg(_: ColorBg) -> &'static str {
     ""
+}
+
+// stub function
+fn intensify_theme_fg(cl: ColorFg) -> ColorFg {
+    cl
+}
+
+// stub function
+fn intensify_theme_bg(cl: ColorBg) -> ColorBg {
+    cl
 }
 
 // pointers to user provided function encoding theme colors
 thread_local!(
-    static CL_FG_THEME: std::cell::Cell<fn(ColorFg) -> &'static str> =
-        std::cell::Cell::new(encode_fg);
-    static CL_BG_THEME: std::cell::Cell<fn(ColorBg) -> &'static str> =
-        std::cell::Cell::new(encode_bg);
+    static ENC_THEME_FG: std::cell::Cell<fn(ColorFg) -> &'static str> =
+        std::cell::Cell::new(encode_theme_fg);
+    static ENC_THEME_BG: std::cell::Cell<fn(ColorBg) -> &'static str> =
+        std::cell::Cell::new(encode_theme_bg);
+    static INTENS_THEME_FG: std::cell::Cell<fn(ColorFg) -> ColorFg> =
+        std::cell::Cell::new(intensify_theme_fg);
+    static INTENS_THEME_BG: std::cell::Cell<fn(ColorBg) -> ColorBg> =
+        std::cell::Cell::new(intensify_theme_bg);
 );
 
 // ---------------------------------------------------------------------------------------------- //
@@ -232,8 +246,9 @@ impl ColorFg {
             // force something bright
             return ColorFg::WhiteIntense;
         }
-        else if self >= Self::Theme0 && self < Self::ThemeEnd {
-            // TODO: return intensifyClTheme(self);
+        else if self >= Self::Theme00 && self < Self::ThemeEnd {
+            let cl_new = INTENS_THEME_FG.with(|cell| cell.get()(self));
+            return cl_new;
         }
 
         self
@@ -255,9 +270,8 @@ impl ColorFg {
         if (self as usize) < MAP_CL_FG.len() {
             return MAP_CL_FG[self as usize];
         }
-        else if self >= Self::Theme0 && self < Self::ThemeEnd {
-            let seq = CL_FG_THEME.with(|cell| cell.get()(self));
-
+        else if self >= Self::Theme00 && self < Self::ThemeEnd {
+            let seq = ENC_THEME_FG.with(|cell| cell.get()(self));
             return seq;
         }
 
@@ -266,8 +280,15 @@ impl ColorFg {
 
     /// Sets encoder function for theme colors
     pub fn set_theme_encoder(encoder: fn(ColorFg) -> &'static str) {
-        CL_FG_THEME.with(|cell| {
+        ENC_THEME_FG.with(|cell| {
             cell.set(encoder);
+        });
+    }
+
+    /// Sets color intensifier function for theme colors
+    pub fn set_theme_intensifier(intensify: fn(ColorFg) -> ColorFg) {
+        INTENS_THEME_FG.with(|cell| {
+            cell.set(intensify);
         });
     }
 }
@@ -287,8 +308,9 @@ impl ColorBg {
             // force something bright
             return ColorBg::WhiteIntense;
         }
-        else if self >= Self::Theme0 && self < Self::ThemeEnd {
-            // TODO: return intensifyClTheme(self);
+        else if self >= Self::Theme00 && self < Self::ThemeEnd {
+            let cl_new = INTENS_THEME_BG.with(|cell| cell.get()(self));
+            return cl_new;
         }
 
         self
@@ -310,9 +332,8 @@ impl ColorBg {
         if (self as usize) < MAP_CL_BG.len() {
             return MAP_CL_BG[self as usize];
         }
-        else if self >= Self::Theme0 && self < Self::ThemeEnd {
-            let seq = CL_BG_THEME.with(|cell| cell.get()(self));
-
+        else if self >= Self::Theme00 && self < Self::ThemeEnd {
+            let seq = ENC_THEME_BG.with(|cell| cell.get()(self));
             return seq;
         }
 
@@ -328,8 +349,15 @@ impl ColorBg {
 
     /// Sets encoder function for theme colors
     pub fn set_theme_encoder(encoder: fn(ColorBg) -> &'static str) {
-        CL_BG_THEME.with(|cell| {
+        ENC_THEME_BG.with(|cell| {
             cell.set(encoder);
+        });
+    }
+
+    /// Sets color intensifier function for theme colors
+    pub fn set_theme_intensifier(intensify: fn(ColorBg) -> ColorBg) {
+        INTENS_THEME_BG.with(|cell| {
+            cell.set(intensify);
         });
     }
 }
