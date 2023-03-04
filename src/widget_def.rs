@@ -20,6 +20,28 @@ pub const WIDGET_ID_NONE: WId = WId::MIN;
 /// Used as a special function parameter
 pub const WIDGET_ID_ALL: WId = WId::MAX;
 
+// This macro uses TT munchers technique:
+// https://danielkeep.github.io/tlborm/book/pat-incremental-tt-munchers.html
+// https://blog.logrocket.com/macros-in-rust-a-tutorial-with-examples/
+#[macro_export]
+macro_rules! generate_ids {
+    // private
+    ($init:expr; $id:ident) => {
+        pub const $id: WId = $init;
+    };
+
+    ($init:expr; $id:ident $($tail:tt)+) => {
+        pub const $id: WId = $init;
+        $crate::generate_ids!{$init+1; $($tail)+}
+    };
+
+    // public arm
+    ($($ids:tt)*) => {
+        // ID's must be > WIDGET_ID_NONE
+        $crate::generate_ids!{WIDGET_ID_NONE + 1; $($ids)*}
+    };
+}
+
 // ---------------------------------------------------------------------------------------------- //
 
 /// Widget static properties
@@ -686,3 +708,25 @@ impl WindowState for WindowStateStub {
 }
 
 // ---------------------------------------------------------------------------------------------- //
+
+#[cfg(test)]
+mod tests {
+    use super::{WId, WIDGET_ID_NONE};
+
+    #[test]
+    fn check_widget_ids_generator() {
+        generate_ids!(POPUP_EMPTY);
+
+        generate_ids!(
+            POPUP_WARN
+                BTN_OK
+        );
+
+        generate_ids!(
+            POPUP_YESNOCANCEL
+                BTN_YES
+                BTN_NO
+                BTN_CANCEL
+        );
+    }
+}

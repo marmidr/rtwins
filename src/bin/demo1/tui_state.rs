@@ -14,7 +14,7 @@ use rtwins::TraceBuffer;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use super::tui_def::Id;
+use super::tui_def::id;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -41,36 +41,6 @@ pub struct DemoWndState {
     tbx_narrow_lines: Rc<RefCell<Vec<String>>>,
 }
 
-trait StatesById {
-    fn get_state_by_id(&self, id: Id) -> Option<&wgt::rstate::State>;
-    fn get_enabled_or_default_by_id(&self, id: Id) -> bool;
-    fn set_enabled_by_id(&mut self, id: Id, en: bool);
-    fn insert_state_by_id(&mut self, id: Id, state: wgt::rstate::State);
-}
-
-/// Helper to avoid using `.into()`
-impl StatesById for wgt::RuntimeStates {
-    #[inline]
-    fn get_state_by_id(&self, id: Id) -> Option<&wgt::rstate::State> {
-        self.get_state(id.into())
-    }
-
-    #[inline]
-    fn get_enabled_or_default_by_id(&self, id: Id) -> bool {
-        self.get_enabled_or_default(id.into())
-    }
-
-    #[inline]
-    fn set_enabled_by_id(&mut self, id: Id, en: bool) {
-        self.set_enabled(id.into(), en);
-    }
-
-    #[inline]
-    fn insert_state_by_id(&mut self, id: Id, state: wgt::rstate::State) {
-        self.insert_state(id.into(), state);
-    }
-}
-
 impl DemoWndState {
     pub fn new(widgets: &'static [Widget]) -> Self {
         let mut wnd_state = DemoWndState {
@@ -89,7 +59,7 @@ impl DemoWndState {
 
         // initial tsate of focused id for each page
         wnd_state.focused_ids.resize(
-            rtwins::wgt::pagectrl_page_count(widgets, Id::PgControl.into()) as usize,
+            rtwins::wgt::pagectrl_page_count(widgets, id::PgControl) as usize,
             WIDGET_ID_NONE,
         );
 
@@ -132,28 +102,28 @@ impl DemoWndState {
         // setup some widgets initial properties
         use wgt::rstate::*;
 
-        wnd_state.rs.set_enabled_by_id(Id::LabelFwVersion, false);
+        wnd_state.rs.set_enabled(id::LabelFwVersion, false);
 
         wnd_state
             .rs
-            .insert_state_by_id(Id::Prgbar1, PgbarState { pos: 5, max: 10 }.into());
+            .insert_state(id::Prgbar1, PgbarState { pos: 5, max: 10 }.into());
         wnd_state
             .rs
-            .insert_state_by_id(Id::Prgbar2, PgbarState { pos: 2, max: 10 }.into());
+            .insert_state(id::Prgbar2, PgbarState { pos: 2, max: 10 }.into());
         wnd_state
             .rs
-            .insert_state_by_id(Id::Prgbar3, PgbarState { pos: 8, max: 10 }.into());
+            .insert_state(id::Prgbar3, PgbarState { pos: 8, max: 10 }.into());
         wnd_state
             .rs
-            .insert_state_by_id(Id::LedLock, LedState { lit: true }.into());
+            .insert_state(id::LedLock, LedState { lit: true }.into());
         wnd_state
             .rs
-            .insert_state_by_id(Id::ChbxEnbl, ChbxState { checked: true }.into());
+            .insert_state(id::ChbxEnbl, ChbxState { checked: true }.into());
         wnd_state
             .rs
-            .insert_state_by_id(Id::PgControl, PgctrlState { page: 0 }.into());
-        wnd_state.rs.insert_state_by_id(
-            Id::TbxWide,
+            .insert_state(id::PgControl, PgctrlState { page: 0 }.into());
+        wnd_state.rs.insert_state(
+            id::TbxWide,
             TxtbxState {
                 top_line: 9,
                 lines: Default::default(),
@@ -162,10 +132,10 @@ impl DemoWndState {
         );
         wnd_state
             .rs
-            .insert_state_by_id(Id::ChbxL1, ChbxState { checked: true }.into());
+            .insert_state(id::ChbxL1, ChbxState { checked: true }.into());
         wnd_state
             .rs
-            .insert_state_by_id(Id::ChbxL2, ChbxState { checked: true }.into());
+            .insert_state(id::ChbxL2, ChbxState { checked: true }.into());
 
         wnd_state
     }
@@ -177,48 +147,46 @@ impl rtwins::wgt::WindowState for DemoWndState {
     /** events **/
 
     fn on_button_down(&mut self, wgt: &Widget, ii: &InputInfo) {
-        if wgt.id == Id::BtnYes {
+        if wgt.id == id::BtnYes {
             rtwins::tr_debug!("▼ BTN_YES");
         }
-        if wgt.id == Id::BtnNo {
+        if wgt.id == id::BtnNo {
             rtwins::tr_warn!("▼ BTN_NO");
         }
-        if wgt.id == Id::BtnPopup {
+        if wgt.id == id::BtnPopup {
             rtwins::tr_info!("▼ BTN_POPUP");
         }
     }
 
     fn on_button_up(&mut self, wgt: &Widget, ii: &InputInfo) {
-        if wgt.id == Id::BtnYes {
+        if wgt.id == id::BtnYes {
             rtwins::tr_debug!("▲ BTN_YES");
         }
-        if wgt.id == Id::BtnNo {
+        if wgt.id == id::BtnNo {
             rtwins::tr_warn!("▲ BTN_NO");
         }
-        if wgt.id == Id::BtnPopup {
+        if wgt.id == id::BtnPopup {
             rtwins::tr_info!("▲ BTN_POPUP");
         }
-        if wgt.id == Id::BtnSayNo {
-            self.rs.set_enabled_by_id(
-                Id::BtnSayYes,
-                !self.rs.get_enabled_or_default_by_id(Id::BtnSayYes),
+        if wgt.id == id::BtnSayNo {
+            self.rs.set_enabled(
+                id::BtnSayYes,
+                !self.rs.get_enabled_or_default(id::BtnSayYes),
             );
 
-            self.invalidate(Id::BtnSayYes.into());
+            self.invalidate(id::BtnSayYes);
 
-            self.rs.set_enabled_by_id(
-                Id::Btn1p5,
-                !self.rs.get_enabled_or_default_by_id(Id::Btn1p5),
-            );
+            self.rs
+                .set_enabled(id::Btn1p5, !self.rs.get_enabled_or_default(id::Btn1p5));
 
-            self.invalidate(Id::Btn1p5.into());
+            self.invalidate(id::Btn1p5);
         }
     }
 
     fn on_button_click(&mut self, wgt: &Widget, ii: &InputInfo) {
         rtwins::tr_debug!("BTN_CLICK");
 
-        if wgt.id == Id::BtnPopup {
+        if wgt.id == id::BtnPopup {
             /* TODO:
             showPopup("Lorem Titlum",
                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
@@ -229,14 +197,14 @@ impl rtwins::wgt::WindowState for DemoWndState {
             */
         }
 
-        if wgt.id == Id::BtnYes {
+        if wgt.id == id::BtnYes {
             // TODO: use command pattern to solve the missing ws ?
-            // rtwins::wgt::pagectrl_select_page(ws, Id::PgControl, Id::PageTextbox);
+            // rtwins::wgt::pagectrl_select_page(ws, id::PgControl, id::PageTextbox);
         }
     }
 
     fn on_button_key(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
-        if wgt.id == Id::Btn1p5 {
+        if wgt.id == id::Btn1p5 {
             rtwins::tr_debug!("BTN_ON_KEY");
 
             if let InputEvent::Char(ref ch) = ii.evnt {
@@ -263,10 +231,10 @@ impl rtwins::wgt::WindowState for DemoWndState {
     fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {
         rtwins::tr_debug!("TXT_EDIT_CHANGE: {}", txt);
 
-        if wgt.id == Id::Edit1 {
+        if wgt.id == id::Edit1 {
             self.text_edit1_txt = std::mem::take(txt);
         }
-        else if wgt.id == Id::Edit2 {
+        else if wgt.id == id::Edit2 {
             self.text_edit2_txt = std::mem::take(txt);
         }
     }
@@ -278,7 +246,7 @@ impl rtwins::wgt::WindowState for DemoWndState {
         txt: &mut String,
         cursor_pos: &mut i16,
     ) -> bool {
-        if wgt.id == Id::Edit2 {
+        if wgt.id == id::Edit2 {
             return rtwins::utils::num_edit_input_evt(
                 ii,
                 txt,
@@ -297,14 +265,14 @@ impl rtwins::wgt::WindowState for DemoWndState {
         let rs = self.rs.as_chbx(wgt.id);
         rs.checked = !rs.checked;
 
-        if wgt.id == Id::ChbxEnbl {
+        if wgt.id == id::ChbxEnbl {
             rtwins::tr_debug!("CHBX_ENBL");
         }
-        else if wgt.id == Id::ChbxLock {
+        else if wgt.id == id::ChbxLock {
             rtwins::tr_debug!("CHBX_LOCK");
         }
-        else if wgt.id == Id::ChbxL1 || wgt.id == Id::ChbxL2 {
-            self.invalidate(Id::PageServ.into());
+        else if wgt.id == id::ChbxL1 || wgt.id == id::ChbxL2 {
+            self.invalidate(id::PageServ);
         }
         else {
             rtwins::tr_debug!("CHBX");
@@ -393,7 +361,7 @@ impl rtwins::wgt::WindowState for DemoWndState {
     /** common state queries **/
 
     fn is_enabled(&self, wgt: &Widget) -> bool {
-        if wgt.id == Id::ChbxC {
+        if wgt.id == id::ChbxC {
             false
         }
         else {
@@ -402,16 +370,14 @@ impl rtwins::wgt::WindowState for DemoWndState {
     }
 
     fn is_focused(&self, wgt: &Widget) -> bool {
-        self.rs
-            .get_state(Id::PgControl.into())
-            .map_or(false, |state| {
-                if let wgt::rstate::State::Pgctrl(ref rs) = state {
-                    self.focused_ids[rs.page as usize] == wgt.id
-                }
-                else {
-                    false
-                }
-            })
+        self.rs.get_state(id::PgControl).map_or(false, |state| {
+            if let wgt::rstate::State::Pgctrl(ref rs) = state {
+                self.focused_ids[rs.page as usize] == wgt.id
+            }
+            else {
+                false
+            }
+        })
     }
 
     fn is_visible(&self, wgt: &Widget) -> bool {
@@ -427,8 +393,8 @@ impl rtwins::wgt::WindowState for DemoWndState {
             }
         }
 
-        if wgt.id == Id::Layer1 {
-            return self.rs.get_state_by_id(Id::ChbxL1).map_or(true, |state| {
+        if wgt.id == id::Layer1 {
+            return self.rs.get_state(id::ChbxL1).map_or(true, |state| {
                 if let wgt::rstate::State::Chbx(ref cbx) = state {
                     cbx.checked
                 }
@@ -438,8 +404,8 @@ impl rtwins::wgt::WindowState for DemoWndState {
             });
         }
 
-        if wgt.id == Id::Layer2 {
-            return self.rs.get_state_by_id(Id::ChbxL2).map_or(true, |state| {
+        if wgt.id == id::Layer2 {
+            return self.rs.get_state(id::ChbxL2).map_or(true, |state| {
                 if let wgt::rstate::State::Chbx(ref cbx) = state {
                     cbx.checked
                 }
@@ -457,12 +423,12 @@ impl rtwins::wgt::WindowState for DemoWndState {
     }
 
     fn get_focused_id(&mut self) -> WId {
-        let rs = self.rs.as_pgctrl(Id::PgControl.into());
+        let rs = self.rs.as_pgctrl(id::PgControl);
         self.focused_ids[rs.page as usize]
     }
 
     fn set_focused_id(&mut self, wid: WId) {
-        let rs = self.rs.as_pgctrl(Id::PgControl.into());
+        let rs = self.rs.as_pgctrl(id::PgControl);
         self.focused_ids[rs.page as usize] = wid;
     }
 
@@ -506,16 +472,16 @@ impl rtwins::wgt::WindowState for DemoWndState {
     }
 
     fn get_label_text(&mut self, wgt: &Widget, txt: &mut String) {
-        if wgt.id == Id::LabelDate {
+        if wgt.id == id::LabelDate {
             txt.push_str(format!("Date•{}", "<datetime>").as_str());
         }
-        else if wgt.id == Id::LabelAbout {
+        else if wgt.id == id::LabelAbout {
             txt.push_str(rtwins::url_link!(
                 "https://github.com/marmidr/rtwins",
                 "About..."
             ));
         }
-        else if wgt.id == Id::LabelMultiFmt {
+        else if wgt.id == id::LabelMultiFmt {
             let _ = txt.stream()
                 << "  ▫▫▫▫▫ "
                 << esc::INVERSE_ON
@@ -538,7 +504,7 @@ impl rtwins::wgt::WindowState for DemoWndState {
                 << esc::UNDERLINE_OFF
                 << " -> select the item";
         }
-        else if wgt.id == Id::LblWordwrap {
+        else if wgt.id == id::LblWordwrap {
             let mut tmp = String::with_capacity(100);
             let _ = tmp.stream()
                 << esc::BOLD
@@ -556,10 +522,10 @@ impl rtwins::wgt::WindowState for DemoWndState {
     }
 
     fn get_text_edit_text(&mut self, wgt: &Widget, txt: &mut String, edit_mode: bool) {
-        if wgt.id == Id::Edit1 {
+        if wgt.id == id::Edit1 {
             *txt = self.text_edit1_txt.clone();
         }
-        else if wgt.id == Id::Edit2 {
+        else if wgt.id == id::Edit2 {
             *txt = self.text_edit2_txt.clone();
         }
     }
@@ -590,7 +556,7 @@ impl rtwins::wgt::WindowState for DemoWndState {
     }
 
     fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {
-        if wgt.id == Id::ListBox {
+        if wgt.id == id::ListBox {
             let plants = ['🌷', '🌱', '🌲', '🌻'];
 
             if item_idx == 3 {
@@ -635,13 +601,13 @@ impl rtwins::wgt::WindowState for DemoWndState {
         let rs = self.rs.as_txtbx(wgt.id);
         state.top_line = rs.top_line;
 
-        if wgt.id == Id::TbxWide {
+        if wgt.id == id::TbxWide {
             if self.tbx_wide_lines.borrow().len() == 0 {
                 self.tbx_wide_lines = utils::word_wrap(wgt.size.width as usize - 2, &self.tbx_text);
             }
             state.lines = Rc::clone(&self.tbx_wide_lines);
         }
-        else if wgt.id == Id::TbxNarrow {
+        else if wgt.id == id::TbxNarrow {
             if self.tbx_narrow_lines.borrow().len() == 0 {
                 self.tbx_narrow_lines =
                     utils::word_wrap(wgt.size.width as usize - 2, &self.tbx_text);
@@ -651,10 +617,10 @@ impl rtwins::wgt::WindowState for DemoWndState {
     }
 
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {
-        if wgt.id == Id::BtnToaster {
+        if wgt.id == id::BtnToaster {
             txt.push_str("  🐸  📢  ");
         }
-        else if wgt.id == Id::Btn1p5 {
+        else if wgt.id == id::Btn1p5 {
             txt.push_str("1.5 🍋 Height");
         }
     }

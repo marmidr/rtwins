@@ -9,9 +9,9 @@ use rtwins::TraceBuffer;
 use std::io::Write;
 
 // https://doc.rust-lang.org/cargo/guide/project-layout.html
+mod tui_colors;
 mod tui_def;
 mod tui_state;
-mod tui_colors;
 
 // -----------------------------------------------------------------------------------------------
 
@@ -194,13 +194,11 @@ fn main() {
 
                 // input processing
                 if let InputEvent::Key(ref key) = ii.evnt {
-                    use tui_def::Id;
+                    use tui_def::id;
 
                     if *key == Key::F2 {
-                        dws.rs.set_enabled(
-                            Id::WndMain.into(),
-                            !dws.rs.get_enabled_or_default(Id::WndMain.into()),
-                        );
+                        dws.rs
+                            .set_enabled(id::WndMain, !dws.rs.get_enabled_or_default(id::WndMain));
                         dws.invalidate(wgt::WIDGET_ID_ALL);
                     }
                     else if *key == Key::F4 {
@@ -231,20 +229,16 @@ fn main() {
                         // if wm.is_top_wnd(&dws) {
                         wgt::pagectrl_select_next_page(
                             &mut dws,
-                            Id::PgControl.into(),
+                            id::PgControl,
                             *key == Key::PgDown,
                         );
-                        dws.invalidate(Id::PgControl.into());
+                        dws.invalidate(id::PgControl);
                         // }
                     }
                     else if *key == Key::F9 || *key == Key::F10 {
                         // if wm.is_top_wnd(&dws) {
-                        wgt::pagectrl_select_next_page(
-                            &mut dws,
-                            Id::PgControl.into(),
-                            *key == Key::F10,
-                        );
-                        dws.invalidate(Id::PgControl.into());
+                        wgt::pagectrl_select_next_page(&mut dws, id::PgControl, *key == Key::F10);
+                        dws.invalidate(id::PgControl);
                         // }
                     }
                 }
@@ -307,6 +301,5 @@ fn test_property_access() {
     }
 
     println!("sizeof Widget: {}", std::mem::size_of::<wgt::Widget>());
-    println!("sizeof Type: {}", std::mem::size_of::<wgt::Property>());
-    println!("sizeof Id: {}", std::mem::size_of::<tui_def::Id>());
+    println!("sizeof Property: {}", std::mem::size_of::<wgt::Property>());
 }
