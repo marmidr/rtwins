@@ -1,13 +1,11 @@
 //! Color definitions
 
 use crate::esc::*;
-use num_enum::TryFromPrimitive;
-use std::convert::TryFrom;
 
 // ---------------------------------------------------------------------------------------------- //
 
 /// Foreground colors
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, TryFromPrimitive)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 #[repr(u8)]
 pub enum ColorFg {
     Inherit,
@@ -63,7 +61,7 @@ pub enum ColorFg {
 }
 
 /// Background colors
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, TryFromPrimitive)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 #[repr(u8)]
 pub enum ColorBg {
     Inherit,
@@ -162,10 +160,6 @@ const MAP_CL_BG: [&str; 18] = [
 
 // -----------------------------------------------------------------------------
 
-// implemented in user code:
-// const char* encodeClTheme(ColorFG cl);
-// const char* encodeClTheme(ColorBG cl);
-
 /// For given background color, returns matching foreground color
 pub fn transcode_cl_bg_2_fg(bg_color_code: &str) -> String {
     // \e[4?m               --> \e[3?m
@@ -238,7 +232,7 @@ impl ColorFg {
             let cl_next_val = (self as u8) + 1;
             // intensified has odd value
             if cl_next_val & 0x01 != 0 {
-                let cl_new = ColorFg::try_from(cl_next_val).unwrap_or(self);
+                let cl_new = unsafe { std::mem::transmute::<u8, ColorFg>(cl_next_val) };
                 return cl_new;
             }
         }
@@ -300,7 +294,7 @@ impl ColorBg {
             let cl_next_val = (self as u8) + 1;
             // intensified has odd value
             if cl_next_val & 0x01 != 0 {
-                let cl_new = ColorBg::try_from(cl_next_val).unwrap_or(self);
+                let cl_new = unsafe { std::mem::transmute::<u8, ColorBg>(cl_next_val) };
                 return cl_new;
             }
         }

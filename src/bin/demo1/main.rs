@@ -11,6 +11,7 @@ use std::io::Write;
 // https://doc.rust-lang.org/cargo/guide/project-layout.html
 mod tui_def;
 mod tui_state;
+mod tui_colors;
 
 // -----------------------------------------------------------------------------------------------
 
@@ -86,7 +87,7 @@ impl rtwins::pal::Pal for DemoPal {
 // -----------------------------------------------------------------------------------------------
 
 fn main() {
-    tui_def::init();
+    tui_colors::init();
     // create Demo window state
     let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN_ARRAY[..]);
     // replace default PAL with our own:

@@ -36,6 +36,14 @@ run-rel:
     clear
     cargo run --release
 
+# Find out what functions takes most of the space in the library
+bloat-lib:
+    cargo bloat --release --filter rtwins --no-relative-size -n 50
+
+# Find out what crates takes most of the space in the executable
+bloat-demo:
+    cargo bloat --release --crates
+
 # default tests runner
 test:
     clear
