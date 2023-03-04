@@ -157,6 +157,21 @@ cargo-nextest, a next-generation test runner for Rust projects
 
 https://nexte.st/book/pre-built-binaries.html
 
+## `expand` - macro expansion tool
+
+Install from sources:
+
+```sh
+cargo install cargo-expand
+```
+
+## `bloat` - what takes most of the space in your executable
+
+https://github.com/RazrFalcon/cargo-bloat
+
+```sh
+cargo install cargo-bloat
+```
 
 ## `just` - convenient commands
 

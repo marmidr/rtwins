@@ -2,6 +2,7 @@
 
 #![allow(dead_code)]
 #![allow(unused_variables)]
+// #![feature(trace_macros)]
 
 use paste::paste;
 use std::collections::HashMap;
@@ -25,20 +26,32 @@ pub const WIDGET_ID_ALL: WId = WId::MAX;
 // https://blog.logrocket.com/macros-in-rust-a-tutorial-with-examples/
 #[macro_export]
 macro_rules! generate_ids {
-    // private
-    ($init:expr; $id:ident) => {
-        pub const $id: WId = $init;
+    // 5+ items
+    // expanding 5 items at a time, the recursion limit of 255 is unlikely to occure
+    ($init:expr;  $id1:ident $id2:ident $id3:ident $id4:ident $id5:ident $($tail:tt)+) => {
+        pub const $id1: WId = $init;
+        pub const $id2: WId = $init+1;
+        pub const $id3: WId = $init+2;
+        pub const $id4: WId = $init+3;
+        pub const $id5: WId = $init+4;
+        $crate::generate_ids!{$init+5; $($tail)+}
     };
 
+    // 2+ items
     ($init:expr; $id:ident $($tail:tt)+) => {
         pub const $id: WId = $init;
         $crate::generate_ids!{$init+1; $($tail)+}
     };
 
-    // public arm
-    ($($ids:tt)*) => {
+    // 1 item - final
+    ($init:expr; $id:ident) => {
+        pub const $id: WId = $init;
+    };
+
+    // public matcher without initializer
+    ($($ids:tt)+) => {
         // ID's must be > WIDGET_ID_NONE
-        $crate::generate_ids!{WIDGET_ID_NONE + 1; $($ids)*}
+        $crate::generate_ids!{WIDGET_ID_NONE + 1; $($ids)+}
     };
 }
 
@@ -722,11 +735,18 @@ mod tests {
                 BTN_OK
         );
 
+        // enable printing of the recursive macro arguments
+        // (uncomment trace_macros on top of the file)
+
+        // trace_macros!(true);
         generate_ids!(
             POPUP_YESNOCANCEL
+            POPUP_CAPTION
                 BTN_YES
                 BTN_NO
                 BTN_CANCEL
+                LBL_MESSAGE
         );
+        // trace_macros!(false);
     }
 }

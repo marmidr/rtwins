@@ -2,6 +2,9 @@
 
 use crate::esc::*;
 
+use lazy_static::lazy_static;
+use std::sync::RwLock;
+
 // ---------------------------------------------------------------------------------------------- //
 
 /// Foreground colors
@@ -212,15 +215,18 @@ fn intensify_theme_bg(cl: ColorBg) -> ColorBg {
 }
 
 // pointers to user provided function encoding theme colors
-thread_local!(
-    static ENC_THEME_FG: std::cell::Cell<fn(ColorFg) -> &'static str> =
-        std::cell::Cell::new(encode_theme_fg);
-    static ENC_THEME_BG: std::cell::Cell<fn(ColorBg) -> &'static str> =
-        std::cell::Cell::new(encode_theme_bg);
-    static INTENS_THEME_FG: std::cell::Cell<fn(ColorFg) -> ColorFg> =
-        std::cell::Cell::new(intensify_theme_fg);
-    static INTENS_THEME_BG: std::cell::Cell<fn(ColorBg) -> ColorBg> =
-        std::cell::Cell::new(intensify_theme_bg);
+lazy_static!(
+    static ref ENC_THEME_FG: RwLock<fn(ColorFg) -> &'static str> =
+        RwLock::new(encode_theme_fg);
+
+    static ref ENC_THEME_BG: RwLock::<fn(ColorBg) -> &'static str> =
+        RwLock::new(encode_theme_bg);
+
+    static ref INTENS_THEME_FG: RwLock::<fn(ColorFg) -> ColorFg> =
+        RwLock::new(intensify_theme_fg);
+
+    static ref INTENS_THEME_BG: RwLock::<fn(ColorBg) -> ColorBg> =
+        RwLock::new(intensify_theme_bg);
 );
 
 // ---------------------------------------------------------------------------------------------- //
@@ -241,8 +247,10 @@ impl ColorFg {
             return ColorFg::WhiteIntense;
         }
         else if self >= Self::Theme00 && self < Self::ThemeEnd {
-            let cl_new = INTENS_THEME_FG.with(|cell| cell.get()(self));
-            return cl_new;
+            if let Ok(guard) = INTENS_THEME_FG.try_read() {
+                let cl_new = guard(self);
+                return cl_new;
+            }
         }
 
         self
@@ -265,8 +273,13 @@ impl ColorFg {
             return MAP_CL_FG[self as usize];
         }
         else if self >= Self::Theme00 && self < Self::ThemeEnd {
-            let seq = ENC_THEME_FG.with(|cell| cell.get()(self));
-            return seq;
+            if let Ok(guard) = ENC_THEME_FG.try_read() {
+                let seq = guard(self);
+                return seq;
+            }
+            else {
+                return "☄";
+            }
         }
 
         ""
@@ -274,16 +287,14 @@ impl ColorFg {
 
     /// Sets encoder function for theme colors
     pub fn set_theme_encoder(encoder: fn(ColorFg) -> &'static str) {
-        ENC_THEME_FG.with(|cell| {
-            cell.set(encoder);
-        });
+        let mut guard = ENC_THEME_FG.write().unwrap();
+        *guard = encoder;
     }
 
     /// Sets color intensifier function for theme colors
     pub fn set_theme_intensifier(intensify: fn(ColorFg) -> ColorFg) {
-        INTENS_THEME_FG.with(|cell| {
-            cell.set(intensify);
-        });
+        let mut guard = INTENS_THEME_FG.write().unwrap();
+        *guard = intensify;
     }
 }
 
@@ -303,8 +314,13 @@ impl ColorBg {
             return ColorBg::WhiteIntense;
         }
         else if self >= Self::Theme00 && self < Self::ThemeEnd {
-            let cl_new = INTENS_THEME_BG.with(|cell| cell.get()(self));
-            return cl_new;
+            if let Ok(guard) = INTENS_THEME_BG.try_read() {
+                let cl_new = guard(self);
+                return cl_new;
+            }
+            else {
+                return self;
+            }
         }
 
         self
@@ -327,8 +343,13 @@ impl ColorBg {
             return MAP_CL_BG[self as usize];
         }
         else if self >= Self::Theme00 && self < Self::ThemeEnd {
-            let seq = ENC_THEME_BG.with(|cell| cell.get()(self));
-            return seq;
+            if let Ok(guard) = ENC_THEME_BG.try_read() {
+                let seq = guard(self);
+                return seq;
+            }
+            else {
+                return "☄";
+            }
         }
 
         ""
@@ -343,15 +364,13 @@ impl ColorBg {
 
     /// Sets encoder function for theme colors
     pub fn set_theme_encoder(encoder: fn(ColorBg) -> &'static str) {
-        ENC_THEME_BG.with(|cell| {
-            cell.set(encoder);
-        });
+        let mut guard = ENC_THEME_BG.write().unwrap();
+        *guard = encoder;
     }
 
     /// Sets color intensifier function for theme colors
     pub fn set_theme_intensifier(intensify: fn(ColorBg) -> ColorBg) {
-        INTENS_THEME_BG.with(|cell| {
-            cell.set(intensify);
-        });
+        let mut guard = INTENS_THEME_BG.write().unwrap();
+        *guard = intensify;
     }
 }
