@@ -197,8 +197,10 @@ fn main() {
                     use tui_def::id;
 
                     if *key == Key::F2 {
-                        dws.rs
-                            .set_enabled(id::WndMain, !dws.rs.get_enabled_or_default(id::WndMain));
+                        dws.rs.set_enabled(
+                            id::WND_MAIN,
+                            !dws.rs.get_enabled_or_default(id::WND_MAIN),
+                        );
                         dws.invalidate(wgt::WIDGET_ID_ALL);
                     }
                     else if *key == Key::F4 {
@@ -229,16 +231,16 @@ fn main() {
                         // if wm.is_top_wnd(&dws) {
                         wgt::pagectrl_select_next_page(
                             &mut dws,
-                            id::PgControl,
+                            id::PG_CONTROL,
                             *key == Key::PgDown,
                         );
-                        dws.invalidate(id::PgControl);
+                        dws.invalidate(id::PG_CONTROL);
                         // }
                     }
                     else if *key == Key::F9 || *key == Key::F10 {
                         // if wm.is_top_wnd(&dws) {
-                        wgt::pagectrl_select_next_page(&mut dws, id::PgControl, *key == Key::F10);
-                        dws.invalidate(id::PgControl);
+                        wgt::pagectrl_select_next_page(&mut dws, id::PG_CONTROL, *key == Key::F10);
+                        dws.invalidate(id::PG_CONTROL);
                         // }
                     }
                 }

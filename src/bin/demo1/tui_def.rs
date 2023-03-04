@@ -14,69 +14,69 @@ pub mod id {
 
     #[rustfmt::skip]
     rtwins::generate_ids!(
-        WndMain
-            BtnToaster
-            PgControl
-                PageVer
-                    PanelVersions
-                        LabelFwVersion
-                        LabelDate
-                        LabelAbout
-                    PanelState
-                        LedPump
-                        LedLock
-                        LedBattery
-                    PanelKey
-                        LabelKeyseq
-                        LabelKeyname
-                    ChbxEnbl
-                    ChbxLock
-                    BtnYes
-                    BtnNo
-                    BtnPopup
-                    Prgbar1
-                    Prgbar2
-                    Prgbar3
-                PageServ
-                    Layer1
-                        LabelMultiFmt
-                        ListBox
-                    Layer2
-                        Radio1
-                        Radio2
-                        Radio3
-                    ChbxL1
-                    ChbxL2
-                PageDiag
-                    PanelEdt
-                        LblEdt1Title
-                        Edit1
-                        LblEdt2Title
-                        Edit2
-                    CustomWgt1
-                    PanelChbx
-                        LblChbxTitle
-                        ChbxA
-                        ChbxB
-                        ChbxC
-                        ChbxD
-                PageInactiv
-                    PanelEmpty1
-                        LblWordwrap
-                        BtnNoaction
-                    PanelEmpty2
-                        LblEmpty2
-                PageTextbox
-                    TbxWide
-                    TbxNarrow
-                PageCombobox
-                    CbxOptions
-                    CbxColors
-                    LbxUnderoptions
-                    BtnSayYes
-                    BtnSayNo
-                    Btn1p5
-            LabelFtr
+        WND_MAIN
+            BTN_TOASTER
+            PG_CONTROL
+                PAGE_VER
+                    PANEL_VERSIONS
+                        LABEL_FW_VERSION
+                        LABEL_DATE
+                        LABEL_ABOUT
+                    PANEL_STATE
+                        LED_PUMP
+                        LED_LOCK
+                        LED_BATTERY
+                    PANEL_KEY
+                        LABEL_KEYSEQ
+                        LABEL_KEYNAME
+                    CHBX_ENBL
+                    CHBX_LOCK
+                    BTN_YES
+                    BTN_NO
+                    BTN_POPUP
+                    PRGBAR1
+                    PRGBAR2
+                    PRGBAR3
+                PAGE_SERV
+                    LAYER1
+                        LABEL_MULTI_FMT
+                        LIST_BOX
+                    LAYER2
+                        RADIO1
+                        RADIO2
+                        RADIO3
+                    CHBX_L1
+                    CHBX_L2
+                PAGE_DIAG
+                    PANEL_EDT
+                        LBL_EDT1_TITLE
+                        EDIT1
+                        LBL_EDT2_TITLE
+                        EDIT2
+                    CUSTOM_WGT1
+                    PANEL_CHBX
+                        LBL_CHBX_TITLE
+                        CHBX_A
+                        CHBX_B
+                        CHBX_C
+                        CHBX_D
+                PAGE_INACTIV
+                    PANEL_EMPTY_1
+                        LBL_WORDWRAP
+                        BTN_NOACTION
+                    PANEL_EMPTY_2
+                        LBL_EMPTY2
+                PAGE_TEXTBOX
+                    TBX_WIDE
+                    TBX_NARROW
+                PAGE_COMBOBOX
+                    CBX_OPTIONS
+                    CBX_COLORS
+                    LBX_UNDEROPTIONS
+                    BTN_SAY_YES
+                    BTN_SAY_NO
+                    BTN_1P5
+            LABEL_FTR
     );
 }
 
@@ -85,7 +85,7 @@ pub mod id {
 #[rustfmt::skip]
 const PNL_STATE_CHILDREN: &[Widget] = &[
     Widget {
-        id: id::LedBattery,
+        id: id::LED_BATTERY,
         coord: Coord { col: 2, row: 1 },
         prop: prop::Led {
             text: "(BATT)",
@@ -96,7 +96,7 @@ const PNL_STATE_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::LedLock,
+        id: id::LED_LOCK,
         coord: Coord { col: 9, row: 1 },
         prop: prop::Led {
             text: "(LOCK)",
@@ -107,7 +107,7 @@ const PNL_STATE_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::LedPump,
+        id: id::LED_PUMP,
         coord: Coord { col: 16, row: 1 },
         prop: prop::Led {
             text: "(PUMP)",
@@ -122,7 +122,7 @@ const PNL_STATE_CHILDREN: &[Widget] = &[
 #[rustfmt::skip]
 const PAGE_VER_CHILDREN: &[Widget] = &[
     Widget {
-        id: id::PanelVersions,
+        id: id::PANEL_VERSIONS,
         link: Link::cdeflt(),
         coord: Coord { col: 1, row: 1 },
         size: Size { width: 21, height: 5 },
@@ -134,7 +134,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         }.into(),
         children: &[
             Widget {
-                id: id::LabelFwVersion,
+                id: id::LABEL_FW_VERSION,
                 coord: Coord { col: 2, row: 1 },
                 prop: prop::Label {
                     title: "FwVer: 1.1",
@@ -144,7 +144,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::LabelDate,
+                id: id::LABEL_DATE,
                 coord: Coord { col: 2, row: 2 },
                 size: Size { width: 18, height: 1 },
                 prop: prop::Label {
@@ -155,7 +155,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::LabelAbout,
+                id: id::LABEL_ABOUT,
                 coord: Coord { col: 2, row: 3 },
                 size: Size { width: 0, height: 1 },
                 prop: prop::Label {
@@ -168,7 +168,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         ]
     },
     Widget {
-        id: id::PanelState,
+        id: id::PANEL_STATE,
         link: Link::cdeflt(),
         coord: Coord { col: 30, row: 1 },
         size: Size { width: 25, height: 3 },
@@ -181,7 +181,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         children: PNL_STATE_CHILDREN
     },
     Widget {
-        id: id::PanelKey,
+        id: id::PANEL_KEY,
         link: Link::cdeflt(),
         coord: Coord { col: 1, row: 7 },
         size: Size { width: 26, height: 4 },
@@ -193,7 +193,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         }.into(),
         children: &[
             Widget {
-                id: id::LabelKeyseq,
+                id: id::LABEL_KEYSEQ,
                 coord: Coord { col: 2, row: 1 },
                 size: Size { width: 22, height: 1 },
                 prop: prop::Label {
@@ -204,7 +204,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::LabelKeyname,
+                id: id::LABEL_KEYNAME,
                 coord: Coord { col: 2, row: 2 },
                 size: Size { width: 17, height: 1 },
                 prop: prop::Label {
@@ -217,7 +217,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         ]
     },
     Widget {
-        id: id::ChbxEnbl,
+        id: id::CHBX_ENBL,
         coord: Coord { col: 30, row: 5 },
         prop: prop::CheckBox {
             text: "Enable",
@@ -226,7 +226,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::ChbxLock,
+        id: id::CHBX_LOCK,
         coord: Coord { col: 45, row: 5 },
         prop: prop::CheckBox {
             text: "Lock",
@@ -235,7 +235,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::BtnYes,
+        id: id::BTN_YES,
         coord: Coord { col: 30, row: 7 },
         prop: prop::Button {
             text: "YES",
@@ -246,7 +246,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::BtnNo,
+        id: id::BTN_NO,
         coord: Coord { col: 38, row: 7 },
         prop: prop::Button {
             text: "NO",
@@ -257,7 +257,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::BtnPopup,
+        id: id::BTN_POPUP,
         coord: Coord { col: 45, row: 7 },
         prop: prop::Button {
             text: "POPUP",
@@ -268,7 +268,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::Prgbar1,
+        id: id::PRGBAR1,
         coord: Coord { col: 30, row: 9 },
         size: Size { width: 25, height: 1 },
         prop: prop::ProgressBar {
@@ -278,7 +278,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::Prgbar2,
+        id: id::PRGBAR2,
         coord: Coord { col: 30, row: 10 },
         size: Size { width: 12, height: 1 },
         prop: prop::ProgressBar {
@@ -288,7 +288,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::Prgbar3,
+        id: id::PRGBAR3,
         coord: Coord { col: 43, row: 10 },
         size: Size { width: 12, height: 1 },
         prop: prop::ProgressBar {
@@ -302,12 +302,12 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
 #[rustfmt::skip]
 const PAGE_SERV_CHILDREN: &[Widget] = &[
     Widget {
-        id: id::Layer1,
+        id: id::LAYER1,
         prop: prop::Layer {
         }.into(),
         children: &[
             Widget {
-                id: id::LabelMultiFmt,
+                id: id::LABEL_MULTI_FMT,
                 coord: Coord { col: 24, row: 2 },
                 size: Size { width: 35, height: 4 },
                 prop: prop::Label {
@@ -318,7 +318,7 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::ListBox,
+                id: id::LIST_BOX,
                 coord: Coord { col: 2, row: 2 },
                 size: Size { width: 20, height: 8 },
                 prop: prop::ListBox {
@@ -332,12 +332,12 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::Layer2,
+        id: id::LAYER2,
         prop: prop::Layer {
         }.into(),
         children: &[
             Widget {
-                id: id::Radio1,
+                id: id::RADIO1,
                 coord: Coord { col: 25, row: 7 },
                 prop: prop::Radio {
                     text : "YES",
@@ -348,7 +348,7 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::Radio2,
+                id: id::RADIO2,
                 coord: Coord { col: 35, row: 7 },
                 prop: prop::Radio {
                     text : "NO",
@@ -359,7 +359,7 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::Radio3,
+                id: id::RADIO3,
                 coord: Coord { col: 44, row: 7 },
                 prop: prop::Radio {
                     text : "Don't know",
@@ -373,7 +373,7 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::ChbxL1,
+        id: id::CHBX_L1,
         coord: Coord { col: 25, row: 9 },
         prop: prop::CheckBox {
             text : "Layer 1",
@@ -382,7 +382,7 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::ChbxL2,
+        id: id::CHBX_L2,
         coord: Coord { col: 40, row: 9 },
         prop: prop::CheckBox {
             text : "Layer 2",
@@ -395,7 +395,7 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
 #[rustfmt::skip]
 const PAGE_DIAG_CHILDREN: &[Widget] = &[
     Widget {
-        id: id::PanelEdt,
+        id: id::PANEL_EDT,
         coord: Coord { col: 2, row: 1 },
         size: Size { width: 32, height: 5 },
         prop: prop::Panel {
@@ -406,7 +406,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
         }.into(),
         children: &[
             Widget {
-                id: id::LblEdt1Title,
+                id: id::LBL_EDT1_TITLE,
                 coord: Coord { col: 1, row: 0 },
                 size: Size { width: 30, height: 1 },
                 prop: prop::Label {
@@ -417,7 +417,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::Edit1,
+                id: id::EDIT1,
                 coord: Coord { col: 1, row: 1 },
                 size: Size { width: 30, height: 1 },
                 prop: prop::TextEdit {
@@ -427,7 +427,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::LblEdt2Title,
+                id: id::LBL_EDT2_TITLE,
                 coord: Coord { col: 1, row: 2 },
                 size: Size { width: 30, height: 1 },
                 prop: prop::Label {
@@ -438,7 +438,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::Edit2,
+                id: id::EDIT2,
                 coord: Coord { col: 1, row: 3 },
                 size: Size { width: 30, height: 1 },
                 prop: prop::TextEdit {
@@ -451,7 +451,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::CustomWgt1,
+        id: id::CUSTOM_WGT1,
         coord: Coord { col: 2, row: 6 },
         size: Size { width: 32, height: 4 },
         prop: prop::CustomWgt {
@@ -459,7 +459,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::PanelChbx,
+        id: id::PANEL_CHBX,
         coord: Coord { col: 36, row: 1 },
         size: Size { width: 22, height: 10 },
         prop: prop::Panel {
@@ -470,7 +470,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
         }.into(),
         children: &[
             Widget {
-                id: id::LblChbxTitle,
+                id: id::LBL_CHBX_TITLE,
                 coord: Coord { col: 2, row: 2 },
                 size: Size { width: 14, height: 1 },
                 prop: prop::Label {
@@ -481,7 +481,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::ChbxA,
+                id: id::CHBX_A,
                 coord: Coord { col: 2, row: 4 },
                 prop: prop::CheckBox {
                     text : "Check A ",
@@ -490,7 +490,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::ChbxB,
+                id: id::CHBX_B,
                 coord: Coord { col: 2, row: 5 },
                 prop: prop::CheckBox {
                     text : "Check B ",
@@ -499,7 +499,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::ChbxC,
+                id: id::CHBX_C,
                 coord: Coord { col: 2, row: 6 },
                 prop: prop::CheckBox {
                     text : "Check C ",
@@ -508,7 +508,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::ChbxD,
+                id: id::CHBX_D,
                 coord: Coord { col: 2, row: 7 },
                 prop: prop::CheckBox {
                     text : "Check D ",
@@ -524,7 +524,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
 #[rustfmt::skip]
 const PAGE_INACT_CHILDREN: &[Widget] = &[
     Widget {
-        id: id::PanelEmpty1,
+        id: id::PANEL_EMPTY_1,
         coord: Coord { col: 5, row: 1 },
         size: Size { width: 20, height: 10 },
         prop: prop::Panel {
@@ -535,7 +535,7 @@ const PAGE_INACT_CHILDREN: &[Widget] = &[
         }.into(),
         children: &[
             Widget {
-                id: id::LblWordwrap,
+                id: id::LBL_WORDWRAP,
                 coord: Coord { col: 2, row: 1 },
                 size: Size { width: 16, height: 6 },
                 prop: prop::Label {
@@ -546,7 +546,7 @@ const PAGE_INACT_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::BtnNoaction,
+                id: id::BTN_NOACTION,
                 coord: Coord { col: 5, row: 8 },
                 prop: prop::Button {
                     text: "...",
@@ -560,7 +560,7 @@ const PAGE_INACT_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::PanelEmpty2,
+        id: id::PANEL_EMPTY_2,
         coord: Coord { col: 40, row: 1 },
         size: Size { width: 12, height: 10 },
         prop: prop::Panel {
@@ -571,7 +571,7 @@ const PAGE_INACT_CHILDREN: &[Widget] = &[
         }.into(),
         children: &[
             Widget {
-                id: id::LblEmpty2,
+                id: id::LBL_EMPTY2,
                 coord: Coord { col: 2, row: 2 },
                 size: Size { width: 1, height: 1 },
                 prop: prop::Label {
@@ -589,7 +589,7 @@ const PAGE_INACT_CHILDREN: &[Widget] = &[
 #[rustfmt::skip]
 const PAGE_TXTBOX_CHILDREN: &[Widget] = &[
     Widget {
-        id: id::TbxWide,
+        id: id::TBX_WIDE,
         coord: Coord { col: 3, row: 1 },
         size: Size { width: 40, height: 10 },
         prop: prop::TextBox {
@@ -599,7 +599,7 @@ const PAGE_TXTBOX_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::TbxNarrow,
+        id: id::TBX_NARROW,
         coord: Coord { col: 46, row: 1 },
         size: Size { width: 12, height: 10 },
         prop: prop::TextBox {
@@ -613,7 +613,7 @@ const PAGE_TXTBOX_CHILDREN: &[Widget] = &[
 #[rustfmt::skip]
 const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
     Widget {
-        id: id::CbxOptions,
+        id: id::CBX_OPTIONS,
         coord: Coord { col: 10, row: 2 },
         size: Size { width: 20, height: 1 },
         prop: prop::ComboBox {
@@ -624,7 +624,7 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::CbxColors,
+        id: id::CBX_COLORS,
         coord: Coord { col: 8, row: 4 },
         size: Size { width: 24, height: 1 },
         prop: prop::ComboBox {
@@ -635,7 +635,7 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::LbxUnderoptions,
+        id: id::LBX_UNDEROPTIONS,
         coord: Coord { col: 5, row: 6 },
         size: Size { width: 30, height: 5 },
         prop: prop::ListBox {
@@ -646,7 +646,7 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::BtnSayYes,
+        id: id::BTN_SAY_YES,
         coord: Coord { col: 38, row: 2 },
         prop: prop::Button {
             text: "Say YES",
@@ -657,7 +657,7 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::BtnSayNo,
+        id: id::BTN_SAY_NO,
         coord: Coord { col: 38, row: 4 },
         prop: prop::Button {
             text: "Say NO",
@@ -668,10 +668,10 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::Btn1p5,
+        id: id::BTN_1P5,
         coord: Coord { col: 38, row: 7 },
         prop: prop::Button {
-            text: "   ????   ",
+            text: "",
             fg_color: ColorFg::White,
             bg_color: ColorBgTheme::ButtonGreen.into(),
             style: ButtonStyle::Solid1p5
@@ -684,7 +684,7 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
 
 #[rustfmt::skip]
 const WINDOW_MAIN: Widget = Widget {
-    id: id::WndMain,
+    id: id::WND_MAIN,
     link: Link::cdeflt(),
     coord: Coord { col: 5, row: 2 },
     size: Size { width: 80, height: 15 },
@@ -696,7 +696,7 @@ const WINDOW_MAIN: Widget = Widget {
     }.into(),
     children: &[
         Widget {
-            id: id::BtnToaster,
+            id: id::BTN_TOASTER,
             coord: Coord { col: 1, row: 1 },
             size: Size { width: 14, height: 1 },
             prop: prop::Button {
@@ -708,7 +708,7 @@ const WINDOW_MAIN: Widget = Widget {
             ..Widget::cdeflt()
         },
         Widget {
-            id: id::PgControl,
+            id: id::PG_CONTROL,
             coord: Coord { col: 1, row: 1 },
             size: Size { width: 75, height: 12 },
             prop: prop::PageCtrl {
@@ -717,7 +717,7 @@ const WINDOW_MAIN: Widget = Widget {
             }.into(),
             children: &[
                 Widget {
-                    id: id::PageVer,
+                    id: id::PAGE_VER,
                     prop: prop::Page {
                         title: "Version",
                         fg_color: ColorFg::Yellow,
@@ -726,7 +726,7 @@ const WINDOW_MAIN: Widget = Widget {
                     ..Widget::cdeflt()
                 },
                 Widget {
-                    id: id::PageServ,
+                    id: id::PAGE_SERV,
                     prop: prop::Page {
                         title: "Service ∑",
                         fg_color: ColorFg::White,
@@ -735,7 +735,7 @@ const WINDOW_MAIN: Widget = Widget {
                     ..Widget::cdeflt()
                 },
                 Widget {
-                    id: id::PageDiag,
+                    id: id::PAGE_DIAG,
                     prop: prop::Page {
                         title: "Diagnostics",
                         fg_color: ColorFg::Yellow,
@@ -744,7 +744,7 @@ const WINDOW_MAIN: Widget = Widget {
                     ..Widget::cdeflt()
                 },
                 Widget {
-                    id: id::PageInactiv,
+                    id: id::PAGE_INACTIV,
                     prop: prop::Page {
                         title: "Inactiv 🍀",
                         fg_color: ColorFg::White,
@@ -753,7 +753,7 @@ const WINDOW_MAIN: Widget = Widget {
                     ..Widget::cdeflt()
                 },
                 Widget {
-                    id: id::PageTextbox,
+                    id: id::PAGE_TEXTBOX,
                     prop: prop::Page {
                         title: "Text Box",
                         fg_color: ColorFg::White,
@@ -762,7 +762,7 @@ const WINDOW_MAIN: Widget = Widget {
                     ..Widget::cdeflt()
                 },
                 Widget {
-                    id: id::PageCombobox,
+                    id: id::PAGE_COMBOBOX,
                     prop: prop::Page {
                         title: "Combo Box",
                         fg_color: ColorFg::White,
@@ -774,7 +774,7 @@ const WINDOW_MAIN: Widget = Widget {
             ..Widget::cdeflt()
         },
         Widget {
-            id: id::LabelFtr,
+            id: id::LABEL_FTR,
             coord: Coord { col: 1, row: 13 },
             prop: prop::Label {
                 title:  concat!(
