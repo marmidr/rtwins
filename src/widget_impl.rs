@@ -39,17 +39,16 @@ pub(crate) struct TextEditState {
     pub txt: String,
 }
 
-lazy_static!(
-    static ref WGT_STATE: RwLock<WidgetState> =
-        RwLock::new(WidgetState::default());
-);
+lazy_static! {
+    static ref WGT_STATE: RwLock<WidgetState> = RwLock::new(WidgetState::default());
+}
 
 /// Crate-wide accessor for global widgets state
 pub(crate) fn wgt_state_with<F, R>(do_with: F) -> R
 where
     F: Fn(&WidgetState) -> R,
 {
-    let guard = WGT_STATE.read().unwrap();
+    let guard = WGT_STATE.try_read().unwrap();
     let wgs = &*guard;
     do_with(wgs)
 }
@@ -59,7 +58,7 @@ pub(crate) fn wgt_state_with_mut<F, R>(mut do_with: F) -> R
 where
     F: FnMut(&mut WidgetState) -> R,
 {
-    let mut guard = WGT_STATE.write().unwrap();
+    let mut guard = WGT_STATE.try_write().unwrap();
     let wgs = &mut *guard;
     do_with(wgs)
 }
@@ -346,9 +345,7 @@ pub fn is_enabled(ws: &dyn WindowState, wgt: &Widget) -> bool {
 
 /// Shall be called eg. on top window change
 pub fn reset_internal_state() {
-    wgt_state_with_mut(|wgtstate| {
-        wgtstate.reset()
-    });
+    wgt_state_with_mut(|wgtstate| wgtstate.reset());
 }
 
 pub fn process_input(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
@@ -885,7 +882,7 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
     // assert(wgt->type == Widget::PageCtrl);
 
     let pgidx = {
-        let mut idx = ws.get_page_ctrl_page_index(pgctrl) as i16;
+        let mut idx = ws.get_page_ctrl_page_index(pgctrl);
         idx += tetrary!(next, 1, -1);
         if idx < 0 {
             idx = pgctrl.link.children_cnt as i16 - 1;
@@ -1455,7 +1452,9 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
             wgt_state_with_mut(|wgtstate| {
                 if wgtstate.drop_down_combo != WIDGET_ID_NONE {
                     // check if drop-down list clicked
-                    if let Some(ddcombo_wgt) = find_by_id(ws.get_widgets(), wgtstate.drop_down_combo) {
+                    if let Some(ddcombo_wgt) =
+                        find_by_id(ws.get_widgets(), wgtstate.drop_down_combo)
+                    {
                         if let Property::ComboBox(ref prop) = ddcombo_wgt.prop {
                             let mut dropdownlist_rct = Rect::cdeflt();
                             dropdownlist_rct.coord = get_screen_coord(ddcombo_wgt);
@@ -1554,16 +1553,19 @@ fn process_mouse_radio(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, 
 
 fn process_mouse_button(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
     if let InputEvent::Mouse(ref mouse) = ii.evnt {
+        if mouse.evt == MouseEvent::ButtonLeft {
+            change_focus_to(ws, wgt.id);
+            ws.on_button_down(wgt, ii);
+            ws.invalidate(wgt.id);
+        }
+
         // pointer may change between onButtonUp and onButtonClick, so remember it
         wgt_state_with_mut(|wgtstate| {
             if mouse.evt == MouseEvent::ButtonLeft {
-                change_focus_to(ws, wgt.id);
-                ws.on_button_down(wgt, ii);
-                ws.invalidate(wgt.id);
+                // change_focus_to() calls wgt_state_with_mut() causing lock error
+                // when used here, within another wgt_state_with_mut()
             }
-            else if mouse.evt == MouseEvent::ButtonReleased
-                && wgtstate.mouse_down_wgt == wgt.id
-            {
+            else if mouse.evt == MouseEvent::ButtonReleased && wgtstate.mouse_down_wgt == wgt.id {
                 ws.on_button_up(wgt, ii);
                 ws.on_button_click(wgt, &wgtstate.mouse_down_ii);
                 wgtstate.mouse_down_wgt = WIDGET_ID_NONE;
@@ -1595,7 +1597,7 @@ fn process_mouse_page_ctrl(
     if let InputEvent::Mouse(ref mouse) = ii.evnt {
         if mouse.evt == MouseEvent::ButtonLeft {
             change_focus_to(ws, wgt.id);
-            let idx = ws.get_page_ctrl_page_index(wgt) as i16;
+            let idx = ws.get_page_ctrl_page_index(wgt);
             let vertoffs = if let Property::PageCtrl(ref prop) = wgt.prop {
                 prop.vert_offs as i16
             }
@@ -1700,7 +1702,7 @@ fn process_mouse_combo_box(
                 ws.get_combo_box_state(wgt, &mut cbs);
 
                 cbs.sel_idx = (cbs.sel_idx / drop_down_size) * drop_down_size; // top item
-                cbs.sel_idx += row as i16;
+                cbs.sel_idx += row;
                 if cbs.sel_idx < cbs.items_cnt {
                     ws.on_combo_box_select(wgt, cbs.sel_idx);
                     ws.invalidate(wgt.id);

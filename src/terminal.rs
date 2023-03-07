@@ -17,9 +17,11 @@ pub type PalBox = Box<dyn crate::pal::Pal + Send + Sync>;
 lazy_static! {
     /// Global instance of Terminal
     static ref TERM: RwLock<Term> = RwLock::new(
+        #[allow(clippy::box_default)]
         Term::new(
             Box::new(
-                crate::pal::PalStub::default()))
+                crate::pal::PalStub::default())
+        )
     );
 }
 

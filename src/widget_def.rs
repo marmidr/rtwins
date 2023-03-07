@@ -571,7 +571,7 @@ impl RuntimeStates {
     }
 
     pub fn get_enabled_or_default(&self, id: WId) -> bool {
-        let en = self.enabled.get(&id).or(Some(&true)).unwrap();
+        let en = self.enabled.get(&id).unwrap_or(&true);
         *en
     }
 

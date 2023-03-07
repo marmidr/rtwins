@@ -215,19 +215,12 @@ fn intensify_theme_bg(cl: ColorBg) -> ColorBg {
 }
 
 // pointers to user provided function encoding theme colors
-lazy_static!(
-    static ref ENC_THEME_FG: RwLock<fn(ColorFg) -> &'static str> =
-        RwLock::new(encode_theme_fg);
-
-    static ref ENC_THEME_BG: RwLock::<fn(ColorBg) -> &'static str> =
-        RwLock::new(encode_theme_bg);
-
-    static ref INTENS_THEME_FG: RwLock::<fn(ColorFg) -> ColorFg> =
-        RwLock::new(intensify_theme_fg);
-
-    static ref INTENS_THEME_BG: RwLock::<fn(ColorBg) -> ColorBg> =
-        RwLock::new(intensify_theme_bg);
-);
+lazy_static! {
+    static ref ENC_THEME_FG: RwLock<fn(ColorFg) -> &'static str> = RwLock::new(encode_theme_fg);
+    static ref ENC_THEME_BG: RwLock::<fn(ColorBg) -> &'static str> = RwLock::new(encode_theme_bg);
+    static ref INTENS_THEME_FG: RwLock::<fn(ColorFg) -> ColorFg> = RwLock::new(intensify_theme_fg);
+    static ref INTENS_THEME_BG: RwLock::<fn(ColorBg) -> ColorBg> = RwLock::new(intensify_theme_bg);
+}
 
 // ---------------------------------------------------------------------------------------------- //
 

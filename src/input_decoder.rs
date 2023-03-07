@@ -626,7 +626,7 @@ impl Decoder {
                 // 3. check for one of Ctrl+[A..Z]
                 if let Some(km) = CTRL_KEYS_MAP_SORTED.iter().find(|&&x| x.code == seq[0]) {
                     let mut cb = CharBuff::default();
-                    cb.utf8seq[0] = km.key as u8;
+                    cb.utf8seq[0] = km.key;
                     cb.utf8sl = 1;
                     inp_info.evnt = InputEvent::Char(cb);
                     inp_info.kmod.mask = km.kmod;

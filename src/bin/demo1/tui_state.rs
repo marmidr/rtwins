@@ -1,6 +1,7 @@
 //! Demo - window state
 
 #![allow(unused_variables)]
+#![allow(dead_code)]
 
 use rtwins::common::*;
 use rtwins::esc;
@@ -12,9 +13,56 @@ use rtwins::Term;
 use rtwins::TraceBuffer;
 
 use std::cell::RefCell;
+use std::collections::vec_deque::VecDeque;
 use std::rc::Rc;
 
 use super::tui_def::id;
+
+// ---------------------------------------------------------------------------------------------- //
+
+pub enum Commands {
+    Func(Box<dyn FnMut() + Send>),
+    SelPage(WId, WId),
+}
+
+/// Deferred commands
+#[derive(Default)]
+pub struct CommandsQueue {
+    commands: VecDeque<Commands>,
+}
+
+impl CommandsQueue {
+    /// Pushes a new command on the queue
+    pub fn push(&mut self, cmd: Commands) {
+        self.commands.push_back(cmd);
+    }
+
+    /// Executes all commands
+    pub fn run_all(&mut self, ws: &mut DemoWndState) {
+        for cmd in self.commands.iter_mut() {
+            match cmd {
+                Commands::Func(ref mut f) => {
+                    f();
+                }
+                Commands::SelPage(pgcontrol_id, page_id) => {
+                    rtwins::wgt::pagectrl_select_page(ws, *pgcontrol_id, *page_id);
+                }
+            }
+        }
+
+        self.commands.clear();
+    }
+
+    /// Number of commands waiting to be run
+    pub fn len(&self) -> usize {
+        self.commands.len()
+    }
+
+    /// Clears the command queue
+    pub fn clear(&mut self) {
+        self.commands.clear();
+    }
+}
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -195,11 +243,13 @@ impl rtwins::wgt::WindowState for DemoWndState {
                 "ync"
             );
             */
+
+            self.invalidate(id::PANEL_EDT);
+            // panel shall remain hidden, as it lays on another page
         }
 
         if wgt.id == id::BTN_YES {
-            // TODO: use command pattern to solve the missing ws ?
-            // rtwins::wgt::pagectrl_select_page(ws, id::PgControl, id::PageTextbox);
+            wgt::pagectrl_select_page(self, id::PG_CONTROL, id::PAGE_TEXTBOX);
         }
     }
 
@@ -383,7 +433,7 @@ impl rtwins::wgt::WindowState for DemoWndState {
     fn is_visible(&self, wgt: &Widget) -> bool {
         if let wgt::Property::Page(_) = wgt.prop {
             let pgctrl = wgt::get_parent(wgt);
-
+            // TODO: this code is a nonsense; it must be simplified
             if let Some(stat) = self.rs.get_state(pgctrl.id) {
                 if let Some(pg_idx) = wgt::page_page_idx(wgt) {
                     if let wgt::rstate::State::Pgctrl(ref pgctrl) = stat {

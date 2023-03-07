@@ -66,25 +66,27 @@ pub fn draw_widgets(term: &mut Term, ws: &mut dyn WindowState, wids: &[WId]) {
 
         for id in wids {
             if let Some(wgt) = wgt::find_by_id(wnd_widgets, *id) {
-                // set parent's background color
-                term.push_cl_bg(get_widget_bg_color(wgt));
+                if wgt::is_visible(ws, wgt) {
+                    // set parent's background color
+                    term.push_cl_bg(get_widget_bg_color(wgt));
 
-                {
-                    let wgt_parent = wgt::get_parent(wgt);
-                    let mut dctx = DrawCtx {
-                        term_cell: RefCell::new(term),
-                        wgt,
-                        wnd_state: ws,
-                        parent_coord: wgt::get_screen_coord(wgt_parent),
-                        wnd_widgets,
-                        strbuff: String::with_capacity(200),
-                    };
+                    {
+                        let wgt_parent = wgt::get_parent(wgt);
+                        let mut dctx = DrawCtx {
+                            term_cell: RefCell::new(term),
+                            wgt,
+                            wnd_state: ws,
+                            parent_coord: wgt::get_screen_coord(wgt_parent),
+                            wnd_widgets,
+                            strbuff: String::with_capacity(200),
+                        };
 
-                    draw_widget_internal(&mut dctx);
+                        draw_widget_internal(&mut dctx);
+                    }
+
+                    // restore background color
+                    term.pop_cl_bg();
                 }
-
-                // restore background color
-                term.pop_cl_bg();
             }
         }
     }
@@ -104,7 +106,7 @@ pub fn draw_widgets(term: &mut Term, ws: &mut dyn WindowState, wids: &[WId]) {
 // ---------------------------------------------------------------------------------------------- //
 
 fn draw_widget_internal(dctx: &mut DrawCtx) {
-    if !dctx.wnd_state.is_visible(dctx.wgt) {
+    if !wgt::is_visible(dctx.wnd_state, dctx.wgt) {
         return;
     }
 
@@ -745,6 +747,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl) {
                 term.pop_cl_fg();
             }
 
+            // when checking if page is visible, here we can call the wnd_state directly
             if idx == cur_pg_idx && dctx.wnd_state.is_visible(page) {
                 dctx.term_cell.borrow_mut().flush_buff();
                 dctx.wgt = page;

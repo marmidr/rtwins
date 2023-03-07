@@ -2,13 +2,12 @@
 
 use crate::input::*;
 use crate::string_ext::*;
-use std::fmt::Write;
 
-pub type StringListRc = std::rc::Rc<std::cell::RefCell<Vec<String>>>;
+use std::fmt::Write;
 
 // ---------------------------------------------------------------------------------------------- //
 
-// mimics C++: cond ? a : b;
+/// Mimics C++ operator: cond ? a : b;
 #[macro_export]
 macro_rules! tetrary {
     ($cond: expr, $then: expr, $else: expr) => {
@@ -23,6 +22,7 @@ macro_rules! tetrary {
 
 // https://internals.rust-lang.org/t/nicer-static-assertions/15986
 // see also: https://crates.io/crates/static_assertions
+/// Assertion at compile time
 #[macro_export]
 macro_rules! static_assert {
     ($cond: expr) => {
@@ -30,6 +30,10 @@ macro_rules! static_assert {
         const _: () = assert!($cond);
     };
 }
+
+// ---------------------------------------------------------------------------------------------- //
+
+pub type StringListRc = std::rc::Rc<std::cell::RefCell<Vec<String>>>;
 
 /// Splits given string into lines so that each line is not wider than `max_disp_w`.
 ///
@@ -139,7 +143,7 @@ pub fn num_edit_input_evt(
                 };
 
                 if *key == Key::Down {
-                    delta *= -1;
+                    delta = -delta;
                 }
 
                 n += delta;
