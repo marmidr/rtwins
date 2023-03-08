@@ -406,7 +406,7 @@ impl Widget {
         wgt::ChildrenIter::new(self)
     }
 
-    /// Returns iterator going up the parents hierarhy, but starting at the widget itself
+    /// Returns iterator going up the parents hierarchy, but starting at the widget itself
     pub fn iter_parents(&self) -> wgt::ParentsIter {
         wgt::ParentsIter::new(self)
     }

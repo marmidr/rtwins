@@ -20,7 +20,7 @@ use std::sync::RwLock;
 pub(crate) struct WidgetState {
     pub focused_wgt: WId,
     pub mouse_down_wgt: WId,
-    pub drop_down_combo: WId,
+    pub cbx_drop_down: WId,
     pub text_edit_state: TextEditState,
     pub mouse_down_ii: InputInfo,
 }
@@ -363,14 +363,19 @@ pub fn process_input(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
             input_handled = process_key(ws, ii);
 
             if !input_handled && ii.kmod.has_special() {
+                let mut cbx_hide_list = None;
                 wgt_state_with_mut(|wgtstate| {
-                    let dd_combo_id = wgtstate.drop_down_combo;
+                    let dd_combo_id = wgtstate.cbx_drop_down;
                     if dd_combo_id != WIDGET_ID_NONE {
                         if let Some(wgt) = find_by_id(ws.get_widgets(), dd_combo_id) {
-                            combo_box_hide_list(ws, wgt);
+                            cbx_hide_list = Some(wgt);
                         }
                     }
                 });
+
+                if let Some(cbx) = cbx_hide_list {
+                    hide_combo_box_dropdown_list(ws, cbx);
+                }
 
                 if let InputEvent::Key(ref key) = ii.evnt {
                     match *key {
@@ -604,7 +609,7 @@ fn get_next_focusable(
 ) -> Option<&'static Widget> {
     if let Some(fp) = first_parent {
         if std::ptr::eq(parent, fp) {
-            tr_err!("full loop detected"); // (pFirstParent id=%d)", pFirstParent?pFirstParent->id:-1);
+            tr_warn!("full loop detected"); // (pFirstParent id=%d)", pFirstParent?pFirstParent->id:-1);
             *break_search = true;
             return None;
         }
@@ -639,7 +644,7 @@ fn get_next_focusable(
             }
         }
         _ => {
-            tr_err!(
+            tr_warn!(
                 "Widget [{} id:{}] is not a parent type widget",
                 parent.prop.to_string(),
                 parent.id
@@ -671,10 +676,6 @@ fn get_next_focusable(
         parent.id,
         focused_id
     );
-
-    // if let Ok(term_lock) = crate::Term::try_lock_read() {
-    //     term_lock.pal.sleep(200);
-    // }
 
     if focused_id == WIDGET_ID_NONE {
         // get first/last of the children ID
@@ -940,16 +941,17 @@ fn find_main_pg_control(ws: &mut dyn WindowState) -> Option<&'static Widget> {
     None
 }
 
-fn combo_box_hide_list(ws: &mut dyn WindowState, wgt: &Widget) {
-    assert!(matches!(wgt.prop, Property::ComboBox(_)));
+fn hide_combo_box_dropdown_list(ws: &mut dyn WindowState, wgt: &Widget) {
+    debug_assert!(matches!(wgt.prop, Property::ComboBox(_)));
 
     ws.on_combo_box_drop(wgt, false);
     // redraw parent to hide list
     let parent = get_parent(wgt);
     ws.invalidate(parent.id);
 
+    // TODO: using wgt_state_with_mut() here causes problems
     wgt_state_with_mut(|wgtstate| {
-        wgtstate.focused_wgt = WIDGET_ID_NONE;
+        wgtstate.cbx_drop_down = WIDGET_ID_NONE;
     });
 }
 
@@ -1294,11 +1296,11 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                 ws.on_combo_box_drop(wgt, true);
 
                 wgt_state_with_mut(|wgtstate| {
-                    wgtstate.drop_down_combo = wgt.id;
+                    wgtstate.cbx_drop_down = wgt.id;
                 });
             }
             else {
-                combo_box_hide_list(ws, wgt);
+                hide_combo_box_dropdown_list(ws, wgt);
             }
 
             input_handled = true;
@@ -1306,7 +1308,7 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
     }
     else if let InputEvent::Key(ref key) = ii.evnt {
         if *key == Key::Esc {
-            combo_box_hide_list(ws, wgt);
+            hide_combo_box_dropdown_list(ws, wgt);
             input_handled = true;
         }
         else if cbs.drop_down {
@@ -1348,7 +1350,7 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
             }
             else if *key == Key::Enter {
                 ws.on_combo_box_change(wgt, cbs.sel_idx);
-                combo_box_hide_list(ws, wgt);
+                hide_combo_box_dropdown_list(ws, wgt);
             }
             else {
                 input_handled = false;
@@ -1447,34 +1449,40 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
                 false
             });
 
-            // TWINS_LOG_D("WidgetAt(%2d:%2d)=%s ID:%u", ii.mouse.col, ii.mouse.row, toString(wgt->type), wgt.id);
+            // tr_debug!("WidgetAt({:2}:{:2})={} ID:{}", ii.mouse.col, ii.mouse.row, wgt.prop.to_string(), wgt.id);
+            let mut cbx_hide_list = None;
 
             wgt_state_with_mut(|wgtstate| {
-                if wgtstate.drop_down_combo != WIDGET_ID_NONE {
+                if wgtstate.cbx_drop_down != WIDGET_ID_NONE {
                     // check if drop-down list clicked
-                    if let Some(ddcombo_wgt) =
-                        find_by_id(ws.get_widgets(), wgtstate.drop_down_combo)
+                    if let Some(cbx) =
+                        find_by_id(ws.get_widgets(), wgtstate.cbx_drop_down)
                     {
-                        if let Property::ComboBox(ref prop) = ddcombo_wgt.prop {
+                        if let Property::ComboBox(ref prop) = cbx.prop {
                             let mut dropdownlist_rct = Rect::cdeflt();
-                            dropdownlist_rct.coord = get_screen_coord(ddcombo_wgt);
-                            dropdownlist_rct.coord.row += 1;
-                            dropdownlist_rct.size.width = ddcombo_wgt.size.width;
-                            dropdownlist_rct.size.height = prop.drop_down_size;
+                            // rect includes the cbx itself
+                            dropdownlist_rct.coord = get_screen_coord(cbx);
+                            dropdownlist_rct.size.width = cbx.size.width;
+                            dropdownlist_rct.size.height = prop.drop_down_size + 1;
 
                             if dropdownlist_rct.is_point_within(mouse.col, mouse.row) {
                                 // yes -> replace data for processing with g_ds.pDropDownCombo
-                                wgt = ddcombo_wgt;
+                                wgt = cbx;
                                 rct.coord = get_screen_coord(wgt);
                                 rct.size = wgt.size;
                             }
                             else if mouse.evt == MouseEvent::ButtonLeft {
-                                combo_box_hide_list(ws, ddcombo_wgt);
+                                // can't make a call from the closure
+                                cbx_hide_list = Some(cbx);
                             }
                         }
                     }
                 }
             });
+
+            if let Some(cbx) = cbx_hide_list {
+                hide_combo_box_dropdown_list(ws, cbx);
+            }
 
             if is_enabled(ws, wgt) {
                 match wgt.prop {
@@ -1641,7 +1649,7 @@ fn process_mouse_list_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
                     ws.on_list_box_select(wgt, lbs.sel_idx);
                 }
             }
-            else if new_selidx < lbs.items_cnt && new_selidx != lbs.sel_idx {
+            else if new_selidx < lbs.items_cnt && new_selidx != lbs.item_idx {
                 lbs.sel_idx = new_selidx;
                 ws.on_list_box_select(wgt, lbs.sel_idx);
                 ws.on_list_box_change(wgt, lbs.sel_idx);
@@ -1724,11 +1732,11 @@ fn process_mouse_combo_box(
                     ws.invalidate(wgt.id);
 
                     wgt_state_with_mut(|wgtstate| {
-                        wgtstate.drop_down_combo = wgt.id;
+                        wgtstate.cbx_drop_down = wgt.id;
                     });
                 }
                 else {
-                    combo_box_hide_list(ws, wgt);
+                    hide_combo_box_dropdown_list(ws, wgt);
                 }
             }
         }
@@ -1780,7 +1788,7 @@ fn process_mouse_combo_box(
             }
 
             ws.on_combo_box_change(wgt, cbs.sel_idx);
-            combo_box_hide_list(ws, wgt);
+            hide_combo_box_dropdown_list(ws, wgt);
         }
     }
 }

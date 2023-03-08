@@ -907,12 +907,14 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox) {
         dctx.strbuff.insert(0, ' ');
         dctx.strbuff
             .set_displayed_width(dctx.wgt.size.width as i16 - 4); //, true);
-        dctx.strbuff.push_str(" [▼]");
+
+        dctx.strbuff.push_str(tetrary!(cbs.drop_down, " [▲]", " [▼]"));
 
         let mut term = dctx.term_cell.borrow_mut();
         term.move_to(my_coord.col as u16, my_coord.row as u16);
         term.push_cl_fg(get_widget_fg_color(dctx.wgt));
         term.push_cl_bg(get_widget_bg_color(dctx.wgt));
+
         if focused && !cbs.drop_down {
             term.push_attr(FontAttrib::Inverse);
         }

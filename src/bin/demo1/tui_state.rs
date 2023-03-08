@@ -207,27 +207,24 @@ impl rtwins::wgt::WindowState for DemoWndState {
     }
 
     fn on_button_up(&mut self, wgt: &Widget, ii: &InputInfo) {
-        if wgt.id == id::BTN_YES {
-            rtwins::tr_debug!("▲ BTN_YES");
-        }
-        if wgt.id == id::BTN_NO {
-            rtwins::tr_warn!("▲ BTN_NO");
-        }
-        if wgt.id == id::BTN_POPUP {
-            rtwins::tr_info!("▲ BTN_POPUP");
-        }
-        if wgt.id == id::BTN_SAY_NO {
-            self.rs.set_enabled(
-                id::BTN_SAY_YES,
-                !self.rs.get_enabled_or_default(id::BTN_SAY_YES),
-            );
+        match wgt.id {
+            id::BTN_YES => rtwins::tr_debug!("▲ BTN_YES"),
+            id::BTN_NO => rtwins::tr_warn!("▲ BTN_NO"),
+            id::BTN_POPUP => rtwins::tr_info!("▲ BTN_POPUP"),
+            id::BTN_SAY_NO => {
+                self.rs.set_enabled(
+                    id::BTN_SAY_YES,
+                    !self.rs.get_enabled_or_default(id::BTN_SAY_YES),
+                );
 
-            self.invalidate(id::BTN_SAY_YES);
+                self.invalidate(id::BTN_SAY_YES);
 
-            self.rs
-                .set_enabled(id::BTN_1P5, !self.rs.get_enabled_or_default(id::BTN_1P5));
+                self.rs
+                    .set_enabled(id::BTN_1P5, !self.rs.get_enabled_or_default(id::BTN_1P5));
 
-            self.invalidate(id::BTN_1P5);
+                self.invalidate(id::BTN_1P5);
+            }
+            _ => {}
         }
     }
 
@@ -307,7 +304,7 @@ impl rtwins::wgt::WindowState for DemoWndState {
             );
         }
 
-        // false means continue default key handling
+        // false means key not handled, continue with default code
         false
     }
 
@@ -315,17 +312,11 @@ impl rtwins::wgt::WindowState for DemoWndState {
         let rs = self.rs.as_chbx(wgt.id);
         rs.checked = !rs.checked;
 
-        if wgt.id == id::CHBX_ENBL {
-            rtwins::tr_debug!("CHBX_ENBL");
-        }
-        else if wgt.id == id::CHBX_LOCK {
-            rtwins::tr_debug!("CHBX_LOCK");
-        }
-        else if wgt.id == id::CHBX_L1 || wgt.id == id::CHBX_L2 {
-            self.invalidate(id::PAGE_SERV);
-        }
-        else {
-            rtwins::tr_debug!("CHBX");
+        match wgt.id {
+            id::CHBX_ENBL => rtwins::tr_debug!("CHBX_ENBL"),
+            id::CHBX_LOCK => rtwins::tr_debug!("CHBX_LOCK"),
+            id::CHBX_L1 | id::CHBX_L2 => self.invalidate(id::PAGE_SERV),
+            _ => rtwins::tr_debug!("CHBX"),
         }
     }
 
