@@ -20,7 +20,8 @@ lazy_static! {
         #[allow(clippy::box_default)]
         Term::new(
             Box::new(
-                crate::pal::PalStub::default())
+                crate::pal::PalStub::default()
+            )
         )
     );
 }

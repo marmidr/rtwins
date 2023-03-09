@@ -3,7 +3,6 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::borrow::Borrow;
 use std::cell::RefCell;
 
 use crate::colors::*;
@@ -40,9 +39,7 @@ pub fn draw_widgets(term: &mut Term, ws: &mut dyn WindowState, wids: &[WId]) {
 
     let mut fm = FontMementoManual::from_term(term);
     let focused_id = ws.get_focused_id();
-    wgt::wgt_state_with_mut(|wgtstate| {
-        wgtstate.focused_wgt = focused_id;
-    });
+    WGT_STATE.try_write().unwrap().focused_wgt = focused_id;
     term.cursor_hide();
     term.flush_buff();
 
@@ -322,12 +319,12 @@ fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label) {
 }
 
 fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit) {
-    dctx.strbuff.clear();
     let mut display_pos = 0;
     let max_w = dctx.wgt.size.width as i16 - 3;
 
-    wgt::wgt_state_with_mut(|wgtstate| {
-        let te_state = &wgtstate.text_edit_state;
+    {
+        let wgtstate_guard = WGT_STATE.try_read().unwrap();
+        let te_state = &wgtstate_guard.text_edit_state;
 
         if dctx.wgt.id == te_state.wgt_id {
             // in edit mode; similar calculation in setCursorAt()
@@ -341,10 +338,12 @@ fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit) {
             }
         }
         else {
+            dctx.strbuff.clear();
             dctx.wnd_state
                 .get_text_edit_text(dctx.wgt, &mut dctx.strbuff, false);
         }
-    });
+        // guard dropped
+    }
 
     let txt_width = dctx.strbuff.displayed_width() as i16;
 
@@ -460,12 +459,10 @@ fn draw_radio(dctx: &mut DrawCtx, prp: &prop::Radio) {
 
 fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button) {
     let focused = dctx.wnd_state.is_focused(dctx.wgt);
-    let pressed = wgt::wgt_state_with(|wgtstate| {
-        return dctx.wgt.id == wgtstate.borrow().mouse_down_wgt;
-    });
-
+    let pressed = dctx.wgt.id == WGT_STATE.try_read().unwrap().mouse_down_wgt;
     let clfg = get_widget_fg_color(dctx.wgt).intensify_if(focused);
     let mut txt = String::new();
+
     if !prp.text.is_empty() {
         txt.push_str(prp.text);
     }
@@ -908,7 +905,8 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox) {
         dctx.strbuff
             .set_displayed_width(dctx.wgt.size.width as i16 - 4); //, true);
 
-        dctx.strbuff.push_str(tetrary!(cbs.drop_down, " [▲]", " [▼]"));
+        dctx.strbuff
+            .push_str(tetrary!(cbs.drop_down, " [▲]", " [▼]"));
 
         let mut term = dctx.term_cell.borrow_mut();
         term.move_to(my_coord.col as u16, my_coord.row as u16);
