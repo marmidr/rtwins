@@ -29,9 +29,10 @@ mod widget_impl;
 
 // import common definition into library's namespace
 pub use crate::common::*;
-pub use crate::debug_trace::TraceBuffer;
+pub use crate::debug_trace::Trace;
 pub use crate::terminal::PalBox;
 pub use crate::terminal::Term;
+pub use crate::terminal::TERM;
 
 // group widget public code under single namespace
 pub mod wgt {

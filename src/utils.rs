@@ -105,10 +105,12 @@ pub fn num_edit_input_evt(
         // 0x7fffffffffffffff = 9223372036854775807
         if let InputEvent::Char(ref ch) = ii.evnt {
             if ch.utf8seq[0] < b'0' || ch.utf8seq[0] > b'9' || txt.len() >= 19 {
-                if let Ok(mut term_lock) = crate::Term::try_lock_write() {
-                    let term = &mut *term_lock;
-                    term.write_str(crate::esc::BELL);
-                    term.flush_buff();
+                if let Ok(mut term_guard) = crate::TERM.try_write() {
+                    term_guard.write_str(crate::esc::BELL);
+                    term_guard.flush_buff();
+                }
+                else {
+                    crate::tr_warn!("Cannot lock TERM");
                 }
                 return true;
             }

@@ -1,10 +1,9 @@
 //! # RTWins demo app
 
-extern crate rtwins;
+// extern crate rtwins;
 use rtwins::wgt;
 use rtwins::wgt::WindowState;
-use rtwins::Term;
-use rtwins::TraceBuffer;
+use rtwins::TERM;
 
 use std::io::Write;
 
@@ -91,7 +90,7 @@ fn main() {
     // create Demo window state
     let mut dws = tui_state::DemoWndState::new(&tui_def::WND_MAIN_ARRAY[..]);
     // replace default PAL with our own:
-    Term::lock_write().pal = Box::new(DemoPal::new());
+    TERM.try_write().unwrap().pal = Box::new(DemoPal::new());
     let mut mouse_on = true;
     // let mut wm = WndManager::new();
 
@@ -103,23 +102,23 @@ fn main() {
 
     // configure terminal, draw window
     {
-        let mut term = Term::lock_write();
-        term.trace_row = {
+        let mut term_guard = TERM.try_write().unwrap();
+        term_guard.trace_row = {
             let coord = dws.get_window_coord();
             let sz = dws.get_window_size();
             coord.row as u16 + sz.height as u16 + 1
         };
-        term.write_str(rtwins::esc::TERM_RESET);
-        term.draw_wnd(&mut dws);
-        term.mouse_mode(rtwins::MouseMode::M2);
-        term.flush_buff();
+        term_guard.write_str(rtwins::esc::TERM_RESET);
+        term_guard.draw_wnd(&mut dws);
+        term_guard.mouse_mode(rtwins::MouseMode::M2);
+        term_guard.flush_buff();
     }
 
     rtwins::tr_info!("Press Ctrl-D to quit");
     rtwins::tr_warn!("WARN MACRO 1");
     rtwins::tr_err!("ERR MACRO 1");
     rtwins::tr_debug!("DEBUG MACRO: X={} N={}", 42, "Warduna");
-    rtwins::tr_flush!(&mut Term::lock_write());
+    rtwins::tr_flush!(&mut TERM.try_write().unwrap());
 
     let mut itty = rtwins::input_tty::InputTty::new(1000);
     let mut ique = rtwins::input_decoder::InputQue::new();
@@ -206,26 +205,26 @@ fn main() {
                     else if *key == Key::F4 {
                         mouse_on = !mouse_on;
                         rtwins::tr_info!("Mouse {}", if mouse_on { "ON" } else { "OFF" });
-                        let mut term = Term::lock_write();
-                        term.mouse_mode(if mouse_on {
+                        let mut term_guard = TERM.try_write().unwrap();
+                        term_guard.mouse_mode(if mouse_on {
                             rtwins::MouseMode::M2
                         }
                         else {
                             rtwins::MouseMode::Off
                         });
-                        term.flush_buff();
+                        term_guard.flush_buff();
                     }
                     else if *key == Key::F5 {
-                        let mut term = Term::lock_write();
-                        term.screen_clr_all();
+                        let mut term_guard = TERM.try_write().unwrap();
+                        term_guard.screen_clr_all();
                         // draw windows from bottom to top
                         // TODO: wm.redraw_all();
-                        term.draw_wnd(&mut dws);
-                        term.flush_buff();
+                        term_guard.draw_wnd(&mut dws);
+                        term_guard.flush_buff();
                     }
                     else if *key == Key::F6 {
-                        let mut term = Term::lock_write();
-                        term.trace_area_clear();
+                        let mut term_guard = TERM.try_write().unwrap();
+                        term_guard.trace_area_clear();
                     }
                     else if ii.kmod.has_ctrl() && (*key == Key::PgUp || *key == Key::PgDown) {
                         // if wm.is_top_wnd(&dws) {
@@ -245,23 +244,23 @@ fn main() {
                     }
                 }
 
-                Term::lock_write().draw_invalidated(&mut dws);
+                TERM.try_write().unwrap().draw_invalidated(&mut dws);
             } // decode_input_seq
         }
 
         // flush the trace logs on every loop
-        rtwins::tr_flush!(&mut Term::lock_write());
+        rtwins::tr_flush!(&mut TERM.try_write().unwrap());
     }
 
     // epilogue
     {
-        let mut term = Term::lock_write();
-        rtwins::tr_flush!(&mut term);
-        term.mouse_mode(rtwins::MouseMode::Off);
-        term.trace_area_clear();
-        let logs_row = term.trace_row;
-        term.move_to(0, logs_row);
-        term.flush_buff();
+        let mut term_guard = TERM.try_write().unwrap();
+        rtwins::tr_flush!(&mut term_guard);
+        term_guard.mouse_mode(rtwins::MouseMode::Off);
+        term_guard.trace_area_clear();
+        let logs_row = term_guard.trace_row;
+        term_guard.move_to(0, logs_row);
+        term_guard.flush_buff();
     }
 }
 

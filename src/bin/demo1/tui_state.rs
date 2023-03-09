@@ -10,7 +10,7 @@ use rtwins::string_ext::StringExt;
 use rtwins::utils;
 use rtwins::wgt::{self, WId, Widget, WIDGET_ID_NONE};
 use rtwins::Term;
-use rtwins::TraceBuffer;
+use rtwins::TERM;
 
 use std::cell::RefCell;
 use std::collections::vec_deque::VecDeque;
@@ -381,8 +381,8 @@ impl rtwins::wgt::WindowState for DemoWndState {
 
     fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
         if let InputEvent::Mouse(ref mouse) = ii.evnt {
-            if let Ok(mut term_lock) = Term::try_lock_write() {
-                let term = &mut *term_lock;
+            if let Ok(mut term_guard) = TERM.try_write() {
+                let term = &mut *term_guard;
                 term.move_to(mouse.col as u16, mouse.row as u16);
                 let mark = mouse.evt.as_mark();
                 term.write_char(mark);
@@ -673,9 +673,9 @@ impl rtwins::wgt::WindowState for DemoWndState {
     }
 
     fn instant_redraw(&mut self, wid: WId) {
-        if let Ok(mut term_lock) = Term::try_lock_write() {
-            term_lock.draw(self, &[wid]);
-            term_lock.flush_buff();
+        if let Ok(mut term_guard) = TERM.try_write() {
+            term_guard.draw(self, &[wid]);
+            term_guard.flush_buff();
         }
         else {
             rtwins::tr_warn!("Cannot lock the term");

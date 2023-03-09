@@ -7,7 +7,7 @@ use crate::wgt;
 use crate::widget_def::*;
 
 use lazy_static::lazy_static;
-use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard, TryLockResult};
+use std::sync::RwLock;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -16,14 +16,7 @@ pub type PalBox = Box<dyn crate::pal::Pal + Send + Sync>;
 
 lazy_static! {
     /// Global instance of Terminal
-    static ref TERM: RwLock<Term> = RwLock::new(
-        #[allow(clippy::box_default)]
-        Term::new(
-            Box::new(
-                crate::pal::PalStub::default()
-            )
-        )
-    );
+    pub static ref TERM: RwLock<Term> = RwLock::new(Term::default());
 }
 
 /// Terminal low level API and context
@@ -42,26 +35,10 @@ pub struct Term {
 
 // pub type TermGuard = RwLockWriteGuard<'static, Term>;
 
-impl Term {
-    /// Get read-only access to global instance
-    pub fn try_lock_read() -> TryLockResult<RwLockReadGuard<'static, Term>> {
-        TERM.try_read()
-    }
-
-    /// Get write access to global instance or panic
-    pub fn lock_write() -> RwLockWriteGuard<'static, Term> {
-        TERM.write().unwrap()
-    }
-
-    /// Get write access to global instance
-    pub fn try_lock_write() -> TryLockResult<RwLockWriteGuard<'static, Term>> {
-        TERM.try_write()
-    }
-
-    /// Creates default instance using provided Pal
-    pub fn new(p: PalBox) -> Self {
+impl Default for Term {
+    fn default() -> Self {
         Term {
-            pal: p,
+            pal: Box::<crate::pal::PalStub>::default(),
             trace_row: 0,
             current_cl_fg: ColorFg::Default,
             current_cl_bg: ColorBg::Default,
@@ -72,7 +49,9 @@ impl Term {
             stack_attr: vec![],
         }
     }
+}
 
+impl Term {
     /// Write single character
     pub fn write_char(&mut self, c: char) -> &mut Self {
         self.pal.write_char(c);

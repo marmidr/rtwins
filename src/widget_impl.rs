@@ -823,8 +823,8 @@ fn change_focus_to(ws: &mut dyn WindowState, new_id: WId) -> bool {
                 }
             }
 
-            if let Ok(mut term_lock) = Term::try_lock_write() {
-                let term = &mut *term_lock;
+            if let Ok(mut term_guard) = TERM.try_write() {
+                let term = &mut *term_guard;
                 set_cursor_at(term, ws, new_focused_wgt);
             }
 
@@ -872,8 +872,8 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
         // tr_debug!("focused id={} ({})", focused.id, focused.prop);
         WGT_STATE.try_write().unwrap().focused_wgt = focused.id;
 
-        if let Ok(mut term_lock) = Term::try_lock_write() {
-            wgt::set_cursor_at(&mut term_lock, ws, focused);
+        if let Ok(mut term_guard) = TERM.try_write() {
+            wgt::set_cursor_at(&mut term_guard, ws, focused);
         }
         else {
             tr_debug!("Unable to lock the term");
@@ -881,13 +881,7 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
     }
     else {
         WGT_STATE.try_write().unwrap().focused_wgt = WIDGET_ID_NONE;
-
-        if let Ok(mut term_lock) = Term::try_lock_write() {
-            term_lock.move_to_home();
-        }
-        else {
-            tr_debug!("Unable to lock the term");
-        }
+        TERM.try_write().unwrap().move_to_home();
     }
 }
 
@@ -961,7 +955,7 @@ fn process_key(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
 fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
     let mut te_state;
 
-    if {
+    let handled = {
         let mut wgtstate_guard = WGT_STATE.try_write().unwrap();
         let testate = &mut wgtstate_guard.text_edit_state;
 
@@ -977,7 +971,9 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
         // TODO: improve to avoid cloning
         te_state = testate.clone();
         false
-    } {
+    };
+
+    if handled {
         return true;
     }
 
@@ -1139,16 +1135,10 @@ fn process_key_button(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) ->
         if *key == Key::Enter {
             // pointer may change between onButtonUp and onButtonClick, so remember it
             WGT_STATE.try_write().unwrap().mouse_down_wgt = wgt.id;
-
             ws.on_button_down(wgt, ii);
             ws.instant_redraw(wgt.id);
-
-            if let Ok(term_lock) = Term::try_lock_read() {
-                term_lock.pal.sleep(200);
-            }
-
+            TERM.try_write().unwrap().pal.sleep(200);
             WGT_STATE.try_write().unwrap().mouse_down_wgt = WIDGET_ID_NONE;
-
             ws.on_button_up(wgt, ii);
             ws.on_button_click(wgt, ii);
             ws.invalidate(wgt.id);
@@ -1434,8 +1424,8 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
                     Property::CustomWgt(_) => process_mouse_custom_wgt(ws, wgt, &rct, ii),
                     Property::TextBox(_) => process_mouse_text_box(ws, wgt, &rct, ii),
                     _ => {
-                        if let Ok(mut term_lock) = Term::try_lock_write() {
-                            let term = &mut *term_lock;
+                        if let Ok(mut term_guard) = TERM.try_write() {
+                            let term = &mut *term_guard;
                             term.move_to_home();
                         }
 
