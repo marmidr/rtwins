@@ -16,7 +16,7 @@ use std::cell::RefCell;
 use std::collections::vec_deque::VecDeque;
 use std::rc::Rc;
 
-use super::tui_def::id;
+use super::tui_def_main::id;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -38,7 +38,7 @@ impl CommandsQueue {
     }
 
     /// Executes all commands
-    pub fn run_all(&mut self, ws: &mut DemoWndState) {
+    pub fn run_all(&mut self, ws: &mut MainWndState) {
         for cmd in self.commands.iter_mut() {
             match cmd {
                 Commands::Func(ref mut f) => {
@@ -67,7 +67,7 @@ impl CommandsQueue {
 // ---------------------------------------------------------------------------------------------- //
 
 /// State of all the DemoWindow widget dynamic properties
-pub struct DemoWndState {
+pub struct MainWndState {
     /// all window widgets, starting with the window widget itself
     widgets: &'static [wgt::Widget],
     /// widgets runtime state
@@ -89,9 +89,9 @@ pub struct DemoWndState {
     tbx_narrow_lines: Rc<RefCell<Vec<String>>>,
 }
 
-impl DemoWndState {
+impl MainWndState {
     pub fn new(widgets: &'static [Widget]) -> Self {
-        let mut wnd_state = DemoWndState {
+        let mut wnd_state = MainWndState {
             widgets,
             rs: wgt::RuntimeStates::new(),
             focused_ids: vec![],
@@ -191,7 +191,7 @@ impl DemoWndState {
 
 // -----------------------------------------------------------------------------------------------
 
-impl rtwins::wgt::WindowState for DemoWndState {
+impl rtwins::wgt::WindowState for MainWndState {
     /** events **/
 
     fn on_button_down(&mut self, wgt: &Widget, ii: &InputInfo) {
@@ -557,8 +557,8 @@ impl rtwins::wgt::WindowState for DemoWndState {
                 << esc::NORMAL
                 << "  Latest, most lo💖ed radio hits. ";
 
-            let splitted = utils::word_wrap(wgt.size.width as usize - 2, &tmp);
-            *txt = splitted.take().join("\n");
+            let wrapped = utils::word_wrap(wgt.size.width as usize - 2, &tmp);
+            *txt = wrapped.take().join("\n");
         }
     }
 

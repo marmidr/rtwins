@@ -798,5 +798,5 @@ const WINDOW_MAIN: Widget = Widget {
 };
 
 /// Example of const-evaluated and translated Widgets tree into Widgets array
-pub const WND_MAIN_ARRAY: [Widget; rtwins::wgt::transform::tree_wgt_count(&WINDOW_MAIN)] =
-    rtwins::wgt::transform::tree_to_array(&WINDOW_MAIN);
+pub const WND_MAIN_WGTS: [Widget; transform::tree_wgt_count(&WINDOW_MAIN)] =
+    transform::tree_to_array(&WINDOW_MAIN);
