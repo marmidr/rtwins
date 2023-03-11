@@ -7,15 +7,16 @@ use rtwins::common::*;
 use rtwins::input;
 use rtwins::input::*;
 use rtwins::utils;
-use rtwins::wgt::{self, WId, Widget, WIDGET_ID_NONE};
+use rtwins::wgt::{self, WId, Widget, WndId, WIDGET_ID_NONE};
 use rtwins::TERM;
 
-use super::tui_def_msgbox::idmb;
+use super::tui_msgbox_def::idmb;
 
 // ---------------------------------------------------------------------------------------------- //
 
 /// State of all the DemoWindow widget dynamic properties
 pub struct MsgBoxState {
+    wnd_id: wgt::WndId,
     /// all window widgets, starting with the window widget itself
     widgets: &'static [wgt::Widget],
     /// widgets runtime state
@@ -24,20 +25,27 @@ pub struct MsgBoxState {
     focused_id: WId,
     /// list of widgets to redraw
     invalidated: Vec<WId>,
+    //
+    coord: Coord,
     /// button click handler
-    on_button: Box<dyn Fn(WId)>,
+    on_button: Box<dyn Fn(WId) + Send + Sync>,
+    /// popup title
     wnd_title: String,
+    /// popup message
     wnd_message: String,
+    /// visible buttons
     buttons: &'static str,
 }
 
 impl MsgBoxState {
-    pub fn new(widgets: &'static [Widget]) -> Self {
+    pub fn new(widgets: &'static [Widget], coord: Coord) -> Self {
         let wnd_state = MsgBoxState {
+            wnd_id: 0,
             widgets,
             rs: wgt::RuntimeStates::new(),
             focused_id: WIDGET_ID_NONE,
             invalidated: vec![],
+            coord,
             on_button: Box::new(|_id: WId| {}),
             wnd_title: String::new(),
             wnd_message: String::new(),
@@ -47,6 +55,15 @@ impl MsgBoxState {
         wnd_state
     }
 
+    pub fn center_on(&mut self, wnd: &Widget) {
+        let wndpopup = &self.widgets[0];
+        // calc location on the main window center
+        self.coord.col = (wnd.size.width - wndpopup.size.width) / 2;
+        self.coord.col += wnd.coord.col;
+        self.coord.row = (wnd.size.height - wndpopup.size.height) / 2;
+        self.coord.row += wnd.coord.row;
+    }
+
     /// Shows the MessageBox
     ///
     /// buttons: string of 'ynoc' defining visibility of Yes/No/Ok/Cancel buttons
@@ -54,7 +71,7 @@ impl MsgBoxState {
         &mut self,
         title: String,
         message: String,
-        on_button: Box<dyn Fn(WId)>,
+        on_button: Box<dyn Fn(WId) + Send + Sync>,
         buttons: &'static str,
     ) {
         self.wnd_title = title;
@@ -98,6 +115,9 @@ impl rtwins::wgt::WindowState for MsgBoxState {
     }
 
     /** common state queries **/
+    fn get_window_id(&self) -> WndId {
+        self.wnd_id
+    }
 
     fn is_enabled(&self, wgt: &Widget) -> bool {
         self.rs.get_enabled_or_default(wgt.id)
@@ -109,17 +129,13 @@ impl rtwins::wgt::WindowState for MsgBoxState {
 
     fn is_visible(&self, wgt: &Widget) -> bool {
         match wgt.id {
-            idmb::WND_MSGBOX => false, // TODO return twins::glob::wMngr.topWnd() == this;
+            // TODO: idmb::WND_MSGBOX => return twins::glob::wMngr.topWnd() == this;
             idmb::BTN_YES => self.buttons.as_bytes().contains(&b'y'),
             idmb::BTN_NO => self.buttons.as_bytes().contains(&b'n'),
             idmb::BTN_CANCEL => self.buttons.as_bytes().contains(&b'c'),
             idmb::BTN_OK => self.buttons.as_bytes().contains(&b'o'),
             _ => true,
         }
-    }
-
-    fn is_desktop(&self) -> bool {
-        false
     }
 
     fn get_focused_id(&mut self) -> WId {
@@ -134,17 +150,14 @@ impl rtwins::wgt::WindowState for MsgBoxState {
         self.widgets
     }
 
+    fn get_rstate(&mut self) -> Option<&mut wgt::RuntimeStates> {
+        Some(&mut self.rs)
+    }
+
     /** widget-specific queries; all mutable params are outputs **/
 
     fn get_window_coord(&mut self) -> Coord {
-        // TODO: const auto *p_wnd = twins::glob::pMainWindowWgts;
-        // calc location on the main window center
-        // coord.col = (p_wnd->size.width - pWgt->size.width) / 2;
-        // coord.col += p_wnd->coord.col;
-        // coord.row = (p_wnd->size.height - pWgt->size.height) / 2;
-        // coord.row += p_wnd->coord.row;
-
-        Coord::cdeflt()
+        self.coord
     }
 
     fn get_window_size(&mut self) -> Size {
@@ -164,6 +177,9 @@ impl rtwins::wgt::WindowState for MsgBoxState {
     }
 
     /* */
+    fn set_window_id(&mut self, id: WndId) {
+        self.wnd_id = id;
+    }
 
     fn invalidate_many(&mut self, wids: &[WId]) {
         self.invalidated.extend(wids.iter());

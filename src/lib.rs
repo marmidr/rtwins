@@ -19,6 +19,7 @@ pub mod input_tty;
 pub mod pal;
 pub mod string_ext;
 pub mod utils;
+pub mod wnd_manager;
 
 // private modules
 mod debug_trace;

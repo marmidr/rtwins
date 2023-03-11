@@ -8,15 +8,15 @@ use rtwins::esc;
 use rtwins::input::*;
 use rtwins::string_ext::StringExt;
 use rtwins::utils;
-use rtwins::wgt::{self, WId, Widget, WIDGET_ID_NONE};
+use rtwins::wgt::{self, WId, Widget, WndId, WIDGET_ID_NONE};
 use rtwins::Term;
 use rtwins::TERM;
 
-use std::cell::RefCell;
+// use std::cell::RefCell;
+// use std::sync::Arc;
 use std::collections::vec_deque::VecDeque;
-use std::rc::Rc;
 
-use super::tui_def_main::id;
+use super::tui_main_def::id;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -68,6 +68,7 @@ impl CommandsQueue {
 
 /// State of all the DemoWindow widget dynamic properties
 pub struct MainWndState {
+    wnd_id: wgt::WndId,
     /// all window widgets, starting with the window widget itself
     widgets: &'static [wgt::Widget],
     /// widgets runtime state
@@ -85,13 +86,14 @@ pub struct MainWndState {
     lbx_items: Vec<&'static str>,
     // text box raw source string and source splitted into rows
     tbx_text: String,
-    tbx_wide_lines: Rc<RefCell<Vec<String>>>,
-    tbx_narrow_lines: Rc<RefCell<Vec<String>>>,
+    // tbx_wide_lines: utils::StringListRc,
+    // tbx_narrow_lines: utils::StringListRc,
 }
 
 impl MainWndState {
     pub fn new(widgets: &'static [Widget]) -> Self {
         let mut wnd_state = MainWndState {
+            wnd_id: 0,
             widgets,
             rs: wgt::RuntimeStates::new(),
             focused_ids: vec![],
@@ -101,8 +103,8 @@ impl MainWndState {
             radiogrp1_idx: 1,
             lbx_items: vec![],
             tbx_text: String::with_capacity(400),
-            tbx_wide_lines: Rc::new(RefCell::new(vec![])),
-            tbx_narrow_lines: Rc::new(RefCell::new(vec![])),
+            // tbx_wide_lines: Arc::new(RefCell::new(vec![])),
+            // tbx_narrow_lines: Arc::new(RefCell::new(vec![])),
         };
 
         // initial tsate of focused id for each page
@@ -174,7 +176,7 @@ impl MainWndState {
             id::TBX_WIDE,
             TxtbxState {
                 top_line: 9,
-                lines: Default::default(),
+                // lines: Default::default(),
             }
             .into(),
         );
@@ -400,6 +402,9 @@ impl rtwins::wgt::WindowState for MainWndState {
     }
 
     /** common state queries **/
+    fn get_window_id(&self) -> WndId {
+        self.wnd_id
+    }
 
     fn is_enabled(&self, wgt: &Widget) -> bool {
         if wgt.id == id::CHBX_C {
@@ -476,6 +481,11 @@ impl rtwins::wgt::WindowState for MainWndState {
     fn get_widgets(&self) -> &'static [Widget] {
         self.widgets
     }
+
+    fn get_rstate(&mut self) -> Option<&mut wgt::RuntimeStates> {
+        Some(&mut self.rs)
+    }
+
 
     /** widget-specific queries; all mutable params are outputs **/
 
@@ -643,17 +653,17 @@ impl rtwins::wgt::WindowState for MainWndState {
         state.top_line = rs.top_line;
 
         if wgt.id == id::TBX_WIDE {
-            if self.tbx_wide_lines.borrow().len() == 0 {
-                self.tbx_wide_lines = utils::word_wrap(wgt.size.width as usize - 2, &self.tbx_text);
-            }
-            state.lines = Rc::clone(&self.tbx_wide_lines);
+            // if self.tbx_wide_lines.borrow().len() == 0 {
+            //     self.tbx_wide_lines = utils::word_wrap(wgt.size.width as usize - 2, &self.tbx_text);
+            // }
+            // state.lines = Arc::clone(&self.tbx_wide_lines);
         }
         else if wgt.id == id::TBX_NARROW {
-            if self.tbx_narrow_lines.borrow().len() == 0 {
-                self.tbx_narrow_lines =
-                    utils::word_wrap(wgt.size.width as usize - 2, &self.tbx_text);
-            }
-            state.lines = Rc::clone(&self.tbx_narrow_lines);
+            // if self.tbx_narrow_lines.borrow().len() == 0 {
+            //     self.tbx_narrow_lines =
+            //         utils::word_wrap(wgt.size.width as usize - 2, &self.tbx_text);
+            // }
+            // state.lines = Arc::clone(&self.tbx_narrow_lines);
         }
     }
 
@@ -667,6 +677,9 @@ impl rtwins::wgt::WindowState for MainWndState {
     }
 
     /* */
+    fn set_window_id(&mut self, id: WndId) {
+        self.wnd_id = id;
+    }
 
     fn invalidate_many(&mut self, wids: &[WId]) {
         self.invalidated.extend(wids.iter());

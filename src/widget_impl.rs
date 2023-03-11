@@ -1305,6 +1305,7 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
 
 fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
     if let InputEvent::Key(ref key) = ii.evnt {
+        /*
         let mut delta = 0;
         let lines_visible = wgt.size.height as i16 - 2;
 
@@ -1335,6 +1336,7 @@ fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
             ws.invalidate(wgt.id);
             return true;
         }
+        */
     }
 
     false
@@ -1727,6 +1729,7 @@ fn process_mouse_text_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
         change_focus_to(ws, wgt.id);
 
         if mouse.evt == MouseEvent::WheelUp || mouse.evt == MouseEvent::WheelDown {
+            /*
             let mut tbs = Default::default();
             ws.get_text_box_state(wgt, &mut tbs);
 
@@ -1752,6 +1755,7 @@ fn process_mouse_text_box(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rec
                 ws.on_text_box_scroll(wgt, tbs.top_line);
                 ws.invalidate(wgt.id);
             }
+            */
         }
     }
 }

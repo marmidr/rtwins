@@ -1,20 +1,24 @@
 //! # RTWins demo app
 
-// extern crate rtwins;
-use rtwins::wgt;
-use rtwins::wgt::WindowState;
+// use rtwins::wgt::WindowState;
+use rtwins::wnd_manager::WNDMNGR;
 use rtwins::TERM;
+use rtwins::{tetrary, wgt};
 
 use std::io::Write;
+use core::sync::atomic;
+
+pub static WND_MAIN: atomic::AtomicU8 = atomic::AtomicU8::new(0);
+pub static WND_MSGBOX: atomic::AtomicU8 = atomic::AtomicU8::new(0);
 
 // https://doc.rust-lang.org/cargo/guide/project-layout.html
 mod tui_colors;
-mod tui_def_main;
-mod tui_def_msgbox;
-mod tui_state_main;
-mod tui_state_msgbox;
+mod tui_main_def;
+mod tui_main_state;
+mod tui_msgbox_def;
+mod tui_msgbox_state;
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
 struct DemoPal {
     line_buff: String,
@@ -85,18 +89,50 @@ impl rtwins::pal::Pal for DemoPal {
     }
 }
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
 fn main() {
     tui_colors::init();
-    // create Demo window state
-    let mut main_ws = tui_state_main::MainWndState::new(&tui_def_main::WND_MAIN_WGTS[..]);
-    let mut _msgbox_ws = tui_state_msgbox::MsgBoxState::new(&tui_def_msgbox::WND_MSGBOX_WGTS[..]);
+
+    // main wnd
+    {
+        let bx = Box::new(tui_main_state::MainWndState::new(
+            &tui_main_def::WND_MAIN_WGTS[..],
+        ));
+
+        let id = WNDMNGR.try_write().unwrap().push(bx);
+        WND_MAIN.store(id, atomic::Ordering::Relaxed);
+        WNDMNGR.try_write().unwrap().show(id);
+    }
+
+    // popup wnd
+    {
+        let c = rtwins::Coord::cdeflt();
+        let mut bx = Box::new(tui_msgbox_state::MsgBoxState::new(
+            &tui_msgbox_def::WND_MSGBOX_WGTS[..],
+            c,
+        ));
+
+        bx.as_mut().center_on(
+            WNDMNGR
+                .try_read()
+                .unwrap()
+                .get_ref(WND_MAIN.load(atomic::Ordering::Relaxed))
+                .unwrap()
+                .get_widgets()
+                .first()
+                .unwrap(),
+        );
+
+        let id =WNDMNGR.try_write().unwrap().push(bx);
+        WND_MSGBOX.store(id, atomic::Ordering::Relaxed);
+    };
+
+    //
 
     // replace default PAL with our own:
     TERM.try_write().unwrap().pal = Box::new(DemoPal::new());
     let mut mouse_on = true;
-    // let mut wm = WndManager::new();
 
     // register function providing traces timestamp
     rtwins::tr_set_timestr_function!(|| {
@@ -104,24 +140,27 @@ fn main() {
         local_time.format("%H:%M:%S%.3f ").to_string()
     });
 
-    // configure terminal, draw window
+    // configure terminal
     {
         let mut term_guard = TERM.try_write().unwrap();
         term_guard.trace_row = {
-            let coord = main_ws.get_window_coord();
-            let sz = main_ws.get_window_size();
+            let mut mngr = WNDMNGR.try_write().unwrap();
+            let w = mngr.get_mut(WND_MAIN.load(atomic::Ordering::Relaxed)).unwrap();
+            let coord = w.get_window_coord();
+            let sz = w.get_window_size();
             coord.row as u16 + sz.height as u16 + 1
         };
         term_guard.write_str(rtwins::esc::TERM_RESET);
-        term_guard.draw_wnd(&mut main_ws);
         term_guard.mouse_mode(rtwins::MouseMode::M2);
-        term_guard.flush_buff();
     }
 
+    // first draw of the UI
+    WNDMNGR.try_write().unwrap().draw_all();
+
     rtwins::tr_info!("Press Ctrl-D to quit");
-    rtwins::tr_warn!("WARN MACRO 1");
-    rtwins::tr_err!("ERR MACRO 1");
-    rtwins::tr_debug!("DEBUG MACRO: X={} N={}", 42, "Warduna");
+    // rtwins::tr_warn!("WARN MACRO 1");
+    // rtwins::tr_err!("ERR MACRO 1");
+    // rtwins::tr_debug!("DEBUG MACRO: X={} N={}", 42, "Warduna");
     rtwins::tr_flush!(&mut TERM.try_write().unwrap());
 
     let mut itty = rtwins::input_tty::InputTty::new(1000);
@@ -143,7 +182,7 @@ fn main() {
             }
 
             // print raw sequence
-            if false {
+            /* if false {
                 let mut s = String::with_capacity(10);
                 for b in inp_seq {
                     if *b == 0 {
@@ -158,15 +197,15 @@ fn main() {
                     };
                 }
                 rtwins::tr_debug!("seq={}", s);
-            }
+            } */
 
             while dec.decode_input_seq(&mut ique, &mut ii) > 0 {
                 use rtwins::input::InputEvent;
                 use rtwins::input::Key;
 
                 // pass key to top-window
-                // let key_handled =  wgt::process_input(rtwins::glob::wMngr.topWndWidgets(), &ii);
-                let _key_handled = wgt::process_input(&mut main_ws, &ii);
+                let _key_handled =
+                    wgt::process_input(WNDMNGR.try_write().unwrap().get_top_mut().unwrap(), &ii);
 
                 // input debug info
                 match ii.evnt {
@@ -178,7 +217,12 @@ fn main() {
                     }
                     InputEvent::Mouse(ref m) => {
                         let mut r = rtwins::Rect::cdeflt();
-                        let wgt_opt = wgt::find_at(&mut main_ws, m.col, m.row, &mut r);
+                        let wgt_opt = wgt::find_at(
+                            WNDMNGR.try_write().unwrap().get_top_mut().unwrap(),
+                            m.col,
+                            m.row,
+                            &mut r,
+                        );
                         if let Some(w) = wgt_opt {
                             rtwins::tr_debug!(
                                 "mouse={:?} at {}:{} ({})",
@@ -197,62 +241,68 @@ fn main() {
 
                 // input processing
                 if let InputEvent::Key(ref key) = ii.evnt {
-                    use tui_def_main::id;
-
                     if *key == Key::F2 {
-                        main_ws.rs.set_enabled(
-                            id::WND_MAIN,
-                            !main_ws.rs.get_enabled_or_default(id::WND_MAIN),
+                        let mut wmngr = WNDMNGR.try_write().unwrap();
+                        let top_ws = wmngr.get_top_mut().unwrap();
+                        let en = !top_ws.is_enabled(&top_ws.get_widgets()[0]);
+
+                        top_ws.get_rstate().unwrap().set_enabled(
+                            tui_main_def::id::WND_MAIN,
+                            en
                         );
-                        main_ws.invalidate(wgt::WIDGET_ID_ALL);
+                        top_ws.invalidate(wgt::WIDGET_ID_ALL);
                     }
                     else if *key == Key::F4 {
                         mouse_on = !mouse_on;
                         rtwins::tr_info!("Mouse {}", if mouse_on { "ON" } else { "OFF" });
                         let mut term_guard = TERM.try_write().unwrap();
-                        term_guard.mouse_mode(if mouse_on {
-                            rtwins::MouseMode::M2
-                        }
-                        else {
+                        term_guard.mouse_mode(tetrary!(
+                            mouse_on,
+                            rtwins::MouseMode::M2,
                             rtwins::MouseMode::Off
-                        });
+                        ));
                         term_guard.flush_buff();
                     }
                     else if *key == Key::F5 {
-                        let mut term_guard = TERM.try_write().unwrap();
-                        term_guard.screen_clr_all();
+                        TERM.try_write().unwrap().screen_clr_all();
                         // draw windows from bottom to top
-                        // TODO: wm.redraw_all();
-                        term_guard.draw_wnd(&mut main_ws);
-                        term_guard.flush_buff();
+                        WNDMNGR.try_write().unwrap().draw_all();
                     }
                     else if *key == Key::F6 {
                         let mut term_guard = TERM.try_write().unwrap();
                         term_guard.trace_area_clear();
                     }
                     else if ii.kmod.has_ctrl() && (*key == Key::PgUp || *key == Key::PgDown) {
-                        // if wm.is_top_wnd(&dws) {
-                        wgt::pagectrl_select_next_page(
-                            &mut main_ws,
-                            id::PG_CONTROL,
-                            *key == Key::PgDown,
-                        );
-                        main_ws.invalidate(id::PG_CONTROL);
-                        // }
+                        let mut wmngr = WNDMNGR.try_write().unwrap();
+
+                        if wmngr.is_top(WND_MAIN.load(atomic::Ordering::Relaxed)) {
+                            let main_ws = wmngr.get_top_mut().unwrap();
+
+                            wgt::pagectrl_select_next_page(
+                                main_ws,
+                                tui_main_def::id::PG_CONTROL,
+                                *key == Key::PgDown,
+                            );
+                            main_ws.invalidate(tui_main_def::id::PG_CONTROL);
+                        }
                     }
                     else if *key == Key::F9 || *key == Key::F10 {
-                        // if wm.is_top_wnd(&dws) {
-                        wgt::pagectrl_select_next_page(
-                            &mut main_ws,
-                            id::PG_CONTROL,
-                            *key == Key::F10,
-                        );
-                        main_ws.invalidate(id::PG_CONTROL);
-                        // }
+                        let mut wmngr = WNDMNGR.try_write().unwrap();
+
+                        if wmngr.is_top(WND_MAIN.load(atomic::Ordering::Relaxed)) {
+                            let main_ws = wmngr.get_top_mut().unwrap();
+
+                            wgt::pagectrl_select_next_page(
+                                main_ws,
+                                tui_main_def::id::PG_CONTROL,
+                                *key == Key::F10,
+                            );
+                            main_ws.invalidate(tui_main_def::id::PG_CONTROL);
+                        }
                     }
                 }
 
-                TERM.try_write().unwrap().draw_invalidated(&mut main_ws);
+                WNDMNGR.try_write().unwrap().draw_top_invalidated();
             } // decode_input_seq
         }
 
@@ -272,7 +322,7 @@ fn main() {
     }
 }
 
-// -----------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------- //
 
 #[test]
 fn test_esc_codes() {
@@ -301,7 +351,7 @@ fn test_esc_codes() {
 
 #[test]
 fn test_property_access() {
-    for (idx, w) in tui_def_main::WND_MAIN_WGTS.iter().enumerate() {
+    for (idx, w) in tui_main_def::WND_MAIN_WGTS.iter().enumerate() {
         let w_par = wgt::get_parent(w);
         println!(
             "  {:2}. {:2}:{:10}, idx:{}, chidx:{}, parid {}:{}",

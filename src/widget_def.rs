@@ -16,6 +16,9 @@ use crate::wgt;
 /// Widget unique identifier
 pub type WId = u16;
 
+/// Window identifier, created by WndManager
+pub type WndId = u8;
+
 /// Convenient, default value that points to nothing
 pub const WIDGET_ID_NONE: WId = WId::MIN;
 /// Used as a special function parameter
@@ -446,7 +449,7 @@ impl Link {
 /// Widget RunTime state
 pub mod rstate {
 
-    use crate::utils::StringListRc;
+    // use crate::utils::StringListRc;
 
     /// CheckBox
     #[derive(Default, Clone, Copy)]
@@ -491,7 +494,7 @@ pub mod rstate {
     pub struct TxtbxState {
         pub top_line: i16,
         // used only when returning current state
-        pub lines: StringListRc,
+        // pub lines: StringListRc,
     }
 
     /// PageControl
@@ -642,6 +645,9 @@ pub trait WindowState {
     }
 
     /// common state queries
+    fn get_window_id(&self) -> WndId {
+        0
+    }
     fn is_enabled(&self, wgt: &Widget) -> bool {
         true
     }
@@ -657,10 +663,12 @@ pub trait WindowState {
     fn get_focused_id(&mut self) -> WId {
         WIDGET_ID_NONE
     }
-    fn set_focused_id(&mut self, wid: WId) {}
+
     fn get_widgets(&self) -> &'static [Widget] {
         &[]
     }
+
+    fn get_rstate(&mut self) -> Option<&mut wgt::RuntimeStates> { None }
 
     /// widget-specific queries; all mutable params are outputs
     fn get_window_coord(&mut self) -> Coord {
@@ -694,6 +702,9 @@ pub trait WindowState {
     fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {}
 
     /// requests
+
+    fn set_window_id(&mut self, id: WndId) {}
+    fn set_focused_id(&mut self, wid: WId) {}
     #[inline]
     fn invalidate(&mut self, wid: WId) {
         self.invalidate_many(&[wid]);

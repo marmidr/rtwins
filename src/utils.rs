@@ -33,7 +33,7 @@ macro_rules! static_assert {
 
 // ---------------------------------------------------------------------------------------------- //
 
-pub type StringListRc = std::rc::Rc<std::cell::RefCell<Vec<String>>>;
+pub type StringListRc = std::sync::Arc<std::cell::RefCell<Vec<String>>>;
 
 /// Splits given string into lines so that each line is not wider than `max_disp_w`.
 ///
