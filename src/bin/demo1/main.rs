@@ -1,15 +1,11 @@
 //! # RTWins demo app
 
-// use rtwins::wgt::WindowState;
-use rtwins::wnd_manager::WNDMNGR;
+use rtwins::wgt::WindowState;
+use rtwins::wnd_manager::WindowManager;
 use rtwins::TERM;
 use rtwins::{tetrary, wgt};
 
 use std::io::Write;
-use core::sync::atomic;
-
-pub static WND_MAIN: atomic::AtomicU8 = atomic::AtomicU8::new(0);
-pub static WND_MSGBOX: atomic::AtomicU8 = atomic::AtomicU8::new(0);
 
 // https://doc.rust-lang.org/cargo/guide/project-layout.html
 mod tui_colors;
@@ -91,44 +87,60 @@ impl rtwins::pal::Pal for DemoPal {
 
 // ---------------------------------------------------------------------------------------------- //
 
+struct WndMngr {
+    main: tui_main_state::MainWndState,
+    msgbox: tui_msgbox_state::MsgBoxState,
+    visible: Vec<usize>,
+}
+
+impl WndMngr {
+    fn new() -> Self {
+        let mut ret = Self {
+            main: tui_main_state::MainWndState::new(&tui_main_def::WND_MAIN_WGTS[..]),
+            msgbox: tui_msgbox_state::MsgBoxState::new(&tui_msgbox_def::WND_MSGBOX_WGTS[..]),
+            visible: vec![],
+        };
+
+        ret.msgbox
+            .center_on(ret.main.get_widgets().first().unwrap());
+        ret
+    }
+}
+
+impl WindowManager for WndMngr {
+    fn get_ref(&self, wnd_idx: usize) -> Option<&dyn WindowState> {
+        match wnd_idx {
+            0 => Some(&self.main),
+            1 => Some(&self.msgbox),
+            _ => None,
+        }
+    }
+
+    fn get_mut(&mut self, wnd_idx: usize) -> Option<&mut dyn WindowState> {
+        match wnd_idx {
+            0 => Some(&mut self.main),
+            1 => Some(&mut self.msgbox),
+            _ => None,
+        }
+    }
+
+    fn get_visible(&self) -> Vec<usize> {
+        self.visible.clone()
+    }
+
+    #[inline]
+    fn get_visible_mut(&mut self) -> &mut Vec<usize> {
+        &mut self.visible
+    }
+}
+
+// ---------------------------------------------------------------------------------------------- //
+
 fn main() {
     tui_colors::init();
 
-    // main wnd
-    {
-        let bx = Box::new(tui_main_state::MainWndState::new(
-            &tui_main_def::WND_MAIN_WGTS[..],
-        ));
-
-        let id = WNDMNGR.try_write().unwrap().push(bx);
-        WND_MAIN.store(id, atomic::Ordering::Relaxed);
-        WNDMNGR.try_write().unwrap().show(id);
-    }
-
-    // popup wnd
-    {
-        let c = rtwins::Coord::cdeflt();
-        let mut bx = Box::new(tui_msgbox_state::MsgBoxState::new(
-            &tui_msgbox_def::WND_MSGBOX_WGTS[..],
-            c,
-        ));
-
-        bx.as_mut().center_on(
-            WNDMNGR
-                .try_read()
-                .unwrap()
-                .get_ref(WND_MAIN.load(atomic::Ordering::Relaxed))
-                .unwrap()
-                .get_widgets()
-                .first()
-                .unwrap(),
-        );
-
-        let id =WNDMNGR.try_write().unwrap().push(bx);
-        WND_MSGBOX.store(id, atomic::Ordering::Relaxed);
-    };
-
-    //
+    // window manager and all windows
+    let mut wmngr = WndMngr::new();
 
     // replace default PAL with our own:
     TERM.try_write().unwrap().pal = Box::new(DemoPal::new());
@@ -144,10 +156,8 @@ fn main() {
     {
         let mut term_guard = TERM.try_write().unwrap();
         term_guard.trace_row = {
-            let mut mngr = WNDMNGR.try_write().unwrap();
-            let w = mngr.get_mut(WND_MAIN.load(atomic::Ordering::Relaxed)).unwrap();
-            let coord = w.get_window_coord();
-            let sz = w.get_window_size();
+            let coord = wmngr.main.get_window_coord();
+            let sz = wmngr.main.get_window_size();
             coord.row as u16 + sz.height as u16 + 1
         };
         term_guard.write_str(rtwins::esc::TERM_RESET);
@@ -155,7 +165,8 @@ fn main() {
     }
 
     // first draw of the UI
-    WNDMNGR.try_write().unwrap().draw_all();
+    wmngr.show(0);
+    wmngr.draw_all();
 
     rtwins::tr_info!("Press Ctrl-D to quit");
     // rtwins::tr_warn!("WARN MACRO 1");
@@ -204,8 +215,7 @@ fn main() {
                 use rtwins::input::Key;
 
                 // pass key to top-window
-                let _key_handled =
-                    wgt::process_input(WNDMNGR.try_write().unwrap().get_top_mut().unwrap(), &ii);
+                let _key_handled = wgt::process_input(wmngr.get_top_mut().unwrap(), &ii);
 
                 // input debug info
                 match ii.evnt {
@@ -217,12 +227,8 @@ fn main() {
                     }
                     InputEvent::Mouse(ref m) => {
                         let mut r = rtwins::Rect::cdeflt();
-                        let wgt_opt = wgt::find_at(
-                            WNDMNGR.try_write().unwrap().get_top_mut().unwrap(),
-                            m.col,
-                            m.row,
-                            &mut r,
-                        );
+                        let wgt_opt =
+                            wgt::find_at(wmngr.get_top_mut().unwrap(), m.col, m.row, &mut r);
                         if let Some(w) = wgt_opt {
                             rtwins::tr_debug!(
                                 "mouse={:?} at {}:{} ({})",
@@ -242,14 +248,13 @@ fn main() {
                 // input processing
                 if let InputEvent::Key(ref key) = ii.evnt {
                     if *key == Key::F2 {
-                        let mut wmngr = WNDMNGR.try_write().unwrap();
                         let top_ws = wmngr.get_top_mut().unwrap();
                         let en = !top_ws.is_enabled(&top_ws.get_widgets()[0]);
 
-                        top_ws.get_rstate().unwrap().set_enabled(
-                            tui_main_def::id::WND_MAIN,
-                            en
-                        );
+                        top_ws
+                            .get_rstate()
+                            .unwrap()
+                            .set_enabled(tui_main_def::id::WND_MAIN, en);
                         top_ws.invalidate(wgt::WIDGET_ID_ALL);
                     }
                     else if *key == Key::F4 {
@@ -266,16 +271,14 @@ fn main() {
                     else if *key == Key::F5 {
                         TERM.try_write().unwrap().screen_clr_all();
                         // draw windows from bottom to top
-                        WNDMNGR.try_write().unwrap().draw_all();
+                        wmngr.draw_all();
                     }
                     else if *key == Key::F6 {
                         let mut term_guard = TERM.try_write().unwrap();
                         term_guard.trace_area_clear();
                     }
                     else if ii.kmod.has_ctrl() && (*key == Key::PgUp || *key == Key::PgDown) {
-                        let mut wmngr = WNDMNGR.try_write().unwrap();
-
-                        if wmngr.is_top(WND_MAIN.load(atomic::Ordering::Relaxed)) {
+                        if wmngr.is_top(0) {
                             let main_ws = wmngr.get_top_mut().unwrap();
 
                             wgt::pagectrl_select_next_page(
@@ -287,9 +290,7 @@ fn main() {
                         }
                     }
                     else if *key == Key::F9 || *key == Key::F10 {
-                        let mut wmngr = WNDMNGR.try_write().unwrap();
-
-                        if wmngr.is_top(WND_MAIN.load(atomic::Ordering::Relaxed)) {
+                        if wmngr.is_top(0) {
                             let main_ws = wmngr.get_top_mut().unwrap();
 
                             wgt::pagectrl_select_next_page(
@@ -302,7 +303,7 @@ fn main() {
                     }
                 }
 
-                WNDMNGR.try_write().unwrap().draw_top_invalidated();
+                wmngr.draw_top_invalidated();
             } // decode_input_seq
         }
 

@@ -984,69 +984,67 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
     let lines_visible = dctx.wgt.size.height as i16 - 2;
     let mut tbs = Default::default();
     dctx.wnd_state.get_text_box_state(dctx.wgt, &mut tbs);
-    /*
-        if std::sync::Arc::strong_count(&tbs.lines) > 0 {
-            let lines = tbs.lines.as_ref().borrow();
-            if tbs.top_line > lines.len() as i16 {
-                tbs.top_line = lines.len() as i16 - lines_visible;
-                dctx.wnd_state.on_text_box_scroll(dctx.wgt, tbs.top_line);
+    if std::sync::Arc::strong_count(&tbs.lines) > 0 {
+        let lines = tbs.lines.as_ref().borrow();
+        if tbs.top_line > lines.len() as i16 {
+            tbs.top_line = lines.len() as i16 - lines_visible;
+            dctx.wnd_state.on_text_box_scroll(dctx.wgt, tbs.top_line);
+        }
+
+        if tbs.top_line < 0 {
+            dctx.wnd_state.on_text_box_scroll(dctx.wgt, tbs.top_line);
+            tbs.top_line = 0;
+        }
+
+        let mut term = dctx.term_cell.borrow_mut();
+
+        draw_list_scroll_bar_v(
+            &mut term,
+            my_coord + Coord::new(dctx.wgt.size.width - 1, 1),
+            lines_visible,
+            lines.len() as i16 - lines_visible,
+            tbs.top_line,
+        );
+
+        term.flush_buff();
+        dctx.strbuff.clear();
+
+        // scan invisible lines (because scrooled down) for ESC sequences: colors, font attributes
+        for i in 0..tbs.top_line as usize {
+            if let Some(line) = lines.get(i) {
+                // iterate over all ESC sequences in the line
+                for it in line.bytes().enumerate() {
+                    if it.1 == crate::esc::ESC_U8 {
+                        let esc = line.as_str();
+                        // get the sequence and push it to the output stream
+                        let esc = &esc[it.0..esc.len()];
+                        let esclen = esc.esc_seq_len();
+                        let sequence = &esc[0..esclen];
+                        dctx.strbuff.push_str(sequence);
+                    }
+                }
             }
+        }
 
-            if tbs.top_line < 0 {
-                dctx.wnd_state.on_text_box_scroll(dctx.wgt, tbs.top_line);
-                tbs.top_line = 0;
-            }
+        term.write_str(dctx.strbuff.as_str());
 
-            let mut term = dctx.term_cell.borrow_mut();
-
-            draw_list_scroll_bar_v(
-                &mut term,
-                my_coord + Coord::new(dctx.wgt.size.width - 1, 1),
-                lines_visible,
-                lines.len() as i16 - lines_visible,
-                tbs.top_line,
-            );
-
-            term.flush_buff();
+        // draw lines
+        for i in 0..lines_visible as usize {
             dctx.strbuff.clear();
 
-            // scan invisible lines (because scrooled down) for ESC sequences: colors, font attributes
-            for i in 0..tbs.top_line as usize {
-                if let Some(line) = lines.get(i) {
-                    // iterate over all ESC sequences in the line
-                    for it in line.bytes().enumerate() {
-                        if it.1 == crate::esc::ESC_U8 {
-                            let esc = line.as_str();
-                            // get the sequence and push it to the output stream
-                            let esc = &esc[it.0..esc.len()];
-                            let esclen = esc.esc_seq_len();
-                            let sequence = &esc[0..esclen];
-                            dctx.strbuff.push_str(sequence);
-                        }
-                    }
+            if tbs.top_line as usize + i < lines.len() {
+                if let Some(line) = lines.get(tbs.top_line as usize + i) {
+                    dctx.strbuff.push_str(line);
                 }
             }
-
+            dctx.strbuff
+                .set_displayed_width(dctx.wgt.size.width as i16 - 2); //, true);
+            term.move_to(my_coord.col as u16 + 1, my_coord.row as u16 + i as u16 + 1);
             term.write_str(dctx.strbuff.as_str());
-
-            // draw lines
-            for i in 0..lines_visible as usize {
-                dctx.strbuff.clear();
-
-                if tbs.top_line as usize + i < lines.len() {
-                    if let Some(line) = lines.get(tbs.top_line as usize + i) {
-                        dctx.strbuff.push_str(line);
-                    }
-                }
-                dctx.strbuff
-                    .set_displayed_width(dctx.wgt.size.width as i16 - 2); //, true);
-                term.move_to(my_coord.col as u16 + 1, my_coord.row as u16 + i as u16 + 1);
-                term.write_str(dctx.strbuff.as_str());
-            }
-
-            term.flush_buff();
         }
-    */
+
+        term.flush_buff();
+    }
 }
 
 fn draw_layer(dctx: &mut DrawCtx, _: &prop::Layer) {

@@ -101,10 +101,11 @@ impl Rect {
         }
     }
 
-    /// Creates a new rect object with coordinates and size set according to `c, r` and `w, h`
-    pub fn new(c: u8, r: u8, w: u8, h: u8) -> Rect {
+    /// Creates a new rect object with coordinates and size set
+    // according to `col, row` and `w, h`
+    pub fn new(col: u8, row: u8, w: u8, h: u8) -> Rect {
         Rect {
-            coord: Coord::new(c, r),
+            coord: Coord::new(col, row),
             size: Size::new(w, h),
         }
     }
@@ -200,16 +201,16 @@ impl FontMementoManual {
 
 /// Helper for automatic restoring terminal font attributes
 // https://doc.rust-lang.org/stable/rust-by-example/scope/lifetime/lifetime_coercion.html
-// lifetime of `a` is >= lifetime of `b`
-pub(crate) struct FontMemento<'b, 'a: 'b> {
+// lifetime of `term` is >= lifetime of `cell`
+pub(crate) struct FontMemento<'cell, 'term: 'cell> {
     fg_stack_len: i8,
     bg_stack_len: i8,
     at_stack_len: i8,
-    term: &'b std::cell::RefCell<&'a mut Term>,
+    term: &'cell std::cell::RefCell<&'term mut Term>,
 }
 
-impl<'b, 'a> FontMemento<'b, 'a> {
-    pub fn new(term: &'b std::cell::RefCell<&'a mut Term>) -> Self {
+impl<'cell, 'term> FontMemento<'cell, 'term> {
+    pub fn new(term: &'cell std::cell::RefCell<&'term mut Term>) -> Self {
         let fg;
         let bg;
         let at;
@@ -230,7 +231,7 @@ impl<'b, 'a> FontMemento<'b, 'a> {
     }
 }
 
-impl<'b, 'a> Drop for FontMemento<'b, 'a> {
+impl<'cell, 'term> Drop for FontMemento<'cell, 'term> {
     fn drop(&mut self) {
         let mut ref_term = self.term.borrow_mut();
         let new_fg = ref_term.stack_cl_fg.len() as i8 - self.fg_stack_len;

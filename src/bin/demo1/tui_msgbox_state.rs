@@ -7,7 +7,7 @@ use rtwins::common::*;
 use rtwins::input;
 use rtwins::input::*;
 use rtwins::utils;
-use rtwins::wgt::{self, WId, Widget, WndId, WIDGET_ID_NONE};
+use rtwins::wgt::{self, WId, Widget, WIDGET_ID_NONE};
 use rtwins::TERM;
 
 use super::tui_msgbox_def::idmb;
@@ -16,7 +16,6 @@ use super::tui_msgbox_def::idmb;
 
 /// State of all the DemoWindow widget dynamic properties
 pub struct MsgBoxState {
-    wnd_id: wgt::WndId,
     /// all window widgets, starting with the window widget itself
     widgets: &'static [wgt::Widget],
     /// widgets runtime state
@@ -38,14 +37,13 @@ pub struct MsgBoxState {
 }
 
 impl MsgBoxState {
-    pub fn new(widgets: &'static [Widget], coord: Coord) -> Self {
+    pub fn new(widgets: &'static [Widget]) -> Self {
         let wnd_state = MsgBoxState {
-            wnd_id: 0,
             widgets,
             rs: wgt::RuntimeStates::new(),
             focused_id: WIDGET_ID_NONE,
             invalidated: vec![],
-            coord,
+            coord: Coord::cdeflt(),
             on_button: Box::new(|_id: WId| {}),
             wnd_title: String::new(),
             wnd_message: String::new(),
@@ -115,9 +113,6 @@ impl rtwins::wgt::WindowState for MsgBoxState {
     }
 
     /** common state queries **/
-    fn get_window_id(&self) -> WndId {
-        self.wnd_id
-    }
 
     fn is_enabled(&self, wgt: &Widget) -> bool {
         self.rs.get_enabled_or_default(wgt.id)
@@ -176,10 +171,7 @@ impl rtwins::wgt::WindowState for MsgBoxState {
         }
     }
 
-    /* */
-    fn set_window_id(&mut self, id: WndId) {
-        self.wnd_id = id;
-    }
+    /* requests */
 
     fn invalidate_many(&mut self, wids: &[WId]) {
         self.invalidated.extend(wids.iter());
