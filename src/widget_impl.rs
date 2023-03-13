@@ -1345,6 +1345,8 @@ fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
 // ---------------------------------------------------------------------------------------------- //
 
 fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
+    // FIXME: for popup window, the position is taken from properties, instead of using get_window_coord()
+
     if let InputEvent::Mouse(ref mouse) = ii.evnt {
         if mouse.evt == MouseEvent::ButtonGoBack || mouse.evt == MouseEvent::ButtonGoForward {
             if let Some(main_pg_ctrl) = find_main_pg_control(ws) {

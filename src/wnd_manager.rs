@@ -5,6 +5,7 @@ use crate::TERM;
 
 // ---------------------------------------------------------------------------------------------- //
 
+// pub trait WindowManager<IT> where IT: Iterator,
 pub trait WindowManager {
     /// Returns any window state
     fn get_ref(&self, wnd_idx: usize) -> Option<&dyn WindowState>;
@@ -12,11 +13,13 @@ pub trait WindowManager {
     /// Returns any window mutable state
     fn get_mut(&mut self, wnd_idx: usize) -> Option<&mut dyn WindowState>;
 
-    ///
-    fn get_visible(&self) -> Vec<usize>;
+    /// Returns vector of visible windows
+    fn get_visible(&self) -> &[usize];
 
-    ///
+    /// Returns mutable vector of visible windows
     fn get_visible_mut(&mut self) -> &mut Vec<usize>;
+
+    // fn iter(&self) -> IT;
 
     /// Show the window, push on the top (if not main wnd)
     fn show(&mut self, wnd_idx: usize) {
@@ -136,9 +139,8 @@ pub trait WindowManager {
     /// Redraw windows from bottom to top
     fn draw_all(&mut self) {
         let mut term_guard = TERM.try_write().unwrap();
-        let visible = self.get_visible();
+        let visible = self.get_visible().to_owned();
 
-        // TODO: impl Iter for WndState
         for wnd_idx in 0..99 {
             if let Some(ws) = self.get_mut(wnd_idx) {
                 if visible.contains(&wnd_idx) {

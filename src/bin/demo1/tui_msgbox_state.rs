@@ -6,10 +6,15 @@
 use rtwins::common::*;
 use rtwins::input;
 use rtwins::input::*;
+use rtwins::tr_err;
 use rtwins::utils;
 use rtwins::wgt::{self, WId, Widget, WIDGET_ID_NONE};
 use rtwins::TERM;
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use super::tui_commands::*;
 use super::tui_msgbox_def::idmb;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -24,7 +29,7 @@ pub struct MsgBoxState {
     focused_id: WId,
     /// list of widgets to redraw
     invalidated: Vec<WId>,
-    //
+    // popup coordinates, centered over main window
     coord: Coord,
     /// button click handler
     on_button: Box<dyn Fn(WId) + Send + Sync>,
@@ -34,10 +39,12 @@ pub struct MsgBoxState {
     wnd_message: String,
     /// visible buttons
     buttons: &'static str,
+    // app-wide commands queue
+    cmds: Rc<RefCell<CommandsQueue>>,
 }
 
 impl MsgBoxState {
-    pub fn new(widgets: &'static [Widget]) -> Self {
+    pub fn new(widgets: &'static [Widget], cmds: Rc<RefCell<CommandsQueue>>) -> Self {
         let wnd_state = MsgBoxState {
             widgets,
             rs: wgt::RuntimeStates::new(),
@@ -48,6 +55,7 @@ impl MsgBoxState {
             wnd_title: String::new(),
             wnd_message: String::new(),
             buttons: "ynoc",
+            cmds,
         };
 
         wnd_state
@@ -69,8 +77,8 @@ impl MsgBoxState {
         &mut self,
         title: String,
         message: String,
-        on_button: Box<dyn Fn(WId) + Send + Sync>,
         buttons: &'static str,
+        on_button: Box<dyn Fn(WId) + Send + Sync>,
     ) {
         self.wnd_title = title;
         if let Some(lbl) = wgt::find_by_id(self.widgets, idmb::LBL_MSG) {
@@ -78,10 +86,8 @@ impl MsgBoxState {
                 .take()
                 .join("\n");
         }
-        self.on_button = on_button;
         self.buttons = buttons;
-
-        // twins::glob::wMngr.show(getWndPopup());
+        self.on_button = on_button;
     }
 }
 
@@ -93,7 +99,11 @@ impl rtwins::wgt::WindowState for MsgBoxState {
     fn on_button_click(&mut self, wgt: &Widget, ii: &InputInfo) {
         rtwins::tr_debug!("BTN_CLICK");
         self.on_button.as_ref()(wgt.id);
-        // twins::glob::wMngr.hide(this);
+
+        match self.cmds.try_borrow_mut() {
+            Ok(ref mut cmds) => cmds.push(Command::HidePopup),
+            Err(e) => tr_err!("Cannot borrow commands"),
+        }
     }
 
     fn on_button_key(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
@@ -187,12 +197,12 @@ impl rtwins::wgt::WindowState for MsgBoxState {
         }
     }
 
-    fn invalidate_clear(&mut self) {
+    fn invalidated_clear(&mut self) {
         self.invalidated.clear();
     }
 
-    fn get_invalidated(&mut self) -> Vec<WId> {
-        let mut ret = vec![];
+    fn take_invalidated(&mut self) -> Vec<WId> {
+        let mut ret = Vec::with_capacity(2);
         std::mem::swap(&mut self.invalidated, &mut ret);
         ret
     }

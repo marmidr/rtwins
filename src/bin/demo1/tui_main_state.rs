@@ -7,65 +7,19 @@ use rtwins::common::*;
 use rtwins::esc;
 use rtwins::input::*;
 use rtwins::string_ext::StringExt;
+use rtwins::tr_err;
+use rtwins::tr_info;
 use rtwins::utils;
 use rtwins::wgt::{self, WId, Widget, WIDGET_ID_NONE};
 use rtwins::Term;
 use rtwins::TERM;
 
 use std::cell::RefCell;
+use std::rc::Rc;
 use std::sync::Arc;
 
+use super::tui_commands::*;
 use super::tui_main_def::id;
-
-// ---------------------------------------------------------------------------------------------- //
-
-/*
-use std::collections::vec_deque::VecDeque;
-
-pub enum Commands {
-    Func(Box<dyn FnMut() + Send>),
-    SelPage(WId, WId),
-}
-
-/// Deferred commands
-#[derive(Default)]
-pub struct CommandsQueue {
-    commands: VecDeque<Commands>,
-}
-
-impl CommandsQueue {
-    /// Pushes a new command on the queue
-    pub fn push(&mut self, cmd: Commands) {
-        self.commands.push_back(cmd);
-    }
-
-    /// Executes all commands
-    pub fn run_all(&mut self, ws: &mut MainWndState) {
-        for cmd in self.commands.iter_mut() {
-            match cmd {
-                Commands::Func(ref mut f) => {
-                    f();
-                }
-                Commands::SelPage(pgcontrol_id, page_id) => {
-                    rtwins::wgt::pagectrl_select_page(ws, *pgcontrol_id, *page_id);
-                }
-            }
-        }
-
-        self.commands.clear();
-    }
-
-    /// Number of commands waiting to be run
-    pub fn len(&self) -> usize {
-        self.commands.len()
-    }
-
-    /// Clears the command queue
-    pub fn clear(&mut self) {
-        self.commands.clear();
-    }
-}
-*/
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -90,10 +44,12 @@ pub struct MainWndState {
     tbx_text: String,
     tbx_wide_lines: utils::StringListRc,
     tbx_narrow_lines: utils::StringListRc,
+    // app-wide commands queue
+    cmds: Rc<RefCell<CommandsQueue>>,
 }
 
 impl MainWndState {
-    pub fn new(widgets: &'static [Widget]) -> Self {
+    pub fn new(widgets: &'static [Widget], cmds: Rc<RefCell<CommandsQueue>>) -> Self {
         let mut wnd_state = MainWndState {
             widgets,
             rs: wgt::RuntimeStates::new(),
@@ -106,6 +62,7 @@ impl MainWndState {
             tbx_text: String::with_capacity(400),
             tbx_wide_lines: Arc::new(RefCell::new(vec![])),
             tbx_narrow_lines: Arc::new(RefCell::new(vec![])),
+            cmds,
         };
 
         // initial tsate of focused id for each page
@@ -235,17 +192,29 @@ impl rtwins::wgt::WindowState for MainWndState {
         rtwins::tr_debug!("BTN_CLICK");
 
         if wgt.id == id::BTN_POPUP {
-            /* TODO:
-            showPopup("Lorem Titlum",
-                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. "
-                "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-                [](twins::WID btnID) { TWINS_LOG_D(ESC_BG_DarkGreen "Choice: %d" ESC_BG_DEFAULT, btnID); },
-                "ync"
-            );
-            */
+            match self.cmds.try_borrow_mut() {
+                Ok(ref mut cmds) => {
+                    cmds.push(
+                        Command::ShowPopup {
+                            title: "Lorem Titlum".to_owned(),
+                            message: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod \
+                                tempor incididunt ut labore et dolore magna aliqua. \
+                                Ut enim ad minim veniam, quis nostrud exercitation ullamco \
+                                laboris nisi ut aliquip ex ea commodo consequat.".to_owned(),
+                            buttons: "ync",
+                            on_button: Box::new(move |btn_id| {
+                                tr_info!("MsgBox callback btn id: {}", btn_id);
+                            }),
+                        }
+                    );
+                }
+                Err(e) => {
+                    tr_err!("Cannot borrow the commands");
+                }
+            }
 
+            // panel shall remain hidden, as it lays on another page:
             self.invalidate(id::PANEL_EDT);
-            // panel shall remain hidden, as it lays on another page
         }
 
         if wgt.id == id::BTN_YES {
@@ -689,13 +658,12 @@ impl rtwins::wgt::WindowState for MainWndState {
         }
     }
 
-    fn invalidate_clear(&mut self) {
+    fn invalidated_clear(&mut self) {
         self.invalidated.clear();
     }
 
-    fn get_invalidated(&mut self) -> Vec<WId> {
-        let mut ret = vec![];
-        ret.reserve(8);
+    fn take_invalidated(&mut self) -> Vec<WId> {
+        let mut ret = Vec::with_capacity(4);
         std::mem::swap(&mut self.invalidated, &mut ret);
         ret
     }

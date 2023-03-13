@@ -420,13 +420,13 @@ impl Term {
     /// Draw widgets marked as invalidated; flushes the buffer.
     /// Clears the invalidated widgets list
     pub fn draw_invalidated(&mut self, ws: &mut dyn WindowState) {
-        let wids = ws.get_invalidated();
+        let wids = ws.take_invalidated();
         wgt::draw_widgets(self, ws, &wids[..]);
     }
 
     /// Draw entire window; flushes the buffer
     pub fn draw_wnd(&mut self, ws: &mut dyn WindowState) {
         wgt::draw_widgets(self, ws, &[WIDGET_ID_ALL]);
-        ws.invalidate_clear();
+        ws.invalidated_clear();
     }
 }

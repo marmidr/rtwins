@@ -2,13 +2,18 @@
 
 use rtwins::wgt::WindowState;
 use rtwins::wnd_manager::WindowManager;
-use rtwins::TERM;
 use rtwins::{tetrary, wgt};
+use rtwins::{tr_info, TERM};
 
+use std::cell::RefCell;
 use std::io::Write;
+use std::rc::Rc;
+
+use crate::tui_commands::Command;
 
 // https://doc.rust-lang.org/cargo/guide/project-layout.html
 mod tui_colors;
+mod tui_commands;
 mod tui_main_def;
 mod tui_main_state;
 mod tui_msgbox_def;
@@ -88,17 +93,28 @@ impl rtwins::pal::Pal for DemoPal {
 // ---------------------------------------------------------------------------------------------- //
 
 struct WndMngr {
+    cmdque: Rc<RefCell<tui_commands::CommandsQueue>>,
+    visible: Vec<usize>,
     main: tui_main_state::MainWndState,
     msgbox: tui_msgbox_state::MsgBoxState,
-    visible: Vec<usize>,
 }
 
 impl WndMngr {
     fn new() -> Self {
+        let cmdque = Rc::new(RefCell::new(tui_commands::CommandsQueue::default()));
+
         let mut ret = Self {
-            main: tui_main_state::MainWndState::new(&tui_main_def::WND_MAIN_WGTS[..]),
-            msgbox: tui_msgbox_state::MsgBoxState::new(&tui_msgbox_def::WND_MSGBOX_WGTS[..]),
+            cmdque: Rc::clone(&cmdque),
             visible: vec![],
+            // all UI windows:
+            main: tui_main_state::MainWndState::new(
+                &tui_main_def::WND_MAIN_WGTS[..],
+                Rc::clone(&cmdque),
+            ),
+            msgbox: tui_msgbox_state::MsgBoxState::new(
+                &tui_msgbox_def::WND_MSGBOX_WGTS[..],
+                Rc::clone(&cmdque),
+            ),
         };
 
         ret.msgbox
@@ -106,6 +122,32 @@ impl WndMngr {
         ret
     }
 }
+
+// struct WndMngrIter<'wm> {
+//     wm: &'wm WndMngr,
+//     iter_idx: usize,
+// }
+
+// impl<'wm> WndMngrIter<'wm> {
+//     fn new(wm: &'wm WndMngr) -> Self {
+//         WndMngrIter{wm, iter_idx: 0}
+//     }
+// }
+
+// impl<'wm> Iterator for WndMngrIter<'wm> {
+//     type Item = &'wm dyn WindowState;
+
+//     fn next(&mut self) -> Option<Self::Item> {
+//         let result= match self.iter_idx {
+//             0 => Some(&self.wm.main as &dyn WindowState),
+//             1 => Some(&self.wm.msgbox as &dyn WindowState),
+//             _ => None,
+//         };
+
+//         self.iter_idx += 1;
+//         result
+//     }
+// }
 
 impl WindowManager for WndMngr {
     fn get_ref(&self, wnd_idx: usize) -> Option<&dyn WindowState> {
@@ -124,14 +166,19 @@ impl WindowManager for WndMngr {
         }
     }
 
-    fn get_visible(&self) -> Vec<usize> {
-        self.visible.clone()
+    #[inline]
+    fn get_visible(&self) -> &[usize] {
+        &self.visible[..]
     }
 
     #[inline]
     fn get_visible_mut(&mut self) -> &mut Vec<usize> {
         &mut self.visible
     }
+
+    // fn iter<'a>(&'a self) -> WndMngrIter<'a> {
+    //     WndMngrIter::new(self)
+    // }
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -214,7 +261,7 @@ fn main() {
                 use rtwins::input::InputEvent;
                 use rtwins::input::Key;
 
-                // pass key to top-window
+                // pass the input event to the top-window
                 let _key_handled = wgt::process_input(wmngr.get_top_mut().unwrap(), &ii);
 
                 // input debug info
@@ -299,6 +346,32 @@ fn main() {
                                 *key == Key::F10,
                             );
                             main_ws.invalidate(tui_main_def::id::PG_CONTROL);
+                        }
+                    }
+                }
+
+                // process the command queue
+                {
+                    let cmdque = wmngr.cmdque.borrow_mut().take_commands();
+
+                    if let Some(cmdque) = cmdque {
+                        for cmd in cmdque.into_iter() {
+                            match cmd {
+                                Command::ShowPopup {
+                                    title,
+                                    message,
+                                    buttons,
+                                    on_button,
+                                } => {
+                                    tr_info!("Command: ShowPopup");
+                                    wmngr.msgbox.show(title, message, buttons, on_button);
+                                    wmngr.show(1);
+                                }
+                                Command::HidePopup => {
+                                    tr_info!("Command: HidePopup");
+                                    wmngr.hide(1);
+                                }
+                            }
                         }
                     }
                 }
