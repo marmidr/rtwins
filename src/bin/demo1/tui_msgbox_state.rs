@@ -6,10 +6,10 @@
 use rtwins::common::*;
 use rtwins::input;
 use rtwins::input::*;
-use rtwins::tr_err;
 use rtwins::utils;
 use rtwins::wgt::{self, WId, Widget, WIDGET_ID_NONE};
 use rtwins::TERM;
+use rtwins::*;
 
 use std::cell::RefCell;
 use std::rc::Rc;

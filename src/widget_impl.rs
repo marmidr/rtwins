@@ -159,7 +159,7 @@ pub fn find_at(
         let mut stop_searching = true;
         let mut wgt_screen_rect = Rect::cdeflt();
 
-        wgt_screen_rect.coord = get_screen_coord(wgt);
+        wgt_screen_rect.coord = get_screen_coord(ws, wgt);
         wgt_screen_rect.size = wgt.size;
 
         // eprintln!("{1:2}:{0:} at {2:2}:{3:-2}", wgt.prop, wgt.id, wgt_screen_rect.coord.col, wgt_screen_rect.coord.row);
@@ -234,22 +234,23 @@ pub fn find_at(
     found_wgt
 }
 
-pub fn get_screen_coord(wgt: &Widget) -> Coord {
-    wgt.iter_parents()
-        .skip(1)
-        .fold(wgt.coord, |mut coord, parent| {
-            if let Property::Window(ref prop) = parent.prop {
-                if prop.is_popup {
-                    // TODO: for popups must be centered on parent window
-                }
-                coord = coord + parent.coord;
-            }
-            else {
-                coord = coord + parent.coord;
-            }
+pub fn get_screen_coord(ws: &mut dyn WindowState, wgt: &Widget) -> Coord {
+    if matches!(wgt.prop, Property::Window(_)) {
+        return ws.get_window_coord();
+    }
 
-            if let Property::PageCtrl(ref prop) = parent.prop {
-                coord.col += prop.tab_width;
+    wgt.iter_parents()
+        .skip(1) // because iterator starts at the widget itself
+        .fold(wgt.coord, |mut coord, parent| {
+            match parent.prop {
+                Property::Window(ref prop) => {
+                    coord += ws.get_window_coord();
+                }
+                Property::PageCtrl(ref prop) => {
+                    coord += parent.coord;
+                    coord.col += prop.tab_width;
+                }
+                _ => coord += parent.coord,
             }
 
             coord
@@ -258,7 +259,7 @@ pub fn get_screen_coord(wgt: &Widget) -> Coord {
 
 /// Move cursor to the best position for given type of the widget
 pub fn set_cursor_at(term: &mut Term, ws: &mut dyn WindowState, wgt: &Widget) {
-    let mut coord = get_screen_coord(wgt);
+    let mut coord = get_screen_coord(ws, wgt);
 
     match wgt.prop {
         Property::TextEdit(ref _p) => {
@@ -1345,8 +1346,6 @@ fn process_key_text_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) 
 // ---------------------------------------------------------------------------------------------- //
 
 fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
-    // FIXME: for popup window, the position is taken from properties, instead of using get_window_coord()
-
     if let InputEvent::Mouse(ref mouse) = ii.evnt {
         if mouse.evt == MouseEvent::ButtonGoBack || mouse.evt == MouseEvent::ButtonGoForward {
             if let Some(main_pg_ctrl) = find_main_pg_control(ws) {
@@ -1398,14 +1397,14 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
                 if let Property::ComboBox(ref prop) = cbx.prop {
                     let mut dropdownlist_rct = Rect::cdeflt();
                     // rect includes the cbx itself
-                    dropdownlist_rct.coord = get_screen_coord(cbx);
+                    dropdownlist_rct.coord = get_screen_coord(ws, cbx);
                     dropdownlist_rct.size.width = cbx.size.width;
                     dropdownlist_rct.size.height = prop.drop_down_size + 1;
 
                     if dropdownlist_rct.is_point_within(mouse.col, mouse.row) {
                         // yes -> replace data for processing with g_ds.pDropDownCombo
                         wgt = cbx;
-                        rct.coord = get_screen_coord(wgt);
+                        rct.coord = get_screen_coord(ws, wgt);
                         rct.size = wgt.size;
                     }
                     else if mouse.evt == MouseEvent::ButtonLeft {

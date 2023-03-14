@@ -33,6 +33,13 @@ impl std::ops::Add for Coord {
     }
 }
 
+impl std::ops::AddAssign for Coord {
+    fn add_assign(&mut self, rhs: Self) {
+        self.col = self.col.saturating_add(rhs.col);
+        self.row = self.row.saturating_add(rhs.row);
+    }
+}
+
 impl std::ops::Sub for Coord {
     type Output = Self;
     fn sub(self, rhs: Coord) -> Coord {

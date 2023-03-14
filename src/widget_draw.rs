@@ -68,12 +68,13 @@ pub fn draw_widgets(term: &mut Term, ws: &mut dyn WindowState, wids: &[WId]) {
                     term.push_cl_bg(get_widget_bg_color(wgt));
 
                     {
-                        let wgt_parent = wgt::get_parent(wgt);
+                        let parent_coord = wgt::get_screen_coord(ws, wgt::get_parent(wgt));
+
                         let mut dctx = DrawCtx {
                             term_cell: RefCell::new(term),
                             wgt,
                             wnd_state: ws,
-                            parent_coord: wgt::get_screen_coord(wgt_parent),
+                            parent_coord,
                             wnd_widgets,
                             strbuff: String::with_capacity(200),
                         };

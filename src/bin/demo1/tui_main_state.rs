@@ -7,12 +7,11 @@ use rtwins::common::*;
 use rtwins::esc;
 use rtwins::input::*;
 use rtwins::string_ext::StringExt;
-use rtwins::tr_err;
-use rtwins::tr_info;
 use rtwins::utils;
 use rtwins::wgt::{self, WId, Widget, WIDGET_ID_NONE};
 use rtwins::Term;
 use rtwins::TERM;
+use rtwins::*;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -341,7 +340,7 @@ impl rtwins::wgt::WindowState for MainWndState {
     }
 
     fn on_custom_widget_draw(&mut self, wgt: &Widget, term_cell: &std::cell::RefCell<&mut Term>) {
-        let coord = rtwins::wgt::get_screen_coord(wgt);
+        let coord = rtwins::wgt::get_screen_coord(self, wgt);
         let sz = &wgt.size;
         let mut term = term_cell.borrow_mut();
 

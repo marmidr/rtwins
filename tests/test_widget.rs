@@ -178,7 +178,7 @@ const WINDOW_TEST: Widget = Widget {
     ]
 };
 
-const WND_TEST_ARRAY: [Widget; rtwins::wgt::transform::tree_wgt_count(&WINDOW_TEST)] =
+const WND_TEST_WGTS: [Widget; rtwins::wgt::transform::tree_wgt_count(&WINDOW_TEST)] =
     rtwins::wgt::transform::tree_to_array(&WINDOW_TEST);
 
 struct WndTestState {
@@ -240,6 +240,7 @@ impl WindowState for WndTestState {
 
     fn get_window_coord(&mut self) -> Coord {
         if let Some(ref w) = self.widgets.first() {
+            // return window coord
             w.coord
         }
         else {
@@ -285,15 +286,15 @@ fn point_within() {
 fn get_parent() {
     // window parent is the window itself
     {
-        let wgt = &WND_TEST_ARRAY[0];
+        let wgt = &WND_TEST_WGTS[0];
         let par = wgt::get_parent(wgt);
         assert!(par.id == wgt.id);
     }
 
     // panel parent is the window
     {
-        let wnd = &WND_TEST_ARRAY[0];
-        let wgt = wgt::find_by_id(&WND_TEST_ARRAY, Id::PgControl.into());
+        let wnd = &WND_TEST_WGTS[0];
+        let wgt = wgt::find_by_id(&WND_TEST_WGTS, Id::PgControl.into());
         assert!(wgt.is_some());
         let par = wgt::get_parent(wgt.unwrap());
         assert!(par.id == wnd.id);
@@ -301,7 +302,7 @@ fn get_parent() {
 
     // try to find invalid widget
     {
-        let wgt = wgt::find_by_id(&WND_TEST_ARRAY, Id::NotExistingWgt.into());
+        let wgt = wgt::find_by_id(&WND_TEST_WGTS, Id::NotExistingWgt.into());
         assert!(wgt.is_none());
     }
 }
@@ -310,7 +311,7 @@ fn get_parent() {
 fn widget_iter() {
     // iterate over panel
     {
-        let pnl_vers = wgt::find_by_id(&WND_TEST_ARRAY, Id::PanelVersions.into());
+        let pnl_vers = wgt::find_by_id(&WND_TEST_WGTS, Id::PanelVersions.into());
         assert!(pnl_vers.is_some());
         let pnl_vers = pnl_vers.unwrap();
 
@@ -323,7 +324,7 @@ fn widget_iter() {
 
     // iterate over ... checkbox
     {
-        let chbx = wgt::find_by_id(&WND_TEST_ARRAY, Id::ChbxEnbl.into());
+        let chbx = wgt::find_by_id(&WND_TEST_WGTS, Id::ChbxEnbl.into());
         assert!(chbx.is_some());
         assert_eq!(0, wgt::ChildrenIter::new(chbx.unwrap()).count());
     }
@@ -331,17 +332,18 @@ fn widget_iter() {
 
 #[test]
 fn screen_coord() {
-    let lbl = wgt::find_by_id(&WND_TEST_ARRAY, Id::LabelAbout.into());
+    let mut ws = WndTestState::new(&WND_TEST_WGTS);
+    let lbl = wgt::find_by_id(&WND_TEST_WGTS, Id::LabelAbout.into());
     assert!(lbl.is_some());
-    let coord = wgt::get_screen_coord(lbl.unwrap());
+    let coord = wgt::get_screen_coord(&mut ws, lbl.unwrap());
     assert_eq!(33, coord.col);
     assert_eq!(7, coord.row);
 }
 
 #[test]
 fn is_visible() {
-    let mut ws = WndTestState::new(&WND_TEST_ARRAY);
-    let lbl = wgt::find_by_id(&WND_TEST_ARRAY, Id::LabelAbout.into());
+    let mut ws = WndTestState::new(&WND_TEST_WGTS);
+    let lbl = wgt::find_by_id(&WND_TEST_WGTS, Id::LabelAbout.into());
     assert!(lbl.is_some());
 
     assert!(!wgt::is_visible(&mut ws, lbl.unwrap()));
@@ -353,8 +355,8 @@ fn is_visible() {
 
 #[test]
 fn is_enabled() {
-    let mut ws = WndTestState::new(&WND_TEST_ARRAY);
-    let lbl = wgt::find_by_id(&WND_TEST_ARRAY, Id::LabelAbout.into());
+    let mut ws = WndTestState::new(&WND_TEST_WGTS);
+    let lbl = wgt::find_by_id(&WND_TEST_WGTS, Id::LabelAbout.into());
     assert!(lbl.is_some());
 
     assert!(!wgt::is_enabled(&mut ws, lbl.unwrap()));
@@ -366,7 +368,7 @@ fn is_enabled() {
 
 #[test]
 fn widget_at() {
-    let mut ws = WndTestState::new(&WND_TEST_ARRAY);
+    let mut ws = WndTestState::new(&WND_TEST_WGTS);
     ws.wnd_visible = true;
     let mut wgt_r = Rect::cdeflt();
 
@@ -386,9 +388,9 @@ fn widget_at() {
 
     // origin of button - this one is always visible
     {
-        let btn = wgt::find_by_id(&WND_TEST_ARRAY, Id::BtnYes.into());
+        let btn = wgt::find_by_id(&WND_TEST_WGTS, Id::BtnYes.into());
         assert!(btn.is_some());
-        let btn_coord = wgt::get_screen_coord(btn.unwrap());
+        let btn_coord = wgt::get_screen_coord(&mut ws, btn.unwrap());
         assert_eq!(60, btn_coord.col);
         assert_eq!(10, btn_coord.row);
 
@@ -405,7 +407,7 @@ fn widget_at() {
 fn page_idx() {
     // correct Page 0
     {
-        let page = wgt::find_by_id(&WND_TEST_ARRAY, Id::PageVer.into());
+        let page = wgt::find_by_id(&WND_TEST_WGTS, Id::PageVer.into());
         assert!(page.is_some());
         let idx = wgt::page_page_idx(&page.unwrap());
         assert!(idx.is_some());
@@ -414,7 +416,7 @@ fn page_idx() {
 
     // correct Page 1
     {
-        let page = wgt::find_by_id(&WND_TEST_ARRAY, Id::PageServ.into());
+        let page = wgt::find_by_id(&WND_TEST_WGTS, Id::PageServ.into());
         assert!(page.is_some());
         let idx = wgt::page_page_idx(&page.unwrap());
         assert!(idx.is_some());
@@ -423,7 +425,7 @@ fn page_idx() {
 
     // wrong widget type
     {
-        let btn = wgt::find_by_id(&WND_TEST_ARRAY, Id::BtnYes.into());
+        let btn = wgt::find_by_id(&WND_TEST_WGTS, Id::BtnYes.into());
         assert!(btn.is_some());
         let idx = wgt::page_page_idx(&btn.unwrap());
         assert!(idx.is_none());
@@ -434,7 +436,7 @@ fn page_idx() {
 fn page_wid() {
     // correct Page 1
     {
-        let pgctrl = wgt::find_by_id(&WND_TEST_ARRAY, Id::PgControl.into());
+        let pgctrl = wgt::find_by_id(&WND_TEST_WGTS, Id::PgControl.into());
         assert!(pgctrl.is_some());
         let pgctrl = pgctrl.unwrap();
         let wid = wgt::pagectrl_page_wid(&pgctrl, 1);
@@ -443,7 +445,7 @@ fn page_wid() {
 
     // incorrect Page 7
     {
-        let pgctrl = wgt::find_by_id(&WND_TEST_ARRAY, Id::PgControl.into());
+        let pgctrl = wgt::find_by_id(&WND_TEST_WGTS, Id::PgControl.into());
         assert!(pgctrl.is_some());
         let pgctrl = pgctrl.unwrap();
         let wid = wgt::pagectrl_page_wid(&pgctrl, 7);
@@ -452,7 +454,7 @@ fn page_wid() {
 
     // wrong widget type
     {
-        let btn = wgt::find_by_id(&WND_TEST_ARRAY, Id::BtnYes.into());
+        let btn = wgt::find_by_id(&WND_TEST_WGTS, Id::BtnYes.into());
         assert!(btn.is_some());
         let btn = btn.unwrap();
         let wid = wgt::pagectrl_page_wid(&btn, 0);
@@ -462,8 +464,8 @@ fn page_wid() {
 
 #[test]
 fn pagectrl_select_next() {
-    let mut ws = WndTestState::new(&WND_TEST_ARRAY);
-    let pgctrl = wgt::find_by_id(&WND_TEST_ARRAY, Id::PgControl.into());
+    let mut ws = WndTestState::new(&WND_TEST_WGTS);
+    let pgctrl = wgt::find_by_id(&WND_TEST_WGTS, Id::PgControl.into());
     assert!(pgctrl.is_some());
     let pgctrl = pgctrl.unwrap();
 
@@ -485,8 +487,8 @@ fn pagectrl_select_next() {
 
 #[test]
 fn pagectrl_select_page() {
-    let mut ws = WndTestState::new(&WND_TEST_ARRAY);
-    let pgctrl = wgt::find_by_id(&WND_TEST_ARRAY, Id::PgControl.into());
+    let mut ws = WndTestState::new(&WND_TEST_WGTS);
+    let pgctrl = wgt::find_by_id(&WND_TEST_WGTS, Id::PgControl.into());
     assert!(pgctrl.is_some());
     let pgctrl = pgctrl.unwrap();
 

@@ -1,6 +1,5 @@
 target/
 .vscode/bookmarks*
-Cargo.lock
 perf*
 flamegraph*
 *.html
