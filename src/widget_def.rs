@@ -28,30 +28,30 @@ pub const WIDGET_ID_ALL: WId = WId::MAX;
 macro_rules! generate_ids {
     // 5+ items
     // expanding 5 items at a time, the recursion limit of 255 is unlikely to occure
-    ($init:expr;  $id1:ident $id2:ident $id3:ident $id4:ident $id5:ident $($tail:tt)+) => {
-        pub const $id1: WId = $init;
-        pub const $id2: WId = $init+1;
-        pub const $id3: WId = $init+2;
-        pub const $id4: WId = $init+3;
-        pub const $id5: WId = $init+4;
-        $crate::generate_ids!{$init+5; $($tail)+}
+    ($INIT: expr;  $ID1: ident $ID2: ident $ID3: ident $ID4: ident $ID5: ident $($TAIL: tt)+) => {
+        pub const $ID1: WId = $INIT;
+        pub const $ID2: WId = $INIT+1;
+        pub const $ID3: WId = $INIT+2;
+        pub const $ID4: WId = $INIT+3;
+        pub const $ID5: WId = $INIT+4;
+        $crate::generate_ids!{$INIT+5; $($TAIL)+}
     };
 
     // 2+ items
-    ($init:expr; $id:ident $($tail:tt)+) => {
-        pub const $id: WId = $init;
-        $crate::generate_ids!{$init+1; $($tail)+}
+    ($INIT: expr; $ID: ident $($TAIL: tt)+) => {
+        pub const $ID: WId = $INIT;
+        $crate::generate_ids!{$INIT+1; $($TAIL)+}
     };
 
     // 1 item - final
-    ($init:expr; $id:ident) => {
-        pub const $id: WId = $init;
+    ($INIT: expr; $ID: ident) => {
+        pub const $ID: WId = $INIT;
     };
 
     // public matcher without initializer
-    ($($ids:tt)+) => {
+    ($($IDS: tt)+) => {
         // ID's must be > WIDGET_ID_NONE
-        $crate::generate_ids!{WIDGET_ID_NONE + 1; $($ids)+}
+        $crate::generate_ids!{WIDGET_ID_NONE + 1; $($IDS)+}
     };
 }
 
@@ -71,24 +71,12 @@ pub mod prop {
         pub is_popup: bool,
     }
 
-    impl Window {
-        pub const fn into(self) -> super::Property {
-            super::Property::Window(self)
-        }
-    }
-
     #[derive(Copy, Clone)]
     pub struct Panel {
         pub title: &'static str,
         pub fg_color: ColorFg,
         pub bg_color: ColorBg,
         pub no_frame: bool,
-    }
-
-    impl Panel {
-        pub const fn into(self) -> super::Property {
-            super::Property::Panel(self)
-        }
     }
 
     #[derive(Copy, Clone)]
@@ -98,34 +86,16 @@ pub mod prop {
         pub bg_color: ColorBg,
     }
 
-    impl Label {
-        pub const fn into(self) -> super::Property {
-            super::Property::Label(self)
-        }
-    }
-
     #[derive(Copy, Clone)]
     pub struct TextEdit {
         pub fg_color: ColorFg,
         pub bg_color: ColorBg,
     }
 
-    impl TextEdit {
-        pub const fn into(self) -> super::Property {
-            super::Property::TextEdit(self)
-        }
-    }
-
     #[derive(Copy, Clone)]
     pub struct CheckBox {
         pub text: &'static str,
         pub fg_color: ColorFg,
-    }
-
-    impl CheckBox {
-        pub const fn into(self) -> super::Property {
-            super::Property::CheckBox(self)
-        }
     }
 
     #[derive(Copy, Clone)]
@@ -136,24 +106,12 @@ pub mod prop {
         pub radio_id: i16,
     }
 
-    impl Radio {
-        pub const fn into(self) -> super::Property {
-            super::Property::Radio(self)
-        }
-    }
-
     #[derive(Copy, Clone)]
     pub struct Button {
         pub text: &'static str,
         pub fg_color: ColorFg,
         pub bg_color: ColorBg,
         pub style: ButtonStyle,
-    }
-
-    impl Button {
-        pub const fn into(self) -> super::Property {
-            super::Property::Button(self)
-        }
     }
 
     #[derive(Copy, Clone)]
@@ -164,22 +122,10 @@ pub mod prop {
         pub bg_color_on: ColorBg,
     }
 
-    impl Led {
-        pub const fn into(self) -> super::Property {
-            super::Property::Led(self)
-        }
-    }
-
     #[derive(Copy, Clone)]
     pub struct PageCtrl {
         pub tab_width: u8,
         pub vert_offs: u8,
-    }
-
-    impl PageCtrl {
-        pub const fn into(self) -> super::Property {
-            super::Property::PageCtrl(self)
-        }
     }
 
     #[derive(Copy, Clone)]
@@ -188,22 +134,10 @@ pub mod prop {
         pub fg_color: ColorFg,
     }
 
-    impl Page {
-        pub const fn into(self) -> super::Property {
-            super::Property::Page(self)
-        }
-    }
-
     #[derive(Copy, Clone)]
     pub struct ProgressBar {
         pub fg_color: ColorFg,
         pub style: PgBarStyle,
-    }
-
-    impl ProgressBar {
-        pub const fn into(self) -> super::Property {
-            super::Property::ProgressBar(self)
-        }
     }
 
     #[derive(Copy, Clone)]
@@ -213,12 +147,6 @@ pub mod prop {
         pub no_frame: bool,
     }
 
-    impl ListBox {
-        pub const fn into(self) -> super::Property {
-            super::Property::ListBox(self)
-        }
-    }
-
     #[derive(Copy, Clone)]
     pub struct ComboBox {
         pub fg_color: ColorFg,
@@ -226,20 +154,8 @@ pub mod prop {
         pub drop_down_size: u8,
     }
 
-    impl ComboBox {
-        pub const fn into(self) -> super::Property {
-            super::Property::ComboBox(self)
-        }
-    }
-
     #[derive(Copy, Clone)]
     pub struct CustomWgt {}
-
-    impl CustomWgt {
-        pub const fn into(self) -> super::Property {
-            super::Property::CustomWgt(self)
-        }
-    }
 
     #[derive(Copy, Clone)]
     pub struct TextBox {
@@ -247,19 +163,25 @@ pub mod prop {
         pub bg_color: ColorBg,
     }
 
-    impl TextBox {
-        pub const fn into(self) -> super::Property {
-            super::Property::TextBox(self)
-        }
-    }
-
     #[derive(Copy, Clone)]
     pub struct Layer {}
 
-    impl Layer {
-        pub const fn into(self) -> super::Property {
-            super::Property::Layer(self)
-        }
+    // Implements into() for all properties
+    macro_rules! impl_into {
+        ($($WGT: ident)*) => (
+            $(
+                impl $WGT {
+                    pub const fn into(self) -> super::Property {
+                        super::Property::$WGT(self)
+                    }
+                }
+            )*
+        )
+    }
+
+    impl_into! {
+        Window Panel Label TextEdit CheckBox Radio Button Led PageCtrl
+        Page ProgressBar ListBox ComboBox CustomWgt TextBox Layer
     }
 }
 
@@ -503,11 +425,11 @@ pub mod rstate {
 
     // Implements into() for all properties
     macro_rules! impl_into {
-        ($($prop: ident)*) => (
+        ($($PROP: ident)*) => (
             $(
-                impl paste!{ [< $prop State >]} {
+                impl paste!{ [< $PROP State >]} {
                     pub fn into(self) -> State {
-                        State::$prop(self)
+                        State::$PROP(self)
                     }
                 }
             )*
@@ -545,13 +467,13 @@ pub struct RuntimeStates {
 
 // macro generating similar member functions
 macro_rules! impl_as {
-    ($name: ident, $prop: ident) => {
+    ($NAME: ident, $PROP: ident) => {
         paste! {
-            pub fn $name(&mut self, id: WId) -> &mut rstate::[< $prop State >] {
+            pub fn $NAME(&mut self, id: WId) -> &mut rstate::[< $PROP State >] {
                 let rs = self.states.entry(id).or_insert(
-                    rstate::[< $prop State >]::default().into());
+                    rstate::[< $PROP State >]::default().into());
 
-                if let rstate::State::$prop(ref mut stat) = rs {
+                if let rstate::State::$PROP(ref mut stat) = rs {
                     return stat;
                 }
 

@@ -10,12 +10,12 @@ use std::fmt::Write;
 /// Mimics C++ operator: cond ? a : b;
 #[macro_export]
 macro_rules! tetrary {
-    ($cond: expr, $then: expr, $else: expr) => {
-        if $cond {
-            $then
+    ($COND: expr, $THEN: expr, $ELSE: expr) => {
+        if $COND {
+            $THEN
         }
         else {
-            $else
+            $ELSE
         }
     };
 }
@@ -25,9 +25,9 @@ macro_rules! tetrary {
 /// Assertion at compile time
 #[macro_export]
 macro_rules! static_assert {
-    ($cond: expr) => {
+    ($COND: expr) => {
         #[allow(dead_code)]
-        const _: () = assert!($cond);
+        const _: () = assert!($COND);
     };
 }
 

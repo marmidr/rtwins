@@ -6,8 +6,8 @@ use crate::TERM;
 // ---------------------------------------------------------------------------------------------- //
 
 pub trait WindowManager {
-// pub trait WindowManager<IT> {
-// where IT: Iterator {
+    // pub trait WindowManager<IT> {
+    // where IT: Iterator {
     /// Returns any window state
     fn get_ref(&self, wnd_idx: usize) -> Option<&dyn WindowState>;
 
