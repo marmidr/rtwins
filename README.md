@@ -173,6 +173,14 @@ https://github.com/RazrFalcon/cargo-bloat
 cargo install cargo-bloat
 ```
 
+## `audit` - performs vulnerabilities check
+
+https://crates.io/crates/cargo-audit
+
+```sh
+cargo install cargo-audit
+```
+
 ## `just` - convenient commands
 
 Package comes with the `Justfile` - make-like collection of useful commands.

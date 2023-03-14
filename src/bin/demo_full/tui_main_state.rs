@@ -17,6 +17,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use crate::tui_msgbox_def::idmb;
+
 use super::tui_commands::*;
 use super::tui_main_def::id;
 
@@ -202,7 +204,13 @@ impl rtwins::wgt::WindowState for MainWndState {
                                 laboris nisi ut aliquip ex ea commodo consequat.".to_owned(),
                             buttons: "ync",
                             on_button: Box::new(move |btn_id| {
-                                tr_info!("MsgBox callback btn id: {}", btn_id);
+                                let msg = match btn_id {
+                                    idmb::BTN_YES => "YES",
+                                    idmb::BTN_NO => "NO",
+                                    idmb::BTN_CANCEL => "CANCEL",
+                                    _ => ""
+                                };
+                                tr_info!("{}MsgBox callback: {msg}{}", esc::BG_DARK_CYAN, esc::BG_DEFAULT);
                             }),
                         }
                     );
@@ -284,7 +292,12 @@ impl rtwins::wgt::WindowState for MainWndState {
         rs.checked = !rs.checked;
 
         match wgt.id {
-            id::CHBX_ENBL => rtwins::tr_debug!("CHBX_ENBL"),
+            id::CHBX_ENBL => {
+                rtwins::tr_debug!("CHBX_ENBL");
+                let en = self.rs.get_enabled_or_default(id::PANEL_STATE);
+                self.rs.set_enabled(id::PANEL_STATE, !en);
+                self.invalidate(id::PANEL_STATE);
+            }
             id::CHBX_LOCK => rtwins::tr_debug!("CHBX_LOCK"),
             id::CHBX_L1 | id::CHBX_L2 => self.invalidate(id::PAGE_SERV),
             _ => rtwins::tr_debug!("CHBX"),
@@ -393,7 +406,7 @@ impl rtwins::wgt::WindowState for MainWndState {
     }
 
     fn is_visible(&self, wgt: &Widget) -> bool {
-        if let wgt::Property::Page(_) = wgt.prop {
+        if matches!(wgt.prop, wgt::Property::Page(_)) {
             let pgctrl = wgt::get_parent(wgt);
             // TODO: this code is a nonsense; it must be simplified
             if let Some(stat) = self.rs.get_state(pgctrl.id) {

@@ -20,12 +20,12 @@ alias nx := nxtest
 # build debug; eg: `just build-dbg -v`
 build-dbg *ARGS:
     cargo build
-    ls -hsk target/debug/demo1
+    ls -hsk target/debug/demo_full
 
 # build release
 build-rel *ARGS:
     cargo build --release {{ARGS}}
-    ls -hsk target/release/demo1
+    ls -hsk target/release/demo_full
 
 #
 run-dbg:
@@ -46,7 +46,7 @@ bloat-demo:
 
 # expand macros in demo <module>.rs
 expand-demo *ARGS:
-    cargo expand --bin demo1 {{ARGS}}
+    cargo expand --bin demo_full {{ARGS}}
 
 # expand macros in twins library <module>.rs
 expand-lib *ARGS:
@@ -64,11 +64,12 @@ nxtest:
 
 # code coverage using tarpaulin
 cover-tarp:
-    @cargo tarpaulin -V; [ $? -eq 0 ] || cargo install cargo-tarpaulin
+    @cargo tarpaulin -V > /dev/null; [ $? -eq 0 ] || cargo install cargo-tarpaulin
     cargo tarpaulin --out html --output-dir target/ --skip-clean --exclude-files "tests/*"
 
 # vulnerabilities check
 audit:
+    @cargo audit --version > /dev/null; [ $? -eq 0 ] || cargo install cargo-audit
     cargo audit
 
 # format using nightly (due to unstable rustfmt options)
@@ -77,8 +78,8 @@ fmt:
 
 # debug locally
 gdb:
-    # rust-gdb -tui -ex "b main" target/debug/demo1 -ex "r"
-    cgdb -ex "b main" target/debug/demo1 -ex "r"
+    # rust-gdb -tui -ex "b main" target/debug/demo_full -ex "r"
+    cgdb -ex "b main" target/debug/demo_full -ex "r"
 
 # debug remote
 gdbremote:
@@ -86,4 +87,4 @@ gdbremote:
 
 # gdb server
 gdbserve:
-    gdbserver :6789 target/debug/demo1
+    gdbserver :6789 target/debug/demo_full
