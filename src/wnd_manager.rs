@@ -5,8 +5,9 @@ use crate::TERM;
 
 // ---------------------------------------------------------------------------------------------- //
 
-// pub trait WindowManager<IT> where IT: Iterator,
 pub trait WindowManager {
+// pub trait WindowManager<IT> {
+// where IT: Iterator {
     /// Returns any window state
     fn get_ref(&self, wnd_idx: usize) -> Option<&dyn WindowState>;
 
@@ -59,7 +60,7 @@ pub trait WindowManager {
         if let Some(idx) = idx {
             visible.remove(idx);
 
-            if visible.len() > 0 {
+            if !visible.is_empty() {
                 self.draw_all();
             }
             else {
@@ -85,8 +86,7 @@ pub trait WindowManager {
         let visible = self.get_visible();
 
         if let Some(wnd_idx) = visible.last() {
-            let wnd_idx = *wnd_idx as usize;
-            self.get_ref(wnd_idx)
+            self.get_ref(*wnd_idx)
         }
         else {
             None
@@ -98,8 +98,7 @@ pub trait WindowManager {
         let visible = self.get_visible();
 
         if let Some(wnd_idx) = visible.last() {
-            let wnd_idx = *wnd_idx as usize;
-            self.get_mut(wnd_idx)
+            self.get_mut(*wnd_idx)
         }
         else {
             None

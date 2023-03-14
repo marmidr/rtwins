@@ -45,7 +45,7 @@ pub struct MsgBoxState {
 
 impl MsgBoxState {
     pub fn new(widgets: &'static [Widget], cmds: Rc<RefCell<CommandsQueue>>) -> Self {
-        let wnd_state = MsgBoxState {
+        MsgBoxState {
             widgets,
             rs: wgt::RuntimeStates::new(),
             focused_id: WIDGET_ID_NONE,
@@ -56,9 +56,7 @@ impl MsgBoxState {
             wnd_message: String::new(),
             buttons: "ynoc",
             cmds,
-        };
-
-        wnd_state
+        }
     }
 
     pub fn center_on(&mut self, wnd: &Widget) {

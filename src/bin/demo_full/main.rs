@@ -123,32 +123,39 @@ impl WndMngr {
     }
 }
 
-// struct WndMngrIter<'wm> {
-//     wm: &'wm WndMngr,
-//     iter_idx: usize,
-// }
+/*
+/// Iterator over manager windows
+struct WndMngrIter<'a> {
+    wm: &'a WndMngr,
+    iter_idx: usize,
+}
 
-// impl<'wm> WndMngrIter<'wm> {
-//     fn new(wm: &'wm WndMngr) -> Self {
-//         WndMngrIter{wm, iter_idx: 0}
-//     }
-// }
+impl<'a> WndMngrIter<'a> {
+    fn new(wm: &'a WndMngr) -> Self {
+        WndMngrIter{
+            wm,
+            iter_idx: 0
+        }
+    }
+}
 
-// impl<'wm> Iterator for WndMngrIter<'wm> {
-//     type Item = &'wm dyn WindowState;
+impl<'a> Iterator for WndMngrIter<'a> {
+    type Item = &'a dyn WindowState;
 
-//     fn next(&mut self) -> Option<Self::Item> {
-//         let result= match self.iter_idx {
-//             0 => Some(&self.wm.main as &dyn WindowState),
-//             1 => Some(&self.wm.msgbox as &dyn WindowState),
-//             _ => None,
-//         };
+    fn next(&mut self) -> Option<Self::Item> {
+        let result= match self.iter_idx {
+            0 => Some(&self.wm.main as &dyn WindowState),
+            1 => Some(&self.wm.msgbox as &dyn WindowState),
+            _ => None,
+        };
 
-//         self.iter_idx += 1;
-//         result
-//     }
-// }
+        self.iter_idx += 1;
+        result
+    }
+}
+*/
 
+// impl<'a> WindowManager<WndMngrIter<'a>> for WndMngr {
 impl WindowManager for WndMngr {
     fn get_ref(&self, wnd_idx: usize) -> Option<&dyn WindowState> {
         match wnd_idx {
@@ -176,7 +183,7 @@ impl WindowManager for WndMngr {
         &mut self.visible
     }
 
-    // fn iter<'a>(&'a self) -> WndMngrIter<'a> {
+    // fn iter(&self) -> WndMngrIter<'a> {
     //     WndMngrIter::new(self)
     // }
 }
@@ -336,17 +343,15 @@ fn main() {
                             main_ws.invalidate(tui_main_def::id::PG_CONTROL);
                         }
                     }
-                    else if *key == Key::F9 || *key == Key::F10 {
-                        if wmngr.is_top(0) {
-                            let main_ws = wmngr.get_top_mut().unwrap();
+                    else if wmngr.is_top(0) && (*key == Key::F9 || *key == Key::F10) {
+                        let main_ws = wmngr.get_top_mut().unwrap();
 
-                            wgt::pagectrl_select_next_page(
-                                main_ws,
-                                tui_main_def::id::PG_CONTROL,
-                                *key == Key::F10,
-                            );
-                            main_ws.invalidate(tui_main_def::id::PG_CONTROL);
-                        }
+                        wgt::pagectrl_select_next_page(
+                            main_ws,
+                            tui_main_def::id::PG_CONTROL,
+                            *key == Key::F10,
+                        );
+                        main_ws.invalidate(tui_main_def::id::PG_CONTROL);
                     }
                 }
 
