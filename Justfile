@@ -30,19 +30,19 @@ build-rel *ARGS:
 #
 run-dbg:
     clear
-    cargo run
+    cargo run --bin demo_full
 
 run-rel:
     clear
-    cargo run --release
+    cargo run --release --bin demo_full
 
 # find out what functions takes most of the space in the library
 bloat-lib:
-    cargo bloat --release --filter rtwins --no-relative-size -n 50
+    cargo bloat --release --bin demo_full --filter rtwins --no-relative-size -n 50
 
 # find out what crates takes most of the space in the executable
 bloat-demo:
-    cargo bloat --release --crates
+    cargo bloat --release --bin demo_full --crates
 
 # expand macros in demo <module>.rs
 expand-demo *ARGS:
@@ -76,6 +76,10 @@ audit:
 fmt:
     cargo +nightly fmt
 
+# run Clippy linter
+clip:
+    cargo clippy --no-deps
+
 # debug locally
 gdb:
     # rust-gdb -tui -ex "b main" target/debug/demo_full -ex "r"
@@ -88,3 +92,7 @@ gdbremote:
 # gdb server
 gdbserve:
     gdbserver :6789 target/debug/demo_full
+
+# project dependencies tree
+tree:
+    cargo tree

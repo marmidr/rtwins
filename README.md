@@ -45,10 +45,10 @@ Implementation is based on:
   * [x] list box
   * [x] combo box
   * [x] scrollable text box
-  * [ ] custom widget base
+  * [x] custom widget base
   * [x] scrollbar
   * [ ] horizontal page control
-  * [ ] popup windows
+  * [x] popup windows
   * [x] layers - to control visibility of groups of widgets
   * [ ] password input
 * navigation
@@ -78,9 +78,12 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 ```bash
 # standard runner
-cargo r
-# with fast_fill enabled:
-cargo r --features=fast_fill
+cargo r --bin demo_full
+# mini demo
+cargo r --bin demo_mini
+
+# full demo with fast_fill enabled:
+cargo r --features=fast_fill --bin demo_full
 # using justfile
 just r
 ```

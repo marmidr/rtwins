@@ -7,6 +7,7 @@ pub trait Pal {
     fn write_char_n(&mut self, c: char, repeat: i16) {}
 
     /// Write single character
+    #[inline]
     fn write_char(&mut self, c: char) {
         self.write_char_n(c, 1);
     }
@@ -15,6 +16,7 @@ pub trait Pal {
     fn write_str_n(&mut self, s: &str, repeat: i16) {}
 
     /// Write single string
+    #[inline]
     fn write_str(&mut self, s: &str) {
         self.write_str_n(s, 1);
     }
@@ -28,8 +30,8 @@ pub trait Pal {
     /// Sleep for `ms` milliseconds
     fn sleep(&self, ms: u16) {}
 
-    /// Get current timestamp (since program start) in milliseconds
-    fn get_timestamp(&self) -> u32 {
+    /// Get current timestamp (since program start), in milliseconds
+    fn get_timestamp_ms(&self) -> u32 {
         0
     }
 

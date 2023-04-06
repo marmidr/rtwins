@@ -176,19 +176,19 @@ pub fn find_at(
                 wgt_screen_rect.size.width = 4 + p.text.displayed_width() as u8;
             }
             Property::Button(ref p) => {
-                let txt_w;
-
-                if !p.text.is_empty() {
-                    txt_w = p.text.displayed_width() as u8;
-                }
-                else if wgt.size.width > 0 {
-                    txt_w = wgt.size.width;
-                }
-                else {
-                    let mut s = String::new();
-                    ws.get_button_text(wgt, &mut s);
-                    txt_w = s.displayed_width() as u8;
-                }
+                let txt_w = {
+                    if !p.text.is_empty() {
+                        p.text.displayed_width() as u8
+                    }
+                    else if wgt.size.width > 0 {
+                        wgt.size.width
+                    }
+                    else {
+                        let mut s = String::new();
+                        ws.get_button_text(wgt, &mut s);
+                        s.displayed_width() as u8
+                    }
+                };
 
                 match p.style {
                     ButtonStyle::Simple => {

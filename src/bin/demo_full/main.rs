@@ -1,4 +1,4 @@
-//! # RTWins demo app
+//! # RTWins full demo app
 
 use rtwins::wgt::WindowState;
 use rtwins::wnd_manager::WindowManager;
@@ -79,7 +79,7 @@ impl rtwins::pal::Pal for DemoPal {
         std::thread::sleep(std::time::Duration::from_millis(ms as u64));
     }
 
-    fn get_timestamp(&self) -> u32 {
+    fn get_timestamp_ms(&self) -> u32 {
         let dif = std::time::Instant::now() - self.started_at;
         dif.as_millis() as u32
     }

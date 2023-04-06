@@ -468,21 +468,11 @@ impl rtwins::wgt::WindowState for MainWndState {
     /** widget-specific queries; all mutable params are outputs **/
 
     fn get_window_coord(&mut self) -> Coord {
-        if let Some(w) = self.widgets.first() {
-            w.coord
-        }
-        else {
-            Coord::cdeflt()
-        }
+        self.widgets.first().map_or(Coord::cdeflt(), |w| w.coord)
     }
 
     fn get_window_size(&mut self) -> Size {
-        if let Some(w) = self.widgets.first() {
-            w.size
-        }
-        else {
-            Size::cdeflt()
-        }
+        self.widgets.first().map_or(Size::cdeflt(), |w| w.size)
     }
 
     fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {
@@ -656,10 +646,6 @@ impl rtwins::wgt::WindowState for MainWndState {
 
     /* requests */
 
-    fn invalidate_many(&mut self, wids: &[WId]) {
-        self.invalidated.extend(wids.iter());
-    }
-
     fn instant_redraw(&mut self, wid: WId) {
         if let Ok(mut term_guard) = TERM.try_write() {
             term_guard.draw(self, &[wid]);
@@ -668,6 +654,10 @@ impl rtwins::wgt::WindowState for MainWndState {
         else {
             rtwins::tr_warn!("Cannot lock the term");
         }
+    }
+
+    fn invalidate_many(&mut self, wids: &[WId]) {
+        self.invalidated.extend(wids.iter());
     }
 
     fn invalidated_clear(&mut self) {
