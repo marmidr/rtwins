@@ -4,13 +4,12 @@
 use crate::esc;
 
 use lazy_static::lazy_static;
-use std::collections::vec_deque::VecDeque;
 use std::sync::Mutex;
 
 // ---------------------------------------------------------------------------------------------- //
 
 pub struct Trace {
-    queue: VecDeque<TraceItem>,
+    queue: Vec<TraceItem>,
     pub print_location: bool,
     pub trace_timestr: Box<fn() -> String>,
 }
@@ -112,7 +111,7 @@ impl Trace {
 
         // deferred log, as the Term is locked OR already contains some items on queue,
         // in order to preserve the messages ordering
-        self.queue.push_back(TraceItem {
+        self.queue.push(TraceItem {
             fg_color,
             time_str,
             prefix,

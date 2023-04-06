@@ -6,11 +6,11 @@ use rtwins::input_decoder::{Decoder, InputQue};
 use rtwins::utils;
 
 trait EasyInput {
-    fn push_back_str(&mut self, s: &str);
+    fn push_str(&mut self, s: &str);
 }
 
 impl EasyInput for InputQue {
-    fn push_back_str(&mut self, s: &str) {
+    fn push_str(&mut self, s: &str) {
         self.extend(s.as_bytes().iter());
     }
 }
@@ -42,7 +42,7 @@ fn inp_unknown_esc() {
     let mut inp = InputQue::new();
     let mut ii = InputInfo::default();
 
-    inp.push_back_str("\x1B[1234");
+    inp.push_str("\x1B[1234");
     dec.decode_input_seq(&mut inp, &mut ii);
 
     assert!(matches!(ii.evnt, InputEvent::None));
@@ -64,7 +64,7 @@ fn utf8_character_ok() {
     let mut ii = InputInfo::default();
 
     let test_str = "Łó+dź😎";
-    inp.push_back_str(test_str);
+    inp.push_str(test_str);
     let mut test_str_it = test_str.chars();
     let mut decoded = 0;
 
@@ -99,9 +99,9 @@ fn utf8_character_incomplete_ok() {
 
     let smile = [240u8, 159, 152, 142]; // 😎
     assert_eq!(4, utils::utf8_char_width(smile[0]));
-    inp.push_back(smile[0]);
-    inp.push_back(smile[1]);
-    inp.push_back(smile[2]);
+    inp.push(smile[0]);
+    inp.push(smile[1]);
+    inp.push(smile[2]);
     assert_eq!(3, inp.len());
 
     // try to decode incomplete input
@@ -111,7 +111,7 @@ fn utf8_character_incomplete_ok() {
     assert_eq!(3, inp.len());
     assert!(matches!(ii.evnt, InputEvent::None));
 
-    inp.push_back(smile[3]);
+    inp.push(smile[3]);
     dec.decode_input_seq(&mut inp, &mut ii);
     assert_eq!(0, inp.len());
     assert!(matches!(ii.evnt, InputEvent::Char(_)));
@@ -129,13 +129,13 @@ fn utf8_character_incomplete_err() {
     let smile = [240u8, 159, 152, 142]; // 😎
     assert_eq!(4, utils::utf8_char_width(smile[0]));
     // three bytes out of 4 in sequence
-    inp.push_back(smile[0]);
-    inp.push_back(smile[1]);
-    inp.push_back(smile[2]);
+    inp.push(smile[0]);
+    inp.push(smile[1]);
+    inp.push(smile[2]);
     // invalid byte
-    inp.push_back(b' ');
+    inp.push(b' ');
     // character following the sequence
-    inp.push_back(b'+');
+    inp.push(b'+');
     assert_eq!(5, inp.len());
 
     // try to decode invalid input
@@ -164,13 +164,13 @@ fn esc_followed_by_esc() {
     let mut ii = InputInfo::default();
 
     // write and decode single ESC - first attempt shall be ignored, waiting for sequence data
-    inp.push_back(AnsiCodes::ESC as u8);
+    inp.push(AnsiCodes::ESC as u8);
 
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::None));
 
     // write second ESC
-    inp.push_back(AnsiCodes::ESC as u8);
+    inp.push(AnsiCodes::ESC as u8);
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Key(Key::Esc)));
     assert_eq!(KEY_MOD_SPECIAL, ii.kmod.mask);
@@ -183,7 +183,7 @@ fn esc_followed_by_nothing() {
     let mut ii = InputInfo::default();
 
     // write and decode single ESC - first attempt shall be ignored, waiting for sequence data
-    inp.push_back(AnsiCodes::ESC as u8);
+    inp.push(AnsiCodes::ESC as u8);
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::None));
 
@@ -198,7 +198,7 @@ fn ctrl_s() {
     let mut inp = InputQue::new();
     let mut ii = InputInfo::default();
 
-    inp.push_back(0x13);
+    inp.push(0x13);
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Char(_)));
     if let InputEvent::Char(ref cb) = ii.evnt {
@@ -213,7 +213,7 @@ fn ctrl_home() {
     let mut inp = InputQue::new();
     let mut ii = InputInfo::default();
 
-    inp.push_back_str("\x1B[1;5H");
+    inp.push_str("\x1B[1;5H");
     dec.decode_input_seq(&mut inp, &mut ii);
 
     assert!(matches!(ii.evnt, InputEvent::Key(Key::Home)));
@@ -227,7 +227,7 @@ fn ctrl_f3() {
     let mut inp = InputQue::new();
     let mut ii = InputInfo::default();
 
-    inp.push_back_str("\x1BOR");
+    inp.push_str("\x1BOR");
     dec.decode_input_seq(&mut inp, &mut ii);
 
     assert!(matches!(ii.evnt, InputEvent::Key(Key::F3)));
@@ -241,9 +241,9 @@ fn unknown_seq_ctrl_home() {
     let mut inp = InputQue::new();
     let mut ii = InputInfo::default();
 
-    inp.push_back_str("\x1B*42~");
+    inp.push_str("\x1B*42~");
     // valid ESC followed by '+'
-    inp.push_back_str("\x1B[1;5H+");
+    inp.push_str("\x1B[1;5H+");
 
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Key(Key::Home)));
@@ -265,15 +265,15 @@ fn loong_unknown_seq_ctrl_home() {
 
     // next ESC is more that 7 bytes further,
     // so entire buffer will be cleared
-    inp.push_back_str("\x1B*123456789~");
+    inp.push_str("\x1B*123456789~");
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::None));
 
-    inp.push_back_str("\x1B[1;5H");
+    inp.push_str("\x1B[1;5H");
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::None));
 
-    inp.push_back_str("+");
+    inp.push_str("+");
     dec.decode_input_seq(&mut inp, &mut ii); // 3rd try - abandon
     assert!(matches!(ii.evnt, InputEvent::None));
     assert_eq!(0, inp.len());
@@ -285,8 +285,8 @@ fn nul_in_input() {
     let mut inp = InputQue::new();
     let mut ii = InputInfo::default();
 
-    inp.push_back(b'\0');
-    inp.push_back(b'\t');
+    inp.push(b'\0');
+    inp.push(b'\t');
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Char(_)));
     if let InputEvent::Char(ref cb) = ii.evnt {
@@ -300,7 +300,7 @@ fn ctrl_f1_incomplete() {
     let mut inp = InputQue::new();
     let mut ii = InputInfo::default();
 
-    inp.push_back_str("\x1B[");
+    inp.push_str("\x1B[");
     assert_eq!(2, inp.len());
     dec.decode_input_seq(&mut inp, &mut ii);
 
@@ -309,7 +309,7 @@ fn ctrl_f1_incomplete() {
     assert!(matches!(ii.evnt, InputEvent::None));
 
     // write rest of previous sequence and additional sole ESC key
-    inp.push_back_str("1;5H\x1B");
+    inp.push_str("1;5H\x1B");
     assert_eq!(7, inp.len());
     dec.decode_input_seq(&mut inp, &mut ii);
     assert_eq!(1, inp.len());
@@ -334,7 +334,7 @@ fn mix_up() {
     let mut ii = InputInfo::default();
 
     // write rest of previous sequence and additional one key
-    inp.push_back_str("Ł\x1B[1;6AÓ*");
+    inp.push_str("Ł\x1B[1;6AÓ*");
 
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Char(_)));
@@ -364,7 +364,7 @@ fn cr() {
     let mut inp = InputQue::new();
     let mut ii = InputInfo::default();
 
-    inp.push_back_str("\r\r\t");
+    inp.push_str("\r\r\t");
 
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Key(Key::Enter)));
@@ -382,7 +382,7 @@ fn lf() {
     let mut inp = InputQue::new();
     let mut ii = InputInfo::default();
 
-    inp.push_back_str("\n\n\t");
+    inp.push_str("\n\n\t");
 
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Key(Key::Enter)));
@@ -400,7 +400,7 @@ fn cr_lf_cr() {
     let mut inp = InputQue::new();
     let mut ii = InputInfo::default();
 
-    inp.push_back_str("\n\r\n\t\n\r\t");
+    inp.push_str("\n\r\n\t\n\r\t");
 
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Key(Key::Enter)));
@@ -427,7 +427,7 @@ fn mouse_click_at_11() {
     let mut inp = InputQue::new();
     let mut ii = InputInfo::default();
 
-    inp.push_back_str("\x1B[M !!");
+    inp.push_str("\x1B[M !!");
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Mouse(_)));
     if let InputEvent::Mouse(ref m) = ii.evnt {
@@ -444,7 +444,7 @@ fn mouse_wheel_down() {
     let mut inp = InputQue::new();
     let mut ii = InputInfo::default();
 
-    inp.push_back_str("\x1B[Ma$\"");
+    inp.push_str("\x1B[Ma$\"");
 
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Mouse(_)));

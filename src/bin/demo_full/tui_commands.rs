@@ -1,7 +1,5 @@
 //! Demo - commands queue
 
-use std::collections::vec_deque::VecDeque;
-
 use rtwins::wgt::WId;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -19,17 +17,17 @@ pub enum Command {
 /// Deferred commands
 #[derive(Default)]
 pub struct CommandsQueue {
-    commands: VecDeque<Command>,
+    commands: Vec<Command>,
 }
 
 impl CommandsQueue {
     /// Pushes a new command on the queue
     pub fn push(&mut self, cmd: Command) {
-        self.commands.push_back(cmd);
+        self.commands.push(cmd);
     }
 
     /// Take out the commands queue, return Some if non-empty
-    pub fn take_commands(&mut self) -> Option<VecDeque<Command>> {
+    pub fn take_commands(&mut self) -> Option<Vec<Command>> {
         if self.commands.is_empty() {
             None
         }

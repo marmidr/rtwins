@@ -5,7 +5,7 @@
 use crate::input::*;
 use std::cmp::Ordering;
 
-pub type InputQue = std::collections::vec_deque::VecDeque<u8>;
+pub type InputQue = Vec<u8>;
 
 // -----------------------------------------------------------------------------
 

@@ -242,9 +242,7 @@ fn main() {
             break;
         }
         else if !inp_seq.is_empty() {
-            for b in inp_seq {
-                ique.push_back(*b);
-            }
+            ique.extend(inp_seq.iter());
 
             // print raw sequence
             /* if false {
