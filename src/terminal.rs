@@ -427,6 +427,6 @@ impl Term {
     /// Draw entire window; flushes the buffer
     pub fn draw_wnd(&mut self, ws: &mut dyn WindowState) {
         wgt::draw_widgets(self, ws, &[WIDGET_ID_ALL]);
-        ws.invalidated_clear();
+        ws.clear_invalidated();
     }
 }

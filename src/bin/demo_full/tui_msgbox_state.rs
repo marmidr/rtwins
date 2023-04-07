@@ -195,7 +195,7 @@ impl rtwins::wgt::WindowState for MsgBoxState {
         }
     }
 
-    fn invalidated_clear(&mut self) {
+    fn clear_invalidated(&mut self) {
         self.invalidated.clear();
     }
 

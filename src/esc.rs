@@ -13,8 +13,8 @@ macro_rules! esc {
         "\x1B"
     };
 
-    ($elem:literal) => {
-        concat!("\x1B", $elem)
+    ($ELEM:literal) => {
+        concat!("\x1B", $ELEM)
     };
 }
 
@@ -25,8 +25,8 @@ macro_rules! csi {
         ""
     };
 
-    ($elem:expr) => {
-        concat!("\x1B[", $elem)
+    ($ELEM:expr) => {
+        concat!("\x1B[", $ELEM)
     };
 }
 
@@ -38,8 +38,8 @@ macro_rules! osc {
         ""
     };
 
-    ($elem:expr) => {
-        concat!("\x1B]", $elem)
+    ($ELEM:expr) => {
+        concat!("\x1B]", $ELEM)
     };
 }
 
@@ -51,8 +51,8 @@ macro_rules! st {
         ""
     };
 
-    ($elem:expr) => {
-        concat!("\x1B\\", $elem)
+    ($ELEM:expr) => {
+        concat!("\x1B\\", $ELEM)
     };
 }
 
@@ -60,8 +60,8 @@ macro_rules! st {
 #[macro_export]
 macro_rules! fg_rgb {
     // r,g,b: 0..255
-    ($r:literal, $g:literal, $b:literal) => {
-        $crate::csi!(concat!("38;2;", $r, ";", $g, ";", $b, "m"))
+    ($R:literal, $G:literal, $B:literal) => {
+        $crate::csi!(concat!("38;2;", $R, ";", $G, ";", $B, "m"))
     };
 }
 
@@ -69,8 +69,8 @@ macro_rules! fg_rgb {
 #[macro_export]
 macro_rules! fg_color {
     // clno: 1..255, 232..255=black->white
-    ($clno:literal) => {
-        $crate::csi!(concat!("38;5;", $clno, "m"))
+    ($CLNO:literal) => {
+        $crate::csi!(concat!("38;5;", $CLNO, "m"))
     };
 }
 
@@ -78,8 +78,8 @@ macro_rules! fg_color {
 #[macro_export]
 macro_rules! bg_rgb {
     // r,g,b: 0..255
-    ($r:literal, $g:literal, $b:literal) => {
-        $crate::csi!(concat!("48;2;", $r, ";", $g, ";", $b, "m"))
+    ($R:literal, $G:literal, $B:literal) => {
+        $crate::csi!(concat!("48;2;", $R, ";", $G, ";", $B, "m"))
     };
 }
 
@@ -87,8 +87,8 @@ macro_rules! bg_rgb {
 #[macro_export]
 macro_rules! bg_color {
     // clno: 1..255, 232..255=black->white
-    ($clno:literal) => {
-        $crate::csi!(concat!("48;5;", $clno, "m"))
+    ($CLNO:literal) => {
+        $crate::csi!(concat!("48;5;", $CLNO, "m"))
     };
 }
 
@@ -573,8 +573,8 @@ macro_rules! cursor_column {
     () => {
         $crate::csi!("{0}G")
     };
-    ($col:literal) => {
-        $crate::csi!(concat!(stringify!($col), "G"));
+    ($COL:literal) => {
+        $crate::csi!(concat!(stringify!($COL), "G"));
     };
 }
 
@@ -583,8 +583,8 @@ macro_rules! cursor_goto {
     () => {
         $crate::csi!("{0};{1}H")
     };
-    ($row:literal, $col:literal) => {
-        $crate::csi!(concat!(stringify!($row), ";", stringify!($col), "H"));
+    ($ROW:literal, $COL:literal) => {
+        $crate::csi!(concat!(stringify!($ROW), ";", stringify!($COL), "H"));
     };
 }
 
@@ -593,8 +593,8 @@ macro_rules! cursor_up {
     () => {
         $crate::csi!("{0}A")
     };
-    ($n:literal) => {
-        $crate::csi!(concat!($n, "A"));
+    ($N:literal) => {
+        $crate::csi!(concat!($N, "A"));
     };
 }
 
@@ -603,8 +603,8 @@ macro_rules! cursor_down {
     () => {
         $crate::csi!("{0}B")
     };
-    ($n:literal) => {
-        $crate::csi!(concat!($n, "B"));
+    ($N:literal) => {
+        $crate::csi!(concat!($N, "B"));
     };
 }
 
@@ -613,8 +613,8 @@ macro_rules! cursor_forward {
     () => {
         $crate::csi!("{0}C")
     };
-    ($n:literal) => {
-        $crate::csi!(concat!($n, "C"));
+    ($N:literal) => {
+        $crate::csi!(concat!($N, "C"));
     };
 }
 
@@ -623,8 +623,8 @@ macro_rules! cursor_backward {
     () => {
         $crate::csi!("{0}D")
     };
-    ($n:literal) => {
-        $crate::csi!(concat!($n, "D"));
+    ($N:literal) => {
+        $crate::csi!(concat!($N, "D"));
     };
 }
 
@@ -649,8 +649,8 @@ macro_rules! line_insert {
     () => {
         $crate::csi!("{0}L")
     };
-    ($n:literal) => {
-        $crate::csi!(concat!($n, "L"));
+    ($N:literal) => {
+        $crate::csi!(concat!($N, "L"));
     };
 }
 
@@ -660,8 +660,8 @@ macro_rules! line_delete {
     () => {
         $crate::csi!("{0}M")
     };
-    ($n:literal) => {
-        $crate::csi!(concat!($n, "M"));
+    ($N:literal) => {
+        $crate::csi!(concat!($N, "M"));
     };
 }
 
@@ -677,8 +677,8 @@ macro_rules! char_repeat_last {
     () => {
         $crate::csi!("{0}b")
     };
-    ($n:literal) => {
-        $crate::csi!(concat!($n, "b"));
+    ($N:literal) => {
+        $crate::csi!(concat!($N, "b"));
     };
 }
 
@@ -688,8 +688,8 @@ macro_rules! char_erase {
     () => {
         $crate::csi!("{0}X")
     };
-    ($n:literal) => {
-        $crate::csi!(concat!($n, "X"));
+    ($N:literal) => {
+        $crate::csi!(concat!($N, "X"));
     };
 }
 
@@ -699,8 +699,8 @@ macro_rules! char_delete {
     () => {
         $crate::csi!("{0}P")
     };
-    ($n:literal) => {
-        $crate::csi!(concat!($n, "P"));
+    ($N:literal) => {
+        $crate::csi!(concat!($N, "P"));
     };
 }
 
@@ -710,8 +710,8 @@ macro_rules! char_insert {
     () => {
         $crate::csi!("{0}L")
     };
-    ($n:literal) => {
-        $crate::csi!(concat!($n, "L"));
+    ($N:literal) => {
+        $crate::csi!(concat!($N, "L"));
     };
 }
 
@@ -742,8 +742,8 @@ macro_rules! screen_scroll_up {
     () => {
         $crate::csi!("{0}S")
     };
-    ($n:literal) => {
-        $crate::csi!(concat!($n, "S"));
+    ($N:literal) => {
+        $crate::csi!(concat!($N, "S"));
     };
 }
 
@@ -753,8 +753,8 @@ macro_rules! screen_scroll_down {
     () => {
         $crate::csi!("{0}T")
     };
-    ($n:literal) => {
-        $crate::csi!(concat!($n, "T"));
+    ($N:literal) => {
+        $crate::csi!(concat!($N, "T"));
     };
 }
 
@@ -802,8 +802,8 @@ pub const SEQ_MAX_LENGTH: usize = 8;
 /// Clickable URL with title
 /// `\u001B]8;;https://github.com\u0007Click\u001B]8;;\u0007`
 
-// pub fn link(url: &str, capt: &str) -> String {
-//     let lnk = osc!("8;;").to_string() + url + "\u{0007}" + capt + osc!("8;;\u{0007}");
+// pub fn link(url: &str, lbl: &str) -> String {
+//     let lnk = osc!("8;;").to_string() + url + "\u{0007}" + lbl + osc!("8;;\u{0007}");
 //     let mut out = String::from("\x1B]");
 //     out.push_str(&lnk);
 //     out
@@ -811,12 +811,12 @@ pub const SEQ_MAX_LENGTH: usize = 8;
 
 #[macro_export]
 macro_rules! url_link {
-    ($url:literal , $capt:literal ) => {
+    ($URL:literal, $LABEL:literal ) => {
         concat!(
             $crate::osc!("8;;"),
-            $url,
+            $URL,
             "\u{0007}",
-            $capt,
+            $LABEL,
             $crate::osc!("8;;\u{0007}")
         );
     };

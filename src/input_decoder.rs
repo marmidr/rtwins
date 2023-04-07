@@ -84,12 +84,12 @@ impl SpecialMap {
 // -----------------------------------------------------------------------------
 
 macro_rules! seq_def {
-    ($s:literal, $n:literal, $k:expr, $m:expr) => {
+    ($S:literal, $N:literal, $K:expr, $M:expr) => {
         SeqMap {
-            seq: $s,
-            name: $n,
-            key: $k,
-            kmod: $m,
+            seq: $S,
+            name: $N,
+            key: $K,
+            kmod: $M,
         }
     };
 }
@@ -262,12 +262,12 @@ const ESC_KEYS_MAP_UNSORTED : [SeqMap; 155] = [
 const ESC_KEYS_MAP_SORTED: [SeqMap; ESC_KEYS_MAP_UNSORTED.len()] = sort_seq(&ESC_KEYS_MAP_UNSORTED);
 
 macro_rules! ctrl_def {
-    ($c:literal, $n:literal, $k:literal, $m:expr) => {
+    ($C:literal, $N:literal, $K:literal, $M:expr) => {
         LetterMap {
-            code: $c,
-            name: $n,
-            key: $k,
-            kmod: $m,
+            code: $C,
+            name: $N,
+            key: $K,
+            kmod: $M,
         }
     };
 }
@@ -304,12 +304,12 @@ const CTRL_KEYS_MAP_SORTED : [LetterMap; 26] = [
 ];
 
 macro_rules! special_def {
-    ($c:expr, $n:literal, $k:expr, $m:expr) => {
+    ($C:expr, $N:literal, $K:expr, $M:expr) => {
         SpecialMap {
-            code: $c as u8,
-            key: $k,
-            kmod: $m,
-            name: $n,
+            code: $C as u8,
+            key: $K,
+            kmod: $M,
+            name: $N,
         }
     };
 }

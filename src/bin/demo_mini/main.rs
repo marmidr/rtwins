@@ -201,7 +201,7 @@ impl rtwins::wgt::WindowState for MainWndState {
         self.invalidated.extend(wids.iter());
     }
 
-    fn invalidated_clear(&mut self) {
+    fn clear_invalidated(&mut self) {
         self.invalidated.clear();
     }
 

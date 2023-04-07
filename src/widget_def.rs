@@ -626,7 +626,7 @@ pub trait WindowState {
     }
     fn instant_redraw(&mut self, wid: WId) {}
     fn invalidate_many(&mut self, wids: &[WId]) {}
-    fn invalidated_clear(&mut self) {}
+    fn clear_invalidated(&mut self) {}
     fn take_invalidated(&mut self) -> Vec<WId> {
         vec![]
     }
@@ -655,11 +655,14 @@ mod tests {
     #[test]
     fn check_widget_ids_generator() {
         generate_ids!(POPUP_EMPTY);
+        assert_eq!(1, POPUP_EMPTY);
 
         generate_ids!(
             POPUP_WARN
                 BTN_OK
         );
+        assert_eq!(1, POPUP_WARN);
+        assert_eq!(2, BTN_OK);
 
         // enable printing of the recursive macro arguments
         // (uncomment trace_macros on top of the file)
@@ -674,5 +677,6 @@ mod tests {
                 LBL_MESSAGE
         );
         // trace_macros!(false);
+        assert_eq!(6, LBL_MESSAGE);
     }
 }
