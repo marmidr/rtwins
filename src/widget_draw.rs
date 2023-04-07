@@ -346,6 +346,10 @@ fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit) {
         // guard dropped
     }
 
+    if prp.psw_mask {
+        dctx.strbuff = "●".repeat(dctx.strbuff.displayed_width());
+    }
+
     let txt_width = dctx.strbuff.displayed_width() as i16;
 
     if display_pos > 0 {

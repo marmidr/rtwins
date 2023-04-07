@@ -979,6 +979,14 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
     }
 
     let mut key_handled = false;
+    let is_psw_masked = {
+        if let Property::TextEdit(ref prop) = wgt.prop {
+            prop.psw_mask
+        }
+        else {
+            false
+        }
+    };
 
     if te_state.wgt_id != WIDGET_ID_NONE {
         let mut cursor_pos = te_state.cursor_pos as isize;
@@ -992,10 +1000,12 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                     key_handled = true;
                 }
                 Key::Tab => {
-                    // real TAB may have different widths and require extra processing
-                    te_state.txt.insert_str(cursor_pos.max(0) as usize, "    ");
-                    cursor_pos += 4;
-                    ws.invalidate(wgt.id);
+                    if !is_psw_masked {
+                        // real TAB may have different widths and require extra processing
+                        te_state.txt.insert_str(cursor_pos.max(0) as usize, "    ");
+                        cursor_pos += 4;
+                        ws.invalidate(wgt.id);
+                    }
                     key_handled = true;
                 }
                 Key::Enter => {
@@ -1022,39 +1032,45 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                     key_handled = true;
                 }
                 Key::Delete => {
-                    if ii.kmod.has_ctrl() {
-                        te_state.txt.trim_at_char_idx(cursor_pos as usize);
-                    }
-                    else {
-                        te_state.txt.erase_char_range(cursor_pos as usize, 1);
-                    }
+                    if !is_psw_masked {
+                        if ii.kmod.has_ctrl() {
+                            te_state.txt.trim_at_char_idx(cursor_pos as usize);
+                        }
+                        else {
+                            te_state.txt.erase_char_range(cursor_pos as usize, 1);
+                        }
 
+                        ws.invalidate(wgt.id);
+                    }
                     key_handled = true;
-                    ws.invalidate(wgt.id);
                 }
                 Key::Up | Key::Down => {}
                 Key::Left => {
-                    if cursor_pos > 0 {
+                    if !is_psw_masked && cursor_pos > 0 {
                         cursor_pos -= 1;
                         ws.invalidate(wgt.id);
                     }
                     key_handled = true;
                 }
                 Key::Right => {
-                    if cursor_pos < te_state.txt.chars().count() as isize {
+                    if !is_psw_masked && (cursor_pos < te_state.txt.chars().count() as isize) {
                         cursor_pos += 1;
                         ws.invalidate(wgt.id);
                     }
                     key_handled = true;
                 }
                 Key::Home => {
-                    cursor_pos = 0;
-                    ws.invalidate(wgt.id);
+                    if !is_psw_masked {
+                        cursor_pos = 0;
+                        ws.invalidate(wgt.id);
+                    }
                     key_handled = true;
                 }
                 Key::End => {
-                    cursor_pos = te_state.txt.chars().count() as isize;
-                    ws.invalidate(wgt.id);
+                    if !is_psw_masked {
+                        cursor_pos = te_state.txt.chars().count() as isize;
+                        ws.invalidate(wgt.id);
+                    }
                     key_handled = true;
                 }
                 _ => {}

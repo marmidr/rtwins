@@ -35,6 +35,7 @@ pub struct MainWndState {
     /// text of focused text edit widget
     text_edit1_txt: String,
     text_edit2_txt: String,
+    text_edit_psw_txt: String,
     /// list of widgets to redraw
     invalidated: Vec<WId>,
     //
@@ -57,6 +58,7 @@ impl MainWndState {
             focused_ids: vec![],
             text_edit1_txt: String::new(),
             text_edit2_txt: String::new(),
+            text_edit_psw_txt: String::from("qwerty"),
             invalidated: vec![],
             radiogrp1_idx: 1,
             lbx_items: vec![],
@@ -257,11 +259,11 @@ impl rtwins::wgt::WindowState for MainWndState {
     fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {
         rtwins::tr_debug!("TXT_EDIT_CHANGE: {}", txt);
 
-        if wgt.id == id::EDIT1 {
-            self.text_edit1_txt = std::mem::take(txt);
-        }
-        else if wgt.id == id::EDIT2 {
-            self.text_edit2_txt = std::mem::take(txt);
+        match wgt.id {
+            id::EDIT1 => self.text_edit1_txt = std::mem::take(txt),
+            id::EDIT2 => self.text_edit2_txt = std::mem::take(txt),
+            id::EDIT_PSW => self.text_edit_psw_txt = std::mem::take(txt),
+            other => tr_warn!("Unknown text edit changed: id={other}"),
         }
     }
 
@@ -504,7 +506,7 @@ impl rtwins::wgt::WindowState for MainWndState {
             let _ = txt.stream()
                 << "  ▫▫▫▫▫ "
                 << esc::INVERSE_ON
-                << "ListBox"
+                << "ListBox manual:"
                 << esc::INVERSE_OFF
                 << " ▫▫▫▫▫\n"
                 << "• "
@@ -541,11 +543,11 @@ impl rtwins::wgt::WindowState for MainWndState {
     }
 
     fn get_text_edit_text(&mut self, wgt: &Widget, txt: &mut String, edit_mode: bool) {
-        if wgt.id == id::EDIT1 {
-            *txt = self.text_edit1_txt.clone();
-        }
-        else if wgt.id == id::EDIT2 {
-            *txt = self.text_edit2_txt.clone();
+        match wgt.id {
+            id::EDIT1 => *txt = self.text_edit1_txt.clone(),
+            id::EDIT2 => *txt = self.text_edit2_txt.clone(),
+            id::EDIT_PSW => *txt = self.text_edit_psw_txt.clone(),
+            other => tr_warn!("Unknown text edit: id={other}"),
         }
     }
 

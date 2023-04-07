@@ -53,6 +53,8 @@ pub mod id {
                         EDIT1
                         LBL_EDT2_TITLE
                         EDIT2
+                        LBL_EDIT_PSW_TITLE
+                        EDIT_PSW
                     CUSTOM_WGT1
                     PANEL_CHBX
                         LBL_CHBX_TITLE
@@ -423,6 +425,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 prop: prop::TextEdit {
                     fg_color: ColorFg::Black,
                     bg_color: ColorBgTheme::Edit1.into(),
+                    psw_mask: false,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -444,6 +447,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 prop: prop::TextEdit {
                     fg_color: ColorFg::Black,
                     bg_color: ColorBgTheme::Edit2.into(),
+                    psw_mask: false,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -460,8 +464,8 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
     },
     Widget {
         id: id::PANEL_CHBX,
-        coord: Coord { col: 36, row: 1 },
-        size: Size { width: 22, height: 10 },
+        coord: Coord { col: 36, row: 4 },
+        size: Size { width: 22, height: 7 },
         prop: prop::Panel {
             title : "",
             fg_color : ColorFgTheme::PanelChbox.into(),
@@ -471,7 +475,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
         children: &[
             Widget {
                 id: id::LBL_CHBX_TITLE,
-                coord: Coord { col: 2, row: 2 },
+                coord: Coord { col: 2, row: 1 },
                 size: Size { width: 14, height: 1 },
                 prop: prop::Label {
                     title: "Check list:", // concat!(bold!(), "Check list:", normal!()),
@@ -482,7 +486,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
             },
             Widget {
                 id: id::CHBX_A,
-                coord: Coord { col: 2, row: 4 },
+                coord: Coord { col: 2, row: 2 },
                 prop: prop::CheckBox {
                     text : "Check A ",
                     fg_color : ColorFg::Green,
@@ -491,7 +495,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
             },
             Widget {
                 id: id::CHBX_B,
-                coord: Coord { col: 2, row: 5 },
+                coord: Coord { col: 2, row: 3 },
                 prop: prop::CheckBox {
                     text : "Check B ",
                     fg_color : ColorFgTheme::Checkbox.into(),
@@ -500,7 +504,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
             },
             Widget {
                 id: id::CHBX_C,
-                coord: Coord { col: 2, row: 6 },
+                coord: Coord { col: 2, row: 4 },
                 prop: prop::CheckBox {
                     text : "Check C ",
                     fg_color : ColorFgTheme::Checkbox.into(),
@@ -509,7 +513,7 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
             },
             Widget {
                 id: id::CHBX_D,
-                coord: Coord { col: 2, row: 7 },
+                coord: Coord { col: 2, row: 5 },
                 prop: prop::CheckBox {
                     text : "Check D ",
                     fg_color : ColorFgTheme::Checkbox.into(),
@@ -518,7 +522,29 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
             },
         ],
         ..Widget::cdeflt()
-    }
+    },
+    Widget {
+        id: id::LBL_EDIT_PSW_TITLE,
+        coord: Coord { col: 36, row: 1 },
+        size: Size { width: 10, height: 1 },
+        prop: prop::Label {
+            title: "Password:",
+            fg_color: ColorFg::WhiteIntense,
+            bg_color: ColorBg::Inherit,
+        }.into(),
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: id::EDIT_PSW,
+        coord: Coord { col: 45, row: 1 },
+        size: Size { width: 12, height: 1 },
+        prop: prop::TextEdit {
+            fg_color: ColorFg::Black,
+            bg_color: ColorBgTheme::EditPsw.into(),
+            psw_mask: true,
+        }.into(),
+        ..Widget::cdeflt()
+    },
 ];
 
 #[rustfmt::skip]

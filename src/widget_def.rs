@@ -90,6 +90,7 @@ pub mod prop {
     pub struct TextEdit {
         pub fg_color: ColorFg,
         pub bg_color: ColorBg,
+        pub psw_mask: bool,
     }
 
     #[derive(Copy, Clone)]

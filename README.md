@@ -50,7 +50,7 @@ Implementation is based on:
   * [ ] horizontal page control
   * [x] popup windows
   * [x] layers - to control visibility of groups of widgets
-  * [ ] password input
+  * [x] password input
 * navigation
   * [x] widgets navigation by Tab/Esc key
   * [x] render focused widget state

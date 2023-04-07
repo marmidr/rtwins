@@ -38,6 +38,8 @@ pub enum ColorBgTheme {
     Edit1Intense,
     Edit2,
     Edit2Intense,
+    EditPsw,
+    EditPswIntense,
     LabelFtr,
     //
     ThemeEnd,
@@ -103,6 +105,8 @@ fn color_bg_theme_encode(cl: ColorBg) -> &'static str {
         ColorBgTheme::Edit1Intense => esc::BG_CYAN_INTENSE,
         ColorBgTheme::Edit2 => esc::BG_GREEN,
         ColorBgTheme::Edit2Intense => esc::BG_GREEN_INTENSE,
+        ColorBgTheme::EditPsw => esc::BG_STEEL_BLUE,
+        ColorBgTheme::EditPswIntense => esc::BG_DODGER_BLUE,
         ColorBgTheme::LabelFtr => esc::BG_NAVY,
         _ => esc::BG_DEFAULT,
     }
@@ -121,6 +125,7 @@ fn color_bg_theme_intensify(cl: ColorBg) -> ColorBg {
     let cl = match ColorBgTheme::from(cl) {
         ColorBgTheme::Edit1 => ColorBgTheme::Edit1Intense,
         ColorBgTheme::Edit2 => ColorBgTheme::Edit2Intense,
+        ColorBgTheme::EditPsw => ColorBgTheme::EditPswIntense,
         other => other,
     };
 
