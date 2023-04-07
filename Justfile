@@ -30,25 +30,25 @@ build-rel *ARGS:
 #
 run-dbg:
     clear
-    cargo run --bin demo_full
+    cargo run --example demo_full
 
 run-rel:
     clear
-    cargo run --release --bin demo_full
+    cargo run --release --example demo_full
 
 # find out what functions takes most of the space in the library
 bloat-lib:
-    cargo bloat --release --bin demo_full --filter rtwins --no-relative-size -n 50
+    cargo bloat --release --example demo_full --filter rtwins --no-relative-size -n 50
 
 # find out what crates takes most of the space in the executable
 bloat-demo:
-    cargo bloat --release --bin demo_full --crates
+    cargo bloat --release --example demo_full --crates
 
 # expand macros in demo <module>.rs
 expand-demo *ARGS:
-    cargo expand --bin demo_full {{ARGS}}
+    cargo expand --example demo_full {{ARGS}}
 
-# expand macros in twins library <module>.rs
+# expand macros in twins module
 expand-lib *ARGS:
     cargo expand --lib {{ARGS}}
 
@@ -82,8 +82,8 @@ clip:
 
 # debug locally
 gdb:
-    # rust-gdb -tui -ex "b main" target/debug/demo_full -ex "r"
-    cgdb -ex "b main" target/debug/demo_full -ex "r"
+    # rust-gdb -tui -ex "b main" target/debug/examples/demo_full -ex "r"
+    cgdb -ex "b main" target/debug/examples/demo_full -ex "r"
 
 # debug remote
 gdbremote:
@@ -91,7 +91,7 @@ gdbremote:
 
 # gdb server
 gdbserve:
-    gdbserver :6789 target/debug/demo_full
+    gdbserver :6789 target/debug/examples/demo_full
 
 # project dependencies tree
 tree:

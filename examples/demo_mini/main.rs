@@ -136,8 +136,6 @@ const WND_MAIN_WGTS: [Widget; transform::tree_wgt_count(&WINDOW_MAIN)] =
 // ---------------------------------------------------------------------------------------------- //
 
 struct MainWndState {
-    /// all window widgets, starting with the window widget itself
-    widgets: &'static [Widget],
     /// currently focused widget, for each pagecontrol page
     focused_id: WId,
     /// list of widgets to redraw
@@ -147,7 +145,6 @@ struct MainWndState {
 impl Default for MainWndState {
     fn default() -> Self {
         MainWndState {
-            widgets: &WND_MAIN_WGTS,
             focused_id: WIDGET_ID_NONE,
             invalidated: vec![],
         }
@@ -176,15 +173,15 @@ impl rtwins::wgt::WindowState for MainWndState {
     }
 
     fn get_widgets(&self) -> &'static [Widget] {
-        self.widgets
+        &WND_MAIN_WGTS
     }
 
     fn get_window_coord(&mut self) -> Coord {
-        self.widgets.first().map_or(Coord::cdeflt(), |w| w.coord)
+        WND_MAIN_WGTS.first().map_or(Coord::cdeflt(), |w| w.coord)
     }
 
     fn get_window_size(&mut self) -> Size {
-        self.widgets.first().map_or(Size::cdeflt(), |w| w.size)
+        WND_MAIN_WGTS.first().map_or(Size::cdeflt(), |w| w.size)
     }
 
     fn instant_redraw(&mut self, wid: WId) {
@@ -267,6 +264,7 @@ fn main() {
         rtwins::tr_flush!(&mut term_guard);
         term_guard.mouse_mode(rtwins::MouseMode::Off);
         term_guard.trace_area_clear();
+        // clear logs below the cursor
         let logs_row = term_guard.trace_row;
         term_guard.move_to(0, logs_row);
         term_guard.flush_buff();

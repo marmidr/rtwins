@@ -1,4 +1,4 @@
-//! # RTWins Widget
+//! # RTWins Platform Abstraction Layer
 
 /// Platform Abstraction Layer for your project
 #[allow(unused_variables)]

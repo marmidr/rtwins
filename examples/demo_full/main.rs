@@ -21,15 +21,15 @@ mod tui_msgbox_state;
 
 // ---------------------------------------------------------------------------------------------- //
 
-struct DemoPal {
+struct DemoFullPal {
     line_buff: String,
     writing_logs: bool,
     started_at: std::time::Instant,
 }
 
-impl DemoPal {
+impl DemoFullPal {
     fn new() -> Self {
-        DemoPal {
+        DemoFullPal {
             line_buff: String::with_capacity(500),
             writing_logs: false,
             started_at: std::time::Instant::now(),
@@ -37,7 +37,7 @@ impl DemoPal {
     }
 }
 
-impl rtwins::pal::Pal for DemoPal {
+impl rtwins::pal::Pal for DemoFullPal {
     fn write_char_n(&mut self, c: char, repeat: i16) {
         for _ in 0..repeat {
             self.line_buff.push(c);
@@ -197,7 +197,7 @@ fn main() {
     let mut wmngr = WndMngr::new();
 
     // replace default PAL with our own:
-    TERM.try_write().unwrap().pal = Box::new(DemoPal::new());
+    TERM.try_write().unwrap().pal = Box::new(DemoFullPal::new());
     let mut mouse_on = true;
 
     // register function providing traces timestamp
@@ -393,6 +393,7 @@ fn main() {
         rtwins::tr_flush!(&mut term_guard);
         term_guard.mouse_mode(rtwins::MouseMode::Off);
         term_guard.trace_area_clear();
+        // clear logs below the cursor
         let logs_row = term_guard.trace_row;
         term_guard.move_to(0, logs_row);
         term_guard.flush_buff();

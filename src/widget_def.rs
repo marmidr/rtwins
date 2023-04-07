@@ -583,7 +583,6 @@ pub trait WindowState {
     fn get_widgets(&self) -> &'static [Widget] {
         &[]
     }
-
     fn get_rstate(&mut self) -> Option<&mut wgt::RuntimeStates> {
         None
     }
