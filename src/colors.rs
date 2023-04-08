@@ -2,7 +2,7 @@
 
 use crate::esc::*;
 
-use lazy_static::lazy_static;
+use atomic_once_cell::AtomicLazy;
 use std::sync::RwLock;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -215,12 +215,14 @@ fn intensify_theme_bg(cl: ColorBg) -> ColorBg {
 }
 
 // pointers to user provided function encoding theme colors
-lazy_static! {
-    static ref ENC_THEME_FG: RwLock<fn(ColorFg) -> &'static str> = RwLock::new(encode_theme_fg);
-    static ref ENC_THEME_BG: RwLock::<fn(ColorBg) -> &'static str> = RwLock::new(encode_theme_bg);
-    static ref INTENS_THEME_FG: RwLock::<fn(ColorFg) -> ColorFg> = RwLock::new(intensify_theme_fg);
-    static ref INTENS_THEME_BG: RwLock::<fn(ColorBg) -> ColorBg> = RwLock::new(intensify_theme_bg);
-}
+static ENC_THEME_FG: AtomicLazy<RwLock<fn(ColorFg) -> &'static str>> =
+    AtomicLazy::new(|| RwLock::new(encode_theme_fg));
+static ENC_THEME_BG: AtomicLazy<RwLock<fn(ColorBg) -> &'static str>> =
+    AtomicLazy::new(|| RwLock::new(encode_theme_bg));
+static INTENS_THEME_FG: AtomicLazy<RwLock<fn(ColorFg) -> ColorFg>> =
+    AtomicLazy::new(|| RwLock::new(intensify_theme_fg));
+static INTENS_THEME_BG: AtomicLazy<RwLock<fn(ColorBg) -> ColorBg>> =
+    AtomicLazy::new(|| RwLock::new(intensify_theme_bg));
 
 // ---------------------------------------------------------------------------------------------- //
 

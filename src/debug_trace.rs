@@ -3,7 +3,7 @@
 
 use crate::esc;
 
-use lazy_static::lazy_static;
+use atomic_once_cell::AtomicLazy;
 use std::sync::Mutex;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -22,9 +22,7 @@ struct TraceItem {
     pub msg: String,
 }
 
-lazy_static! {
-    static ref TRACE: Mutex<Trace> = Mutex::new(Trace::default());
-}
+static TRACE: AtomicLazy<Mutex<Trace>> = AtomicLazy::new(|| Mutex::new(Trace::default()));
 
 // ---------------------------------------------------------------------------------------------- //
 

@@ -6,7 +6,7 @@ use crate::esc;
 use crate::wgt;
 use crate::widget_def::*;
 
-use lazy_static::lazy_static;
+use atomic_once_cell::AtomicLazy;
 use std::sync::RwLock;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -14,10 +14,8 @@ use std::sync::RwLock;
 // https://github.com/rust-lang-nursery/lazy-static.rs/issues/169
 pub type PalBox = Box<dyn crate::pal::Pal + Send + Sync>;
 
-lazy_static! {
-    /// Global instance of Terminal
-    pub static ref TERM: RwLock<Term> = RwLock::new(Term::default());
-}
+/// Global instance of Terminal
+pub static TERM: AtomicLazy<RwLock<Term>> = AtomicLazy::new(|| RwLock::new(Term::default()));
 
 /// Terminal low level API and context
 ///

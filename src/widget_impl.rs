@@ -9,7 +9,7 @@ use crate::string_ext::*;
 use crate::widget_def::*;
 use crate::*; // tr_info
 
-use lazy_static::lazy_static;
+use atomic_once_cell::AtomicLazy;
 use std::sync::RwLock;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -39,9 +39,8 @@ pub(crate) struct TextEditState {
     pub txt: String,
 }
 
-lazy_static! {
-    pub(crate) static ref WGT_STATE: RwLock<WidgetState> = RwLock::new(WidgetState::default());
-}
+pub(crate) static WGT_STATE: AtomicLazy<RwLock<WidgetState>> =
+    AtomicLazy::new(|| RwLock::new(WidgetState::default()));
 
 // ---------------------------------------------------------------------------------------------- //
 // ---- UI TRANSFORMATION ----------------------------------------------------------------------- //

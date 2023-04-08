@@ -20,12 +20,12 @@ alias nx := nxtest
 # build debug; eg: `just build-dbg -v`
 build-dbg *ARGS:
     cargo build
-    ls -hsk target/debug/demo_full
+    ls -hsk target/debug/examples/demo_full
 
 # build release
 build-rel *ARGS:
     cargo build --release {{ARGS}}
-    ls -hsk target/release/demo_full
+    ls -hsk target/release/examples/demo_full
 
 #
 run-dbg:
