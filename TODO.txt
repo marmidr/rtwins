@@ -3,4 +3,4 @@
 [x] turn src/bin/ into examples/, remove chrono from lib dependencies
 [x] replace lazystatic with no-std equivalent:
     * https://crates.io/crates/atomic_once_cell
-[ ]
+[ ] Ctrl+Bckspace -> 'W' ?

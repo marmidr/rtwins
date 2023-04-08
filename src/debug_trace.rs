@@ -4,7 +4,7 @@
 use crate::esc;
 
 use atomic_once_cell::AtomicLazy;
-use std::sync::Mutex;
+use std::sync::RwLock;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -22,7 +22,7 @@ struct TraceItem {
     pub msg: String,
 }
 
-static TRACE: AtomicLazy<Mutex<Trace>> = AtomicLazy::new(|| Mutex::new(Trace::default()));
+static TRACE: AtomicLazy<RwLock<Trace>> = AtomicLazy::new(|| RwLock::new(Trace::default()));
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -130,42 +130,42 @@ impl Trace {
 
     /// Print Debug message
     pub fn trace_d(filepath: &str, line: u32, msg: Msg) {
-        if let Ok(ref mut guard) = TRACE.lock() {
+        if let Ok(ref mut guard) = TRACE.write() {
             guard.push(filepath, line, esc::FG_BLACK_INTENSE, "-D- ", msg);
         }
     }
 
     /// Print Info message
     pub fn trace_i(filepath: &str, line: u32, msg: Msg) {
-        if let Ok(ref mut guard) = TRACE.lock() {
+        if let Ok(ref mut guard) = TRACE.write() {
             guard.push(filepath, line, esc::FG_WHITE, "-I- ", msg);
         }
     }
 
     /// Print Warning message
     pub fn trace_w(filepath: &str, line: u32, msg: Msg) {
-        if let Ok(ref mut guard) = TRACE.lock() {
+        if let Ok(ref mut guard) = TRACE.write() {
             guard.push(filepath, line, esc::FG_YELLOW, "-W- ", msg);
         }
     }
 
     /// Print Error message
     pub fn trace_e(filepath: &str, line: u32, msg: Msg) {
-        if let Ok(ref mut guard) = TRACE.lock() {
+        if let Ok(ref mut guard) = TRACE.write() {
             guard.push(filepath, line, esc::FG_RED, "-E- ", msg);
         }
     }
 
     /// Flush buffered messages
     pub fn trace_flush(term: &mut crate::Term) {
-        if let Ok(ref mut guard) = TRACE.lock() {
+        if let Ok(ref mut guard) = TRACE.write() {
             guard.flush(term);
         }
     }
 
     /// Set user provided pointer to function returning traces timestamp string
     pub fn set_timestr_fn(f: Box<fn() -> String>) {
-        if let Ok(ref mut guard) = TRACE.lock() {
+        if let Ok(ref mut guard) = TRACE.write() {
             guard.trace_timestr = f;
         }
     }
