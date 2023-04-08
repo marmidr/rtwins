@@ -3,7 +3,12 @@
 #![allow(dead_code)]
 
 use crate::input::*;
-use std::cmp::Ordering;
+
+use core::cmp::Ordering;
+use core::prelude::rust_2021::*;
+
+extern crate alloc;
+use alloc::vec::Vec;
 
 pub type InputQue = Vec<u8>;
 
@@ -411,11 +416,11 @@ const fn seq_cmp(left: &[u8], right: &[u8]) -> (bool, Ordering) {
 
 // -----------------------------------------------------------------------------
 
-pub fn print_seq() {
-    for s in ESC_KEYS_MAP_SORTED.iter() {
-        println!("{:7} -> {}", s.seq, s.name);
-    }
-}
+// pub fn print_seq() {
+//     for s in ESC_KEYS_MAP_SORTED.iter() {
+//         println!("{:7} -> {}", s.seq, s.name);
+//     }
+// }
 
 /// Fast binary search of key-sequence `sequence` in sorted `map`.
 /// Returns Some(SeqMap) if found, None otherwise.

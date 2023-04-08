@@ -186,7 +186,7 @@ impl rtwins::wgt::WindowState for MsgBoxState {
     }
 
     fn instant_redraw(&mut self, wid: WId) {
-        if let Ok(mut term_guard) = TERM.try_write() {
+        if let Some(mut term_guard) = TERM.try_lock() {
             term_guard.draw(self, &[wid]);
             term_guard.flush_buff();
         }

@@ -3,6 +3,12 @@
 use crate::wgt::WindowState;
 use crate::TERM;
 
+pub use core::prelude::rust_2021::*;
+
+extern crate alloc;
+use alloc::borrow::ToOwned;
+use alloc::vec::Vec;
+
 // ---------------------------------------------------------------------------------------------- //
 
 pub trait WindowManager {
@@ -63,8 +69,7 @@ pub trait WindowManager {
             if !visible.is_empty() {
                 self.draw_all();
             }
-            else {
-                let mut term_guard = TERM.try_write().unwrap();
+            else if let Some(mut term_guard) = TERM.try_lock() {
                 term_guard.screen_clr_all();
                 term_guard.flush_buff();
             }
@@ -119,35 +124,36 @@ pub trait WindowManager {
 
     /// Draw the top window only
     fn draw_top(&mut self) {
-        let mut term_guard = TERM.try_write().unwrap();
-
-        if let Some(ws) = self.get_top_mut() {
-            term_guard.draw_wnd(ws);
+        if let Some(mut term_guard) = TERM.try_lock() {
+            if let Some(ws) = self.get_top_mut() {
+                term_guard.draw_wnd(ws);
+            }
         }
     }
 
     /// Draw the top window invalidated widgets
     fn draw_top_invalidated(&mut self) {
-        let mut term_guard = TERM.try_write().unwrap();
-
-        if let Some(ws) = self.get_top_mut() {
-            term_guard.draw_invalidated(ws);
+        if let Some(mut term_guard) = TERM.try_lock() {
+            if let Some(ws) = self.get_top_mut() {
+                term_guard.draw_invalidated(ws);
+            }
         }
     }
 
     /// Redraw windows from bottom to top
     fn draw_all(&mut self) {
-        let mut term_guard = TERM.try_write().unwrap();
-        let visible = self.get_visible().to_owned();
+        if let Some(mut term_guard) = TERM.try_lock() {
+            let visible = self.get_visible().to_owned();
 
-        for wnd_idx in 0..99 {
-            if let Some(ws) = self.get_mut(wnd_idx) {
-                if visible.contains(&wnd_idx) {
-                    term_guard.draw_wnd(ws);
+            for wnd_idx in 0..99 {
+                if let Some(ws) = self.get_mut(wnd_idx) {
+                    if visible.contains(&wnd_idx) {
+                        term_guard.draw_wnd(ws);
+                    }
                 }
-            }
-            else {
-                break;
+                else {
+                    break;
+                }
             }
         }
     }

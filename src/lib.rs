@@ -5,6 +5,10 @@
 //!
 //! It provides basic facilities required by interactive applications such as screen and cursor management, keyboard input, keymaps, color codes.
 
+// #![no_std]
+
+use core::env;
+
 /// Library version from Cargo.toml
 pub const VER: &str = env!("CARGO_PKG_VERSION");
 

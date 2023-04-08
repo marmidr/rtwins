@@ -7,7 +7,16 @@ use crate::wgt;
 use crate::widget_def::*;
 
 use atomic_once_cell::AtomicLazy;
-use std::sync::RwLock;
+use try_lock::TryLock;
+
+use core::prelude::rust_2021::*;
+
+extern crate alloc;
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec;
+use alloc::vec::Vec;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -15,7 +24,7 @@ use std::sync::RwLock;
 pub type PalBox = Box<dyn crate::pal::Pal + Send + Sync>;
 
 /// Global instance of Terminal
-pub static TERM: AtomicLazy<RwLock<Term>> = AtomicLazy::new(|| RwLock::new(Term::default()));
+pub static TERM: AtomicLazy<TryLock<Term>> = AtomicLazy::new(|| TryLock::new(Term::default()));
 
 /// Terminal low level API and context
 ///

@@ -367,7 +367,7 @@ impl rtwins::wgt::WindowState for MainWndState {
 
     fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
         if let InputEvent::Mouse(ref mouse) = ii.evnt {
-            if let Ok(mut term_guard) = TERM.try_write() {
+            if let Some(mut term_guard) = TERM.try_lock() {
                 let term = &mut *term_guard;
                 term.move_to(mouse.col as u16, mouse.row as u16);
                 let mark = mouse.evt.as_mark();
@@ -649,7 +649,7 @@ impl rtwins::wgt::WindowState for MainWndState {
     /* requests */
 
     fn instant_redraw(&mut self, wid: WId) {
-        if let Ok(mut term_guard) = TERM.try_write() {
+        if let Some(mut term_guard) = TERM.try_lock() {
             term_guard.draw(self, &[wid]);
             term_guard.flush_buff();
         }

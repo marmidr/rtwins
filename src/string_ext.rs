@@ -1,8 +1,14 @@
 //! # RTWins String extensions
 
-use std::fmt::Write;
-use std::ops::Shl;
 use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
+
+use core::fmt::Write;
+use core::format_args;
+use core::ops::Shl;
+use core::prelude::rust_2021::*;
+
+extern crate alloc;
+use alloc::string::String;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -168,10 +174,10 @@ impl StrExt for str {
                         };
                     }
                     _ => {
-                        if ('A'..='Z').contains(&ch) && ch != 'O' {
+                        if ch.is_ascii_uppercase() && ch != 'O' {
                             return seq_idx + 1;
                         }
-                        if ('a'..='z').contains(&ch) {
+                        if ch.is_ascii_lowercase() {
                             return seq_idx + 1;
                         }
                     }

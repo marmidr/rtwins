@@ -1,8 +1,10 @@
 //! # RTWins terminal input constants and structures
 
-// ---------------------------------------------------------------------------------------------- //
-
 #![allow(dead_code)]
+
+use core::prelude::rust_2021::*;
+
+// ---------------------------------------------------------------------------------------------- //
 
 /// ANSI control codes
 #[derive(PartialEq)]
@@ -80,6 +82,7 @@ pub enum Key {
     //
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for Key {
     fn default() -> Self {
         Key::None
@@ -116,6 +119,7 @@ impl MouseEvent {
     }
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for MouseEvent {
     fn default() -> Self {
         MouseEvent::None
@@ -200,14 +204,8 @@ impl CharBuff {
     /// Returns proper UTF-8 slice from self.utf8seq or empty slice in case of invalid sequence
     pub fn utf8str(&self) -> &str {
         let leading_seq = self.utf8seq.split_at(self.utf8sl as usize).0;
-        let res = std::str::from_utf8(leading_seq);
-
-        if let Ok(s) = res {
-            s
-        }
-        else {
-            ""
-        }
+        let res = core::str::from_utf8(leading_seq);
+        res.unwrap_or_default()
     }
 }
 
@@ -224,6 +222,7 @@ pub enum InputEvent {
     Mouse(MouseInfo),
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for InputEvent {
     fn default() -> Self {
         InputEvent::None

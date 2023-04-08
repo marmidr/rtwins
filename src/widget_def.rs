@@ -4,12 +4,22 @@
 #![allow(unused_variables)]
 // #![feature(trace_macros)]
 
-use paste::paste;
-use std::collections::HashMap;
-
 use crate::common::*;
 use crate::input::*;
 use crate::wgt;
+
+use paste::paste;
+
+use core::fmt;
+use core::panic;
+use core::prelude::rust_2021::*;
+use core::write;
+
+extern crate alloc;
+use alloc::collections::BTreeMap;
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -62,6 +72,7 @@ pub mod prop {
     use super::ButtonStyle;
     use super::PgBarStyle;
     use crate::colors::*;
+    use core::prelude::rust_2021::*;
 
     #[derive(Copy, Clone)]
     pub struct Window {
@@ -207,8 +218,6 @@ pub enum Property {
     TextBox(prop::TextBox),
     Layer(prop::Layer),
 }
-
-use std::fmt;
 
 impl fmt::Display for Property {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -367,8 +376,8 @@ impl Link {
 
 /// Widget RunTime state
 pub mod rstate {
-
     use crate::utils::StringListRc;
+    use core::prelude::rust_2021::*;
 
     /// CheckBox
     #[derive(Default, Clone, Copy)]
@@ -450,6 +459,7 @@ pub mod rstate {
         Pgctrl(PgctrlState),
     }
 
+    #[allow(clippy::derivable_impls)]
     impl Default for State {
         fn default() -> State {
             State::None
@@ -461,9 +471,9 @@ pub mod rstate {
 #[derive(Default)]
 pub struct RuntimeStates {
     // widget type state
-    states: HashMap<WId, rstate::State>,
+    states: BTreeMap<WId, rstate::State>,
     // applies to every widget
-    enabled: HashMap<WId, bool>,
+    enabled: BTreeMap<WId, bool>,
 }
 
 // macro generating similar member functions
@@ -487,8 +497,8 @@ macro_rules! impl_as {
 impl RuntimeStates {
     pub fn new() -> Self {
         RuntimeStates {
-            states: HashMap::new(),
-            enabled: HashMap::new(),
+            states: BTreeMap::new(),
+            enabled: BTreeMap::new(),
         }
     }
 
@@ -553,7 +563,7 @@ pub trait WindowState {
     fn on_custom_widget_draw(
         &mut self,
         wgt: &Widget,
-        term: &std::cell::RefCell<&mut crate::terminal::Term>,
+        term: &core::cell::RefCell<&mut crate::terminal::Term>,
     ) {
     }
     fn on_custom_widget_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {

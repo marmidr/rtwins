@@ -2,6 +2,8 @@
 
 use crate::Term;
 
+use core::prelude::rust_2021::*;
+
 // ---------------------------------------------------------------------------------------------- //
 
 /// Widget coordinates on screen or on parent widget
@@ -23,7 +25,7 @@ impl Coord {
     }
 }
 
-impl std::ops::Add for Coord {
+impl core::ops::Add for Coord {
     type Output = Self;
     fn add(self, rhs: Coord) -> Coord {
         Coord {
@@ -33,14 +35,14 @@ impl std::ops::Add for Coord {
     }
 }
 
-impl std::ops::AddAssign for Coord {
+impl core::ops::AddAssign for Coord {
     fn add_assign(&mut self, rhs: Self) {
         self.col = self.col.saturating_add(rhs.col);
         self.row = self.row.saturating_add(rhs.row);
     }
 }
 
-impl std::ops::Sub for Coord {
+impl core::ops::Sub for Coord {
     type Output = Self;
     fn sub(self, rhs: Coord) -> Coord {
         Coord {
@@ -50,7 +52,7 @@ impl std::ops::Sub for Coord {
     }
 }
 
-impl std::ops::SubAssign for Coord {
+impl core::ops::SubAssign for Coord {
     fn sub_assign(&mut self, rhs: Self) {
         self.col = self.col.saturating_sub(rhs.col);
         self.row = self.row.saturating_sub(rhs.row);
@@ -82,7 +84,7 @@ impl Size {
     }
 }
 
-impl std::ops::Sub for Size {
+impl core::ops::Sub for Size {
     type Output = Self;
     fn sub(self, other: Size) -> Size {
         Size {
@@ -213,11 +215,11 @@ pub(crate) struct FontMemento<'cell, 'term: 'cell> {
     fg_stack_len: i8,
     bg_stack_len: i8,
     at_stack_len: i8,
-    term: &'cell std::cell::RefCell<&'term mut Term>,
+    term: &'cell core::cell::RefCell<&'term mut Term>,
 }
 
 impl<'cell, 'term> FontMemento<'cell, 'term> {
-    pub fn new(term: &'cell std::cell::RefCell<&'term mut Term>) -> Self {
+    pub fn new(term: &'cell core::cell::RefCell<&'term mut Term>) -> Self {
         let fg;
         let bg;
         let at;

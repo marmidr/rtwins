@@ -3,7 +3,12 @@
 use crate::esc::*;
 
 use atomic_once_cell::AtomicLazy;
-use std::sync::RwLock;
+use try_lock::TryLock;
+
+use core::prelude::rust_2021::*;
+
+extern crate alloc;
+use alloc::string::String;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -215,14 +220,18 @@ fn intensify_theme_bg(cl: ColorBg) -> ColorBg {
 }
 
 // pointers to user provided function encoding theme colors
-static ENC_THEME_FG: AtomicLazy<RwLock<fn(ColorFg) -> &'static str>> =
-    AtomicLazy::new(|| RwLock::new(encode_theme_fg));
-static ENC_THEME_BG: AtomicLazy<RwLock<fn(ColorBg) -> &'static str>> =
-    AtomicLazy::new(|| RwLock::new(encode_theme_bg));
-static INTENS_THEME_FG: AtomicLazy<RwLock<fn(ColorFg) -> ColorFg>> =
-    AtomicLazy::new(|| RwLock::new(intensify_theme_fg));
-static INTENS_THEME_BG: AtomicLazy<RwLock<fn(ColorBg) -> ColorBg>> =
-    AtomicLazy::new(|| RwLock::new(intensify_theme_bg));
+#[allow(clippy::type_complexity)]
+static ENC_THEME_FG: AtomicLazy<TryLock<fn(ColorFg) -> &'static str>> =
+    AtomicLazy::new(|| TryLock::new(encode_theme_fg));
+#[allow(clippy::type_complexity)]
+static ENC_THEME_BG: AtomicLazy<TryLock<fn(ColorBg) -> &'static str>> =
+    AtomicLazy::new(|| TryLock::new(encode_theme_bg));
+#[allow(clippy::type_complexity)]
+static INTENS_THEME_FG: AtomicLazy<TryLock<fn(ColorFg) -> ColorFg>> =
+    AtomicLazy::new(|| TryLock::new(intensify_theme_fg));
+#[allow(clippy::type_complexity)]
+static INTENS_THEME_BG: AtomicLazy<TryLock<fn(ColorBg) -> ColorBg>> =
+    AtomicLazy::new(|| TryLock::new(intensify_theme_bg));
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -233,7 +242,7 @@ impl ColorFg {
             let cl_next_val = (self as u8) + 1;
             // intensified has odd value
             if cl_next_val & 0x01 != 0 {
-                let cl_new = unsafe { std::mem::transmute::<u8, ColorFg>(cl_next_val) };
+                let cl_new = unsafe { core::mem::transmute::<u8, ColorFg>(cl_next_val) };
                 return cl_new;
             }
         }
@@ -242,7 +251,7 @@ impl ColorFg {
             return ColorFg::WhiteIntense;
         }
         else if self >= Self::Theme00 && self < Self::ThemeEnd {
-            if let Ok(guard) = INTENS_THEME_FG.try_read() {
+            if let Some(guard) = INTENS_THEME_FG.try_lock() {
                 let cl_new = guard(self);
                 return cl_new;
             }
@@ -268,7 +277,7 @@ impl ColorFg {
             return MAP_CL_FG[self as usize];
         }
         else if self >= Self::Theme00 && self < Self::ThemeEnd {
-            if let Ok(guard) = ENC_THEME_FG.try_read() {
+            if let Some(guard) = ENC_THEME_FG.try_lock() {
                 let seq = guard(self);
                 return seq;
             }
@@ -282,13 +291,13 @@ impl ColorFg {
 
     /// Sets encoder function for theme colors
     pub fn set_theme_encoder(encoder: fn(ColorFg) -> &'static str) {
-        let mut guard = ENC_THEME_FG.write().unwrap();
+        let mut guard = ENC_THEME_FG.try_lock().unwrap();
         *guard = encoder;
     }
 
     /// Sets color intensifier function for theme colors
     pub fn set_theme_intensifier(intensify: fn(ColorFg) -> ColorFg) {
-        let mut guard = INTENS_THEME_FG.write().unwrap();
+        let mut guard = INTENS_THEME_FG.try_lock().unwrap();
         *guard = intensify;
     }
 }
@@ -300,7 +309,7 @@ impl ColorBg {
             let cl_next_val = (self as u8) + 1;
             // intensified has odd value
             if cl_next_val & 0x01 != 0 {
-                let cl_new = unsafe { std::mem::transmute::<u8, ColorBg>(cl_next_val) };
+                let cl_new = unsafe { core::mem::transmute::<u8, ColorBg>(cl_next_val) };
                 return cl_new;
             }
         }
@@ -309,7 +318,7 @@ impl ColorBg {
             return ColorBg::WhiteIntense;
         }
         else if self >= Self::Theme00 && self < Self::ThemeEnd {
-            if let Ok(guard) = INTENS_THEME_BG.try_read() {
+            if let Some(guard) = INTENS_THEME_BG.try_lock() {
                 let cl_new = guard(self);
                 return cl_new;
             }
@@ -338,7 +347,7 @@ impl ColorBg {
             return MAP_CL_BG[self as usize];
         }
         else if self >= Self::Theme00 && self < Self::ThemeEnd {
-            if let Ok(guard) = ENC_THEME_BG.try_read() {
+            if let Some(guard) = ENC_THEME_BG.try_lock() {
                 let seq = guard(self);
                 return seq;
             }
@@ -359,13 +368,13 @@ impl ColorBg {
 
     /// Sets encoder function for theme colors
     pub fn set_theme_encoder(encoder: fn(ColorBg) -> &'static str) {
-        let mut guard = ENC_THEME_BG.write().unwrap();
+        let mut guard = ENC_THEME_BG.try_lock().unwrap();
         *guard = encoder;
     }
 
     /// Sets color intensifier function for theme colors
     pub fn set_theme_intensifier(intensify: fn(ColorBg) -> ColorBg) {
-        let mut guard = INTENS_THEME_BG.write().unwrap();
+        let mut guard = INTENS_THEME_BG.try_lock().unwrap();
         *guard = intensify;
     }
 }

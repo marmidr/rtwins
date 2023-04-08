@@ -4,7 +4,17 @@
 use crate::esc;
 
 use atomic_once_cell::AtomicLazy;
-use std::sync::RwLock;
+use try_lock::TryLock;
+
+pub use core::prelude::rust_2021::*;
+
+extern crate alloc;
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
+use alloc::format;
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec::Vec;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -22,7 +32,7 @@ struct TraceItem {
     pub msg: String,
 }
 
-static TRACE: AtomicLazy<RwLock<Trace>> = AtomicLazy::new(|| RwLock::new(Trace::default()));
+static TRACE: AtomicLazy<TryLock<Trace>> = AtomicLazy::new(|| TryLock::new(Trace::default()));
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -86,7 +96,7 @@ macro_rules! tr_set_timestr_function {
 
 // ---------------------------------------------------------------------------------------------- //
 
-type Msg = std::borrow::Cow<'static, str>;
+type Msg = alloc::borrow::Cow<'static, str>;
 
 impl Trace {
     /// Creates a new trace entry on the internal queue
@@ -130,42 +140,42 @@ impl Trace {
 
     /// Print Debug message
     pub fn trace_d(filepath: &str, line: u32, msg: Msg) {
-        if let Ok(ref mut guard) = TRACE.write() {
+        if let Some(ref mut guard) = TRACE.try_lock() {
             guard.push(filepath, line, esc::FG_BLACK_INTENSE, "-D- ", msg);
         }
     }
 
     /// Print Info message
     pub fn trace_i(filepath: &str, line: u32, msg: Msg) {
-        if let Ok(ref mut guard) = TRACE.write() {
+        if let Some(ref mut guard) = TRACE.try_lock() {
             guard.push(filepath, line, esc::FG_WHITE, "-I- ", msg);
         }
     }
 
     /// Print Warning message
     pub fn trace_w(filepath: &str, line: u32, msg: Msg) {
-        if let Ok(ref mut guard) = TRACE.write() {
+        if let Some(ref mut guard) = TRACE.try_lock() {
             guard.push(filepath, line, esc::FG_YELLOW, "-W- ", msg);
         }
     }
 
     /// Print Error message
     pub fn trace_e(filepath: &str, line: u32, msg: Msg) {
-        if let Ok(ref mut guard) = TRACE.write() {
+        if let Some(ref mut guard) = TRACE.try_lock() {
             guard.push(filepath, line, esc::FG_RED, "-E- ", msg);
         }
     }
 
     /// Flush buffered messages
     pub fn trace_flush(term: &mut crate::Term) {
-        if let Ok(ref mut guard) = TRACE.write() {
+        if let Some(ref mut guard) = TRACE.try_lock() {
             guard.flush(term);
         }
     }
 
     /// Set user provided pointer to function returning traces timestamp string
     pub fn set_timestr_fn(f: Box<fn() -> String>) {
-        if let Ok(ref mut guard) = TRACE.write() {
+        if let Some(ref mut guard) = TRACE.try_lock() {
             guard.trace_timestr = f;
         }
     }

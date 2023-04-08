@@ -1,5 +1,9 @@
 //! # RTWins Platform Abstraction Layer
 
+use core::prelude::rust_2021::*;
+
+// ---------------------------------------------------------------------------------------------- //
+
 /// Platform Abstraction Layer for your project
 #[allow(unused_variables)]
 pub trait Pal {

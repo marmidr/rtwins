@@ -10,7 +10,17 @@ use crate::widget_def::*;
 use crate::*; // tr_info
 
 use atomic_once_cell::AtomicLazy;
-use std::sync::RwLock;
+use try_lock::TryLock;
+
+use core::assert;
+use core::debug_assert;
+use core::matches;
+use core::prelude::rust_2021::*;
+
+extern crate alloc;
+use alloc::format;
+use alloc::string::String;
+use alloc::string::ToString;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -39,8 +49,8 @@ pub(crate) struct TextEditState {
     pub txt: String,
 }
 
-pub(crate) static WGT_STATE: AtomicLazy<RwLock<WidgetState>> =
-    AtomicLazy::new(|| RwLock::new(WidgetState::default()));
+pub(crate) static WGT_STATE: AtomicLazy<TryLock<WidgetState>> =
+    AtomicLazy::new(|| TryLock::new(WidgetState::default()));
 
 // ---------------------------------------------------------------------------------------------- //
 // ---- UI TRANSFORMATION ----------------------------------------------------------------------- //
@@ -262,7 +272,7 @@ pub fn set_cursor_at(term: &mut Term, ws: &mut dyn WindowState, wgt: &Widget) {
 
     match wgt.prop {
         Property::TextEdit(ref _p) => {
-            let wgtstate_guard = WGT_STATE.try_read().unwrap();
+            let wgtstate_guard = WGT_STATE.try_lock().unwrap();
             let te_state = &wgtstate_guard.text_edit_state;
 
             if wgt.id == te_state.wgt_id {
@@ -329,7 +339,7 @@ pub fn is_enabled(ws: &dyn WindowState, wgt: &Widget) -> bool {
 
 /// Shall be called eg. on top window change
 pub fn reset_internal_state() {
-    WGT_STATE.try_write().unwrap().reset();
+    WGT_STATE.try_lock().unwrap().reset();
 }
 
 pub fn process_input(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
@@ -347,7 +357,7 @@ pub fn process_input(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
             input_handled = process_key(ws, ii);
 
             if !input_handled && ii.kmod.has_special() {
-                let dd_combo_id = WGT_STATE.try_read().unwrap().cbx_drop_down;
+                let dd_combo_id = WGT_STATE.try_lock().unwrap().cbx_drop_down;
 
                 if let Some(wgt) = find_by_id(ws.get_widgets(), dd_combo_id) {
                     hide_combo_box_dropdown_list(ws, wgt);
@@ -456,7 +466,7 @@ pub fn pagectrl_select_next_page(ws: &mut dyn WindowState, pgctrl_id: WId, next:
 
 /// Mark internal clicked widget id
 pub fn mark_button_down(btn: &Widget, is_down: bool) {
-    WGT_STATE.try_write().unwrap().mouse_down_wgt = tetrary!(is_down, btn.id, WIDGET_ID_NONE);
+    WGT_STATE.try_lock().unwrap().mouse_down_wgt = tetrary!(is_down, btn.id, WIDGET_ID_NONE);
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -582,7 +592,7 @@ fn get_next_focusable(
     break_search: &mut bool,
 ) -> Option<&'static Widget> {
     if let Some(fp) = first_parent {
-        if std::ptr::eq(parent, fp) {
+        if core::ptr::eq(parent, fp) {
             tr_warn!("full loop detected"); // (pFirstParent id=%d)", pFirstParent?pFirstParent->id:-1);
             *break_search = true;
             return None;
@@ -823,12 +833,12 @@ fn change_focus_to(ws: &mut dyn WindowState, new_id: WId) -> bool {
                 }
             }
 
-            if let Ok(mut term_guard) = TERM.try_write() {
+            if let Some(mut term_guard) = TERM.try_lock() {
                 let term = &mut *term_guard;
                 set_cursor_at(term, ws, new_focused_wgt);
             }
 
-            WGT_STATE.try_write().unwrap().focused_wgt = new_focused_wgt.id;
+            WGT_STATE.try_lock().unwrap().focused_wgt = new_focused_wgt.id;
         }
 
         if is_focusable_by_id(ws, prev_id) {
@@ -866,13 +876,13 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
     ws.invalidate(pgctrl.id);
 
     // cancel EDIT mode
-    WGT_STATE.try_write().unwrap().text_edit_state.wgt_id = WIDGET_ID_NONE;
+    WGT_STATE.try_lock().unwrap().text_edit_state.wgt_id = WIDGET_ID_NONE;
 
     if let Some(focused) = find_by_id(ws.get_widgets(), ws.get_focused_id()) {
         // tr_debug!("focused id={} ({})", focused.id, focused.prop);
-        WGT_STATE.try_write().unwrap().focused_wgt = focused.id;
+        WGT_STATE.try_lock().unwrap().focused_wgt = focused.id;
 
-        if let Ok(mut term_guard) = TERM.try_write() {
+        if let Some(mut term_guard) = TERM.try_lock() {
             wgt::set_cursor_at(&mut term_guard, ws, focused);
         }
         else {
@@ -880,8 +890,10 @@ fn pagectrl_change_page(ws: &mut dyn WindowState, pgctrl: &Widget, next: bool) {
         }
     }
     else {
-        WGT_STATE.try_write().unwrap().focused_wgt = WIDGET_ID_NONE;
-        TERM.try_write().unwrap().move_to_home();
+        WGT_STATE.try_lock().unwrap().focused_wgt = WIDGET_ID_NONE;
+        if let Some(mut term_guard) = TERM.try_lock() {
+            term_guard.move_to_home();
+        }
     }
 }
 
@@ -904,7 +916,7 @@ fn hide_combo_box_dropdown_list(ws: &mut dyn WindowState, wgt: &Widget) {
     // redraw parent to hide list
     let parent = get_parent(wgt);
     ws.invalidate(parent.id);
-    WGT_STATE.try_write().unwrap().cbx_drop_down = WIDGET_ID_NONE;
+    WGT_STATE.try_lock().unwrap().cbx_drop_down = WIDGET_ID_NONE;
 }
 
 fn invalidate_radio_group(ws: &mut dyn WindowState, wgt: &Widget) {
@@ -956,7 +968,7 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
     let mut te_state;
 
     let handled = {
-        let mut wgtstate_guard = WGT_STATE.try_write().unwrap();
+        let mut wgtstate_guard = WGT_STATE.try_lock().unwrap();
         let testate = &mut wgtstate_guard.text_edit_state;
 
         if wgt.id == testate.wgt_id {
@@ -1097,7 +1109,7 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
         }
     }
 
-    WGT_STATE.try_write().unwrap().text_edit_state = te_state.clone();
+    WGT_STATE.try_lock().unwrap().text_edit_state = te_state.clone();
     key_handled
 }
 
@@ -1150,11 +1162,13 @@ fn process_key_button(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) ->
     if let InputEvent::Key(ref key) = ii.evnt {
         if *key == Key::Enter {
             // pointer may change between onButtonUp and onButtonClick, so remember it
-            WGT_STATE.try_write().unwrap().mouse_down_wgt = wgt.id;
+            WGT_STATE.try_lock().unwrap().mouse_down_wgt = wgt.id;
             ws.on_button_down(wgt, ii);
             ws.instant_redraw(wgt.id);
-            TERM.try_write().unwrap().pal.sleep(200);
-            WGT_STATE.try_write().unwrap().mouse_down_wgt = WIDGET_ID_NONE;
+            if let Some(term_guard) = TERM.try_lock() {
+                term_guard.pal.sleep(200);
+            }
+            WGT_STATE.try_lock().unwrap().mouse_down_wgt = WIDGET_ID_NONE;
             ws.on_button_up(wgt, ii);
             ws.on_button_click(wgt, ii);
             ws.invalidate(wgt.id);
@@ -1251,7 +1265,7 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
 
             if cbs.drop_down {
                 ws.on_combo_box_drop(wgt, true);
-                WGT_STATE.try_write().unwrap().cbx_drop_down = wgt.id;
+                WGT_STATE.try_lock().unwrap().cbx_drop_down = wgt.id;
             }
             else {
                 hide_combo_box_dropdown_list(ws, wgt);
@@ -1379,7 +1393,7 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
 
         if let Some(mut wgt) = find_at(ws, mouse.col, mouse.row, &mut rct) {
             let ret = {
-                let mouse_down_wgt = WGT_STATE.try_read().unwrap().mouse_down_wgt;
+                let mouse_down_wgt = WGT_STATE.try_lock().unwrap().mouse_down_wgt;
 
                 if let Some(md_wgt) = find_by_id(ws.get_widgets(), mouse_down_wgt) {
                     // apply only for Button widget
@@ -1395,7 +1409,7 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
                     // remember clicked widget
                     if mouse.evt >= MouseEvent::ButtonLeft && mouse.evt < MouseEvent::ButtonReleased
                     {
-                        let mut wgtstate_guard = WGT_STATE.try_write().unwrap();
+                        let mut wgtstate_guard = WGT_STATE.try_lock().unwrap();
                         wgtstate_guard.mouse_down_wgt = wgt.id;
                         wgtstate_guard.mouse_down_ii = (*ii).clone();
                     }
@@ -1405,7 +1419,7 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
             };
 
             // tr_debug!("WidgetAt({:2}:{:2})={} ID:{}", ii.mouse.col, ii.mouse.row, wgt.prop.to_string(), wgt.id);
-            let cbx_drop_down = WGT_STATE.try_read().unwrap().cbx_drop_down;
+            let cbx_drop_down = WGT_STATE.try_lock().unwrap().cbx_drop_down;
 
             // check if drop-down list clicked
             if let Some(cbx) = find_by_id(ws.get_widgets(), cbx_drop_down) {
@@ -1440,19 +1454,19 @@ fn process_mouse(ws: &mut dyn WindowState, ii: &InputInfo) -> bool {
                     Property::CustomWgt(_) => process_mouse_custom_wgt(ws, wgt, &rct, ii),
                     Property::TextBox(_) => process_mouse_text_box(ws, wgt, &rct, ii),
                     _ => {
-                        if let Ok(mut term_guard) = TERM.try_write() {
+                        if let Some(mut term_guard) = TERM.try_lock() {
                             let term = &mut *term_guard;
                             term.move_to_home();
                         }
 
-                        WGT_STATE.try_write().unwrap().mouse_down_wgt = WIDGET_ID_NONE;
+                        WGT_STATE.try_lock().unwrap().mouse_down_wgt = WIDGET_ID_NONE;
                         return false;
                     }
                 }
             }
 
             if mouse.evt == MouseEvent::ButtonReleased {
-                WGT_STATE.try_write().unwrap().mouse_down_wgt = WIDGET_ID_NONE;
+                WGT_STATE.try_lock().unwrap().mouse_down_wgt = WIDGET_ID_NONE;
             }
         }
     }
@@ -1501,7 +1515,7 @@ fn process_mouse_radio(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, 
 fn process_mouse_button(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect, ii: &InputInfo) {
     if let InputEvent::Mouse(ref mouse) = ii.evnt {
         let mouse_down_wgt = {
-            let wgtstate_guard = WGT_STATE.try_read().unwrap();
+            let wgtstate_guard = WGT_STATE.try_lock().unwrap();
             wgtstate_guard.mouse_down_wgt
         };
 
@@ -1514,14 +1528,14 @@ fn process_mouse_button(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect,
         else if mouse.evt == MouseEvent::ButtonReleased && mouse_down_wgt == wgt.id {
             ws.on_button_up(wgt, ii);
             {
-                let mut guard = WGT_STATE.try_write().unwrap();
+                let mut guard = WGT_STATE.try_lock().unwrap();
                 ws.on_button_click(wgt, &guard.mouse_down_ii);
                 guard.mouse_down_wgt = WIDGET_ID_NONE;
             }
             ws.invalidate(wgt.id);
         }
         else {
-            let mut guard = WGT_STATE.try_write().unwrap();
+            let mut guard = WGT_STATE.try_lock().unwrap();
             guard.mouse_down_wgt = WIDGET_ID_NONE;
         }
     }
@@ -1530,7 +1544,7 @@ fn process_mouse_button(ws: &mut dyn WindowState, wgt: &Widget, wgt_rect: &Rect,
 fn process_mouse_button_release(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) {
     if let InputEvent::Mouse(ref mouse) = ii.evnt {
         ws.on_button_up(wgt, ii);
-        WGT_STATE.try_write().unwrap().mouse_down_wgt = WIDGET_ID_NONE;
+        WGT_STATE.try_lock().unwrap().mouse_down_wgt = WIDGET_ID_NONE;
         ws.invalidate(wgt.id);
     }
 }
@@ -1669,7 +1683,7 @@ fn process_mouse_combo_box(
                 if cbs.drop_down {
                     ws.on_combo_box_drop(wgt, true);
                     ws.invalidate(wgt.id);
-                    WGT_STATE.try_write().unwrap().cbx_drop_down = wgt.id;
+                    WGT_STATE.try_lock().unwrap().cbx_drop_down = wgt.id;
                 }
                 else {
                     hide_combo_box_dropdown_list(ws, wgt);

@@ -3,7 +3,16 @@
 use crate::input::*;
 use crate::string_ext::*;
 
-use std::fmt::Write;
+use core::file;
+use core::fmt::Write;
+use core::line;
+use core::prelude::rust_2021::*;
+use core::write;
+
+extern crate alloc;
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec::Vec;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -33,7 +42,7 @@ macro_rules! static_assert {
 
 // ---------------------------------------------------------------------------------------------- //
 
-pub type StringListRc = std::sync::Arc<std::cell::RefCell<Vec<String>>>;
+pub type StringListRc = alloc::sync::Arc<core::cell::RefCell<Vec<String>>>;
 
 /// Splits given string into lines so that each line is not wider than `max_disp_w`.
 ///
@@ -105,7 +114,7 @@ pub fn num_edit_input_evt(
         // 0x7fffffffffffffff = 9223372036854775807
         if let InputEvent::Char(ref ch) = ii.evnt {
             if ch.utf8seq[0] < b'0' || ch.utf8seq[0] > b'9' || txt.len() >= 19 {
-                if let Ok(mut term_guard) = crate::TERM.try_write() {
+                if let Some(mut term_guard) = crate::TERM.try_lock() {
                     term_guard.write_str(crate::esc::BELL);
                     term_guard.flush_buff();
                 }

@@ -3,6 +3,8 @@
 //! [More on Wikipedia](https://en.m.wikipedia.org/wiki/ANSI_escape_code)
 //!
 
+use core::concat;
+
 // -----------------------------------------------------------------------------------------------
 /// # Escape sequence generation
 

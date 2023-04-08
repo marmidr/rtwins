@@ -3,8 +3,6 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use std::cell::RefCell;
-
 use crate::colors::*;
 use crate::common::*;
 use crate::esc;
@@ -12,6 +10,17 @@ use crate::string_ext::*;
 use crate::wgt;
 use crate::wgt::*;
 use crate::*; // tr_info
+
+use core::cell::RefCell;
+use core::cfg;
+use core::concat;
+use core::panic;
+use core::prelude::rust_2021::*;
+
+extern crate alloc;
+use alloc::format;
+use alloc::string::String;
+use alloc::string::ToString;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -39,7 +48,7 @@ pub fn draw_widgets(term: &mut Term, ws: &mut dyn WindowState, wids: &[WId]) {
 
     let mut fm = FontMementoManual::from_term(term);
     let focused_id = ws.get_focused_id();
-    WGT_STATE.try_write().unwrap().focused_wgt = focused_id;
+    WGT_STATE.try_lock().unwrap().focused_wgt = focused_id;
     term.cursor_hide();
     term.flush_buff();
 
@@ -324,7 +333,7 @@ fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit) {
     let max_w = dctx.wgt.size.width as i16 - 3;
 
     {
-        let wgtstate_guard = WGT_STATE.try_read().unwrap();
+        let wgtstate_guard = WGT_STATE.try_lock().unwrap();
         let te_state = &wgtstate_guard.text_edit_state;
 
         if dctx.wgt.id == te_state.wgt_id {
@@ -464,7 +473,7 @@ fn draw_radio(dctx: &mut DrawCtx, prp: &prop::Radio) {
 
 fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button) {
     let focused = dctx.wnd_state.is_focused(dctx.wgt);
-    let pressed = dctx.wgt.id == WGT_STATE.try_read().unwrap().mouse_down_wgt;
+    let pressed = dctx.wgt.id == WGT_STATE.try_lock().unwrap().mouse_down_wgt;
     let clfg = get_widget_fg_color(dctx.wgt).intensify_if(focused);
     let mut txt = String::new();
 
@@ -989,7 +998,8 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
     let lines_visible = dctx.wgt.size.height as i16 - 2;
     let mut tbs = Default::default();
     dctx.wnd_state.get_text_box_state(dctx.wgt, &mut tbs);
-    if std::sync::Arc::strong_count(&tbs.lines) > 0 {
+
+    if alloc::sync::Arc::strong_count(&tbs.lines) > 0 {
         let lines = tbs.lines.as_ref().borrow();
         if tbs.top_line > lines.len() as i16 {
             tbs.top_line = lines.len() as i16 - lines_visible;
