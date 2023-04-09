@@ -1,11 +1,10 @@
 //! # RTWins String extensions
 
-use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
-
 use core::fmt::Write;
 use core::format_args;
 use core::ops::Shl;
-use core::prelude::rust_2021::*;
+
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 extern crate alloc;
 use alloc::string::String;

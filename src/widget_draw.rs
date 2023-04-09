@@ -12,10 +12,6 @@ use crate::wgt::*;
 use crate::*; // tr_info
 
 use core::cell::RefCell;
-use core::cfg;
-use core::concat;
-use core::panic;
-use core::prelude::rust_2021::*;
 
 extern crate alloc;
 use alloc::format;

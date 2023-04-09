@@ -9,8 +9,6 @@ use crate::widget_def::*;
 use atomic_once_cell::AtomicLazy;
 use try_lock::TryLock;
 
-use core::prelude::rust_2021::*;
-
 extern crate alloc;
 use alloc::boxed::Box;
 use alloc::string::String;

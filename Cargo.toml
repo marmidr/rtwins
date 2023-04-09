@@ -1,6 +1,6 @@
 [package]
 name = "rtwins"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Mariusz Midor <mmidor@gmail.com>"]
 edition = "2021"
 description = "Rust library designed for easy creation of text user interface applications (TUI)"

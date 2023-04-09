@@ -10,6 +10,8 @@ use rtwins::TERM;
 
 use std::io::Write;
 
+mod input_tty;
+
 // ---------------------------------------------------------------------------------------------- //
 
 struct DemoMiniPal {
@@ -204,7 +206,7 @@ impl rtwins::wgt::WindowState for MainWndState {
 
     fn take_invalidated(&mut self) -> Vec<WId> {
         let mut ret = Vec::with_capacity(4);
-        std::mem::swap(&mut self.invalidated, &mut ret);
+        core::mem::swap(&mut self.invalidated, &mut ret);
         ret
     }
 }
@@ -232,7 +234,7 @@ fn main() {
     rtwins::tr_info!("Press Ctrl-D to quit");
     rtwins::tr_flush!(&mut TERM.try_lock().unwrap());
 
-    let mut itty = rtwins::input_tty::InputTty::new(1000);
+    let mut itty = input_tty::InputTty::new(1000);
     let mut ique = rtwins::input_decoder::InputQue::new();
     let mut dec = rtwins::input_decoder::Decoder::default();
     let mut ii = rtwins::input::InputInfo::default();

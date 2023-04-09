@@ -5,8 +5,6 @@ use crate::esc::*;
 use atomic_once_cell::AtomicLazy;
 use try_lock::TryLock;
 
-use core::prelude::rust_2021::*;
-
 extern crate alloc;
 use alloc::string::String;
 

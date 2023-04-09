@@ -29,7 +29,7 @@ Implementation is based on:
 * [x] buffered terminal output
 * [x] platform abstraction layer (PAL) to ease porting
 * [ ] command line interface with history (CLI)
-* [ ] #![no_std]
+* [x] #![no_std]
 
 ## Secondary goals
 

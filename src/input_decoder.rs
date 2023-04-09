@@ -5,7 +5,6 @@
 use crate::input::*;
 
 use core::cmp::Ordering;
-use core::prelude::rust_2021::*;
 
 extern crate alloc;
 use alloc::vec::Vec;

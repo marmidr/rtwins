@@ -1,11 +1,10 @@
 //! # RTWins TUI library
 //! `RTWins` is a Rust library designed for easy creation of visual terminal applications.
 //!
-//! *Future goal: make it run on non-os platforms, like bare Cortex-M3.*
-//!
-//! It provides basic facilities required by interactive applications such as screen and cursor management, keyboard input, keymaps, color codes.
+//! It provides basic facilities required by interactive applications
+//! such as screen and cursor management, keyboard input, keymaps, color codes.
 
-// #![no_std]
+#![no_std]
 
 use core::env;
 
@@ -18,8 +17,6 @@ pub mod common;
 pub mod esc;
 pub mod input;
 pub mod input_decoder;
-#[cfg(target_os = "linux")]
-pub mod input_tty;
 pub mod pal;
 pub mod string_ext;
 pub mod utils;

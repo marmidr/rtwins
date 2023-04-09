@@ -3,11 +3,7 @@
 use crate::input::*;
 use crate::string_ext::*;
 
-use core::file;
 use core::fmt::Write;
-use core::line;
-use core::prelude::rust_2021::*;
-use core::write;
 
 extern crate alloc;
 use alloc::string::String;

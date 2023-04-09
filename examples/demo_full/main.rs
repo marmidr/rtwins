@@ -12,6 +12,7 @@ use std::rc::Rc;
 use crate::tui_commands::Command;
 
 // https://doc.rust-lang.org/cargo/guide/project-layout.html
+mod input_tty;
 mod tui_colors;
 mod tui_commands;
 mod tui_main_def;
@@ -227,7 +228,7 @@ fn main() {
     // rtwins::tr_debug!("DEBUG MACRO: X={} N={}", 42, "Warduna");
     rtwins::tr_flush!(&mut TERM.try_lock().unwrap());
 
-    let mut itty = rtwins::input_tty::InputTty::new(1000);
+    let mut itty = input_tty::InputTty::new(1000);
     let mut ique = rtwins::input_decoder::InputQue::new();
     let mut dec = rtwins::input_decoder::Decoder::default();
     let mut ii = rtwins::input::InputInfo::default();

@@ -14,7 +14,7 @@ pub struct InputTty {
     c_lflag_bkp: libc::tcflag_t,
     eof_code: libc::cc_t,
     input_timeout_ms: u16,
-    input_buff: [u8; crate::esc::SEQ_MAX_LENGTH],
+    input_buff: [u8; rtwins::esc::SEQ_MAX_LENGTH],
     input_len: u8,
 }
 
@@ -47,7 +47,7 @@ impl InputTty {
             c_lflag_bkp: 0,
             eof_code: 0,
             input_timeout_ms: timeout_ms,
-            input_buff: [0u8; crate::esc::SEQ_MAX_LENGTH],
+            input_buff: [0u8; rtwins::esc::SEQ_MAX_LENGTH],
             input_len: 0,
         };
 
@@ -80,11 +80,6 @@ impl InputTty {
         itty
     }
 
-    /// Checks if the input is initialized properly
-    pub fn opened(&self) -> bool {
-        self.tty_file.is_some()
-    }
-
     /// Returns tuple with ESC sequence slice and bool marker set to true,
     /// if application termination was requested (C-d)
     pub fn read_input(&mut self) -> (&[u8], bool) {
@@ -104,7 +99,7 @@ impl InputTty {
         if let Some(ref mut f) = self.tty_file {
             if Self::wait_input(f.as_raw_fd(), self.input_timeout_ms) {
                 // read up to 8-1 bytes
-                let res = f.read(&mut self.input_buff[..crate::esc::SEQ_MAX_LENGTH - 1]);
+                let res = f.read(&mut self.input_buff[..rtwins::esc::SEQ_MAX_LENGTH - 1]);
                 if let Ok(nb) = res {
                     // print!("nb={} ", nb);
                     self.input_buff[nb] = 0;

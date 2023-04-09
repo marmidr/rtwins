@@ -12,11 +12,6 @@ use crate::*; // tr_info
 use atomic_once_cell::AtomicLazy;
 use try_lock::TryLock;
 
-use core::assert;
-use core::debug_assert;
-use core::matches;
-use core::prelude::rust_2021::*;
-
 extern crate alloc;
 use alloc::format;
 use alloc::string::String;

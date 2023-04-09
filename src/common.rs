@@ -2,8 +2,6 @@
 
 use crate::Term;
 
-use core::prelude::rust_2021::*;
-
 // ---------------------------------------------------------------------------------------------- //
 
 /// Widget coordinates on screen or on parent widget

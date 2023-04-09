@@ -11,9 +11,6 @@ use crate::wgt;
 use paste::paste;
 
 use core::fmt;
-use core::panic;
-use core::prelude::rust_2021::*;
-use core::write;
 
 extern crate alloc;
 use alloc::collections::BTreeMap;

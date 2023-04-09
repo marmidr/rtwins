@@ -3,8 +3,6 @@
 use crate::wgt::WindowState;
 use crate::TERM;
 
-pub use core::prelude::rust_2021::*;
-
 extern crate alloc;
 use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
