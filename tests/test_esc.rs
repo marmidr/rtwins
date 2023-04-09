@@ -4,16 +4,20 @@ extern crate rtwins;
 
 use rtwins::esc::*;
 
-fn count_esc(s: &str) -> u32
-{
-    let n_esc = s.chars().fold(
-        0u32, |acc, item| if item == '\x1B' { acc + 1 } else { acc }
-    );
+fn count_esc(s: &str) -> u32 {
+    let n_esc = s.chars().fold(0u32, |acc, item| {
+        if item == ESC {
+            acc + 1
+        }
+        else {
+            acc
+        }
+    });
     n_esc
 }
 
 #[test]
-fn test_esc_macros() {
+fn esc_macros() {
     assert_eq!("\x1b[{0}G", rtwins::cursor_column!());
     assert_eq!("\x1b[{0}G", CURSOR_COLUMN_FMT);
     assert_eq!("\x1b[42G", rtwins::cursor_column!(42));
@@ -26,7 +30,7 @@ fn test_esc_macros() {
 }
 
 #[test]
-fn test_colors_attributes() {
+fn colors_attributes() {
     let s = String::new()
         + BOLD
         + FAINT
@@ -50,7 +54,7 @@ fn test_colors_attributes() {
 
 /// Check if all colors are available
 #[test]
-fn test_colors_fg() {
+fn colors_fg() {
     let s = String::new()
         + FG_BLACK
         + FG_BLACK_INTENSE
@@ -198,7 +202,7 @@ fn test_colors_fg() {
 
 /// Check if all constants are available
 #[test]
-fn test_colors_bg() {
+fn colors_bg() {
     let s = String::new()
         + BG_BLACK
         + BG_BLACK_INTENSE
@@ -346,7 +350,7 @@ fn test_colors_bg() {
 
 /// Check cursor navigation
 #[test]
-fn test_cursor() {
+fn cursor_move() {
     let s = String::new()
         + rtwins::cursor_backward!(1)
         + rtwins::cursor_forward!(1)
@@ -360,17 +364,15 @@ fn test_cursor() {
 
 /// Check lines manipulation
 #[test]
-fn test_line() {
-    let s = String::new()
-        + rtwins::line_insert!(1)
-        + rtwins::line_delete!(1);
+fn line_insert_delete() {
+    let s = String::new() + rtwins::line_insert!(1) + rtwins::line_delete!(1);
 
     assert_eq!(count_esc(&s), 2);
 }
 
 /// Check character manipulation
 #[test]
-fn test_character() {
+fn character_erase_insert() {
     let s = String::new()
         + rtwins::char_repeat_last!(1)
         + rtwins::char_erase!(1)
@@ -382,17 +384,15 @@ fn test_character() {
 
 /// Check screen manipulation
 #[test]
-fn test_screen() {
-    let s = String::new()
-        + rtwins::screen_scroll_up!(1)
-        + rtwins::screen_scroll_down!(1);
+fn screen_scroll() {
+    let s = String::new() + rtwins::screen_scroll_up!(1) + rtwins::screen_scroll_down!(1);
 
     assert_eq!(count_esc(&s), 2);
 }
 
 #[test]
-fn test_link_url() {
-    let s = String::new() + rtwins::link!("https://github.com/marmidr/rtwins", "RTWins");
+fn link_url() {
+    let s = String::new() + rtwins::url_link!("https://github.com/marmidr/rtwins", "RTWins");
 
     assert!(s.len() > 0);
 }

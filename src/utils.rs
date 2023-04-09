@@ -1,54 +1,89 @@
 //! # RTWins Utils
 
+use crate::input::*;
 use crate::string_ext::*;
 
-pub type StringListRc = std::rc::Rc<std::cell::RefCell<Vec<String>>>;
+use core::fmt::Write;
+
+extern crate alloc;
+use alloc::string::String;
+use alloc::string::ToString;
+use alloc::vec::Vec;
+
+// ---------------------------------------------------------------------------------------------- //
+
+/// Mimics C++ operator: cond ? a : b;
+#[macro_export]
+macro_rules! tetrary {
+    ($COND: expr, $THEN: expr, $ELSE: expr) => {
+        if $COND {
+            $THEN
+        }
+        else {
+            $ELSE
+        }
+    };
+}
+
+// https://internals.rust-lang.org/t/nicer-static-assertions/15986
+// see also: https://crates.io/crates/static_assertions
+/// Assertion at compile time
+#[macro_export]
+macro_rules! static_assert {
+    ($COND: expr) => {
+        #[allow(dead_code)]
+        const _: () = assert!($COND);
+    };
+}
+
+// ---------------------------------------------------------------------------------------------- //
+
+pub type StringListRc = alloc::sync::Arc<core::cell::RefCell<Vec<String>>>;
 
 /// Splits given string into lines so that each line is not wider than `max_disp_w`.
 ///
 /// Display width is calculated using Unicode data to determine if character is single or double width.
 /// Returns Vector of String's (not slices)
-pub fn word_wrap(max_disp_w: usize, src: &String) -> StringListRc {
-    let it = src.split_inclusive(char::is_whitespace)
+pub fn word_wrap(max_disp_w: usize, src: &str) -> StringListRc {
+    let it = src
+        .split_inclusive(char::is_whitespace)
         .scan((0usize, 0usize, 0usize), |state, word| {
-            let word_w = word.ansi_displayed_width();
+            let word_w = word.displayed_width();
             // println!("w:'{}', wl:{}", word, word.len());
 
             if state.0 + word_w > max_disp_w {
                 // ready to output the line as the current word would made it too wide
                 let outslice = &src[state.1..state.2];
                 // println!(">'{}'", outslice);
-                state.0 = word_w;       // line_w = word_w
-                state.1 = state.2;      // begin = end
-                state.2 += word.len();  // end += word.len
-                return Some(outslice.to_string());
+                state.0 = word_w; // line_w = word_w
+                state.1 = state.2; // begin = end
+                state.2 += word.len(); // end += word.len
+                Some(outslice.to_string())
+            }
+            else if word.ends_with('\n') {
+                // shorter than possible, but ends with new line
+                state.2 += word.len(); // end += word.len
+                state.2 -= 1; // do not put '\n' to the output
+                let outslice = &src[state.1..state.2];
+                // println!("<'{}'", outslice);
+                state.0 = 0;
+                state.2 += 1; // do not put '\n' to the output
+                state.1 = state.2; // begin = end
+                Some(outslice.to_string())
             }
             else {
-                if word.ends_with('\n') {
-                    // shorter than possible, but ends with new line
-                    state.2 += word.len();  // end += word.len
-                    state.2 -= 1;           // do not put '\n' to the output
-                    let outslice = &src[state.1..state.2];
-                    // println!("<'{}'", outslice);
-                    state.0 = 0;
-                    state.2 += 1;           // do not put '\n' to the output
-                    state.1 = state.2;      // begin = end
-                    return Some(outslice.to_string());
+                // single word not ending with \n
+                state.0 += word_w; // line_w += word_w
+                state.2 += word.len(); // end += word.len
+
+                if state.2 == src.len() {
+                    // `word` is the last item in a string -> output it
+                    // println!("<'{}'", src[state.1..state.2].to_string());
+                    Some(word.to_string())
                 }
                 else {
-                    // single word not ending with \n
-                    state.0 += word_w;      // line_w += word_w
-                    state.2 += word.len();  // end += word.len
-
-                    if state.2 == src.len() {
-                        // `word` is the last item in a string -> output it
-                        // println!("<'{}'", src[state.1..state.2].to_string());
-                        Some(word.to_string())
-                    }
-                    else {
-                        // keep iterating -> return Some
-                        Some("".to_string())    // empty str -> will be filtered out
-                    }
+                    // keep iterating -> return Some
+                    Some("".to_string()) // empty str -> will be filtered out
                 }
             }
         })
@@ -59,7 +94,88 @@ pub fn word_wrap(max_disp_w: usize, src: &String) -> StringListRc {
     out
 }
 
-// copied from code::str::validations.rs
+/// Custom handler for text edit - edit integer value
+///
+/// Returns true if input event was handled and needs no more processing, false otherwise.
+pub fn num_edit_input_evt(
+    ii: &InputInfo,
+    txt: &mut String,
+    cursor_pos: &mut i16,
+    limit_min: i64,
+    limit_max: i64,
+    wrap: bool,
+) -> bool {
+    if ii.kmod.is_empty() {
+        // reject non-digits and avoid too long numbers
+        // 0x7fffffffffffffff = 9223372036854775807
+        if let InputEvent::Char(ref ch) = ii.evnt {
+            if ch.utf8seq[0] < b'0' || ch.utf8seq[0] > b'9' || txt.len() >= 19 {
+                if let Some(mut term_guard) = crate::TERM.try_lock() {
+                    term_guard.write_str(crate::esc::BELL);
+                    term_guard.flush_buff();
+                }
+                else {
+                    crate::tr_warn!("Cannot lock TERM");
+                }
+                return true;
+            }
+        }
+    }
+
+    if let InputEvent::Key(ref key) = ii.evnt {
+        match *key {
+            Key::Tab => {
+                return true;
+            }
+            Key::Enter => {
+                let mut n: i64 = txt.parse().unwrap_or_default();
+                n = n.clamp(limit_min, limit_max);
+                txt.clear();
+                write!(txt, "{n}").unwrap();
+                return false;
+            }
+            Key::Esc => {
+                return false;
+            }
+            Key::Up | Key::Down => {
+                let mut n: i64 = txt.parse().unwrap_or_default();
+                let mut delta: i64 = if ii.kmod.has_shift() {
+                    100
+                }
+                else if ii.kmod.has_ctrl() {
+                    10
+                }
+                else {
+                    1
+                };
+
+                if *key == Key::Down {
+                    delta = -delta;
+                }
+
+                n += delta;
+
+                if n < limit_min {
+                    n = if wrap { limit_max } else { limit_min };
+                }
+
+                if n > limit_max {
+                    n = if wrap { limit_min } else { limit_max };
+                }
+
+                txt.clear();
+                write!(txt, "{n}").unwrap();
+                *cursor_pos = txt.chars().count() as i16;
+                return true;
+            }
+            _ => {}
+        }
+    }
+
+    false
+}
+
+// copied from core::str::validations.rs
 // https://tools.ietf.org/html/rfc3629
 const UTF8_CHAR_WIDTH: &[u8; 256] = &[
     // 1  2  3  4  5  6  7  8  9  A  B  C  D  E  F

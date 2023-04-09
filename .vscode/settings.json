@@ -1,0 +1,11 @@
+{
+    "[rust]": {
+        // "editor.semanticHighlighting.enabled": false
+    },
+    "rust-analyzer.runnableEnv": {
+        "RUST_BACKTRACE": "0"
+    },
+    "workbench.editorAssociations": {
+        "*.md": "vscode.markdown.preview.editor",
+    },
+}

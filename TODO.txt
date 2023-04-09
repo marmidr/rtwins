@@ -1,0 +1,8 @@
+
+[x] listbox: mouse m-click changes selection
+[x] turn src/bin/ into examples/, remove chrono from lib dependencies
+[x] replace lazystatic with no-std equivalent:
+    * https://crates.io/crates/atomic_once_cell
+[ ] Ctrl+Bckspace -> 'W' ?
+[x] make the lib `no_std`
+[ ] use crate `log` in place of own macros
