@@ -145,23 +145,16 @@ impl Rect {
 /// Some of them may be combined
 #[derive(Clone, Copy)]
 pub enum FontAttrib {
-    /// Style
+    /// Styles - only one at a time
     None,
-    /// Style
     Bold,
-    /// Style
     Faint,
-    /// Style
     Italics,
-    // Decorator
+    /// Decorators - may be combined
     Underline,
-    // Decorator
     Blink,
-    // Decorator
     Inverse,
-    // Decorator
     Invisible,
-    // Decorator
     StrikeThrough,
 }
 

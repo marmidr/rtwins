@@ -5,7 +5,7 @@
     * https://crates.io/crates/atomic_once_cell
 [x] make the lib `no_std`
 [ ] use crate `log` in place of own macros
-[ ] fix rendering of the disabled window
+[x] fix rendering of the disabled window
 [ ] simplify the RuntimeState
 [x] reorganize DemoFull, rename tabs
 [ ] improve Tab-traversal

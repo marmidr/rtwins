@@ -71,7 +71,39 @@ impl Term {
 
     /// Write single string
     pub fn write_str(&mut self, s: &str) -> &mut Self {
-        self.pal.write_str(s);
+        if self.is_faint() {
+            // search for BOLD and NORNAL attributes and skip them,
+            // to preserve FAINT mode, used for disabled widgets
+            let mut it = s.char_indices();
+
+            while let Some((idx, c)) = it.next() {
+                if c == esc::ESC {
+                    let mut advance_by = 0;
+
+                    if s[idx..].starts_with(esc::BOLD) {
+                        // skip BOLD sequence
+                        advance_by = esc::BOLD.len() - 1;
+                    }
+                    else if s[idx..].starts_with(esc::NORMAL) {
+                        // skip NORMAL sequence
+                        advance_by = esc::NORMAL.len() - 1;
+                    }
+
+                    if advance_by > 0 {
+                        while advance_by > 0 && it.next().is_some() {
+                            advance_by -= 1;
+                        }
+                        continue;
+                    }
+                }
+
+                self.write_char(c);
+            }
+        }
+        else {
+            self.pal.write_str(s);
+        }
+
         self
     }
 
@@ -261,6 +293,7 @@ impl Term {
     }
 
     /// Restore previous foreground color
+    #[inline]
     pub fn pop_cl_fg(&mut self) {
         self.pop_cl_fg_n(1);
     }
@@ -291,6 +324,7 @@ impl Term {
     }
 
     /// Restore previous background color
+    #[inline]
     pub fn pop_cl_bg(&mut self) {
         self.pop_cl_bg_n(1);
     }
@@ -353,7 +387,9 @@ impl Term {
                 FontAttrib::Faint => {
                     if self.attr_faint > 0 {
                         self.attr_faint -= 1;
-                        self.write_str(esc::NORMAL);
+                        if self.attr_faint == 0 {
+                            self.write_str(esc::NORMAL);
+                        }
                     }
                 }
                 FontAttrib::Italics => {
@@ -381,6 +417,7 @@ impl Term {
     }
 
     /// Restore previous font attribute
+    #[inline]
     pub fn pop_attr(&mut self) {
         self.pop_attr_n(1);
     }
@@ -393,8 +430,15 @@ impl Term {
     }
 
     /// Returns attributes stack size
+    #[inline]
     pub fn attr_stack_len(&self) -> usize {
         self.stack_attr.len()
+    }
+
+    /// Returns true if faint style is active
+    #[inline]
+    pub fn is_faint(&self) -> bool {
+        self.attr_faint > 0
     }
 
     // -----------------
