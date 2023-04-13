@@ -27,8 +27,8 @@ pub mod id {
                         LED_LOCK
                         LED_BATTERY
                     PANEL_KEY
-                        LABEL_KEYSEQ
-                        LABEL_KEYNAME
+                        LABEL_INPSEQ
+                        LABEL_INPNAME
                     CHBX_ENBL
                     CHBX_LOCK
                     BTN_YES
@@ -195,7 +195,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
         }.into(),
         children: &[
             Widget {
-                id: id::LABEL_KEYSEQ,
+                id: id::LABEL_INPSEQ,
                 coord: Coord { col: 2, row: 1 },
                 size: Size { width: 22, height: 1 },
                 prop: prop::Label {
@@ -206,9 +206,9 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
                 ..Widget::cdeflt()
             },
             Widget {
-                id: id::LABEL_KEYNAME,
+                id: id::LABEL_INPNAME,
                 coord: Coord { col: 2, row: 2 },
-                size: Size { width: 17, height: 1 },
+                size: Size { width: 22, height: 1 },
                 prop: prop::Label {
                     title: "",
                     fg_color: ColorFg::White,

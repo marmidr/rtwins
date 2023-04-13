@@ -26,7 +26,9 @@ impl Drop for InputTty {
                 let mut tios = std::mem::MaybeUninit::<libc::termios>::uninit();
                 if 0 == libc::tcgetattr(f.as_raw_fd(), tios.as_mut_ptr()) {
                     let tios_ref = tios.assume_init_mut();
-                    tios_ref.c_lflag = self.c_lflag_bkp;
+                    // when restoring, explicitly add previously removed attributes,
+                    // in case the program was aborted not executing this code
+                    tios_ref.c_lflag = self.c_lflag_bkp | libc::ICANON | libc::ECHO;
                     libc::tcsetattr(f.as_raw_fd(), libc::TCSAFLUSH, tios.as_ptr());
                 }
                 else {

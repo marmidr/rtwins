@@ -2,14 +2,14 @@
 
 use rtwins::wgt::WindowState;
 use rtwins::wnd_manager::WindowManager;
-use rtwins::{tetrary, wgt};
-use rtwins::{tr_info, TERM};
+use rtwins::{tetrary, wgt, TERM};
 
 use std::cell::RefCell;
 use std::io::Write;
 use std::rc::Rc;
 
 use crate::tui_commands::Command;
+use crate::tui_main_def::id;
 
 // https://doc.rust-lang.org/cargo/guide/project-layout.html
 mod input_tty;
@@ -244,24 +244,6 @@ fn main() {
         else if !inp_seq.is_empty() {
             ique.extend(inp_seq.iter());
 
-            // print raw sequence
-            /* if false {
-                let mut s = String::with_capacity(10);
-                for b in inp_seq {
-                    if *b == 0 {
-                        break;
-                    }
-
-                    if *b < b' ' {
-                        s.push('�')
-                    }
-                    else {
-                        s.push(*b as char)
-                    };
-                }
-                rtwins::tr_debug!("seq={}", s);
-            } */
-
             while dec.decode_input_seq(&mut ique, &mut ii) > 0 {
                 use rtwins::input::InputEvent;
                 use rtwins::input::Key;
@@ -272,7 +254,7 @@ fn main() {
                 // input debug info
                 match ii.evnt {
                     InputEvent::Char(ref ch) => {
-                        rtwins::tr_debug!("char='{}'", ch.utf8str());
+                        rtwins::tr_debug!("char='{}'", ch.as_str());
                     }
                     InputEvent::Key(ref _k) => {
                         rtwins::tr_debug!("key={}", ii.name);
@@ -353,6 +335,12 @@ fn main() {
                     }
                 }
 
+                wmngr.main.lbl_inpseq = rtwins::input_decoder::inp_seq_debug(inp_seq);
+                wmngr.main.lbl_inpname = ii.name.to_owned();
+                wmngr
+                    .main
+                    .invalidate_many(&[id::LABEL_INPNAME, id::LABEL_INPSEQ]);
+
                 // process the command queue
                 {
                     let cmdque = wmngr.cmdque.borrow_mut().take_commands();
@@ -366,12 +354,12 @@ fn main() {
                                     buttons,
                                     on_button,
                                 } => {
-                                    tr_info!("Command: ShowPopup");
+                                    rtwins::tr_info!("Command: ShowPopup");
                                     wmngr.msgbox.show(title, message, buttons, on_button);
                                     wmngr.show(1);
                                 }
                                 Command::HidePopup => {
-                                    tr_info!("Command: HidePopup");
+                                    rtwins::tr_info!("Command: HidePopup");
                                     wmngr.hide(1);
                                 }
                             }

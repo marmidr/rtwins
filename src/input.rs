@@ -200,10 +200,16 @@ impl CharBuff {
     }
 
     /// Returns proper UTF-8 slice from self.utf8seq or empty slice in case of invalid sequence
-    pub fn utf8str(&self) -> &str {
+    pub fn as_str(&self) -> &str {
         let leading_seq = self.utf8seq.split_at(self.utf8sl as usize).0;
         let res = core::str::from_utf8(leading_seq);
         res.unwrap_or_default()
+    }
+
+    /// Uses `as_str()` to encode a `char`
+    pub fn as_char(&self) -> char {
+        let seq = self.as_str();
+        seq.chars().next().unwrap_or_default()
     }
 }
 

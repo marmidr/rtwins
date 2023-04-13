@@ -73,18 +73,18 @@ fn utf8_character_ok() {
         assert!(matches!(ii.evnt, InputEvent::Char(_)));
 
         if let InputEvent::Char(ref cb) = ii.evnt {
-            let kc_utf8 = cb.utf8str();
+            let kc_str = cb.as_str();
 
             if let Some(c) = test_str_it.next() {
                 let mut cbuf = [0; 4];
                 let expected = c.encode_utf8(&mut cbuf);
-                assert_eq!(expected, kc_utf8);
+                assert_eq!(expected, kc_str);
                 // dbg!(expected, s);
                 decoded += 1;
             }
 
             assert_eq!(KEY_MOD_NONE, ii.kmod.mask);
-            assert_eq!("<.>", ii.name);
+            assert_eq!("<Char>", ii.name);
         }
     }
 
@@ -117,6 +117,7 @@ fn utf8_character_incomplete_ok() {
     assert!(matches!(ii.evnt, InputEvent::Char(_)));
     if let InputEvent::Char(ref cb) = ii.evnt {
         assert_eq!(4, cb.utf8sl);
+        assert_eq!('😎', cb.as_char());
     }
 }
 
@@ -145,7 +146,7 @@ fn utf8_character_incomplete_err() {
     assert!(matches!(ii.evnt, InputEvent::Char(_)));
     if let InputEvent::Char(ref cb) = ii.evnt {
         // because UTF-8 validation returns error, we receive ""
-        assert_eq!("", cb.utf8str());
+        assert_eq!("", cb.as_str());
     }
 
     // decode remaining
@@ -153,7 +154,7 @@ fn utf8_character_incomplete_err() {
     assert_eq!(0, inp.len());
     assert!(matches!(ii.evnt, InputEvent::Char(_)));
     if let InputEvent::Char(ref cb) = ii.evnt {
-        assert_eq!("+", cb.utf8str());
+        assert_eq!("+", cb.as_str());
     }
 }
 
@@ -202,7 +203,7 @@ fn ctrl_s() {
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Char(_)));
     if let InputEvent::Char(ref cb) = ii.evnt {
-        assert_eq!("S", cb.utf8str());
+        assert_eq!("S", cb.as_str());
         assert_eq!(KEY_MOD_CTRL, ii.kmod.mask);
     }
 }
@@ -252,7 +253,7 @@ fn unknown_seq_ctrl_home() {
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Char(_)));
     if let InputEvent::Char(ref cb) = ii.evnt {
-        assert_eq!("+", cb.utf8str());
+        assert_eq!("+", cb.as_str());
         assert_eq!(KEY_MOD_NONE, ii.kmod.mask);
     }
 }
@@ -334,12 +335,12 @@ fn mix_up() {
     let mut ii = InputInfo::default();
 
     // write rest of previous sequence and additional one key
-    inp.push_str("Ł\x1B[1;6AÓ*");
+    inp.push_str("🔰\x1B[1;6AÓ*");
 
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Char(_)));
     if let InputEvent::Char(ref cb) = ii.evnt {
-        assert_eq!("Ł", cb.utf8str());
+        assert_eq!("🔰", cb.as_str());
         assert_eq!(KEY_MOD_NONE, ii.kmod.mask);
     }
 
@@ -350,7 +351,7 @@ fn mix_up() {
     dec.decode_input_seq(&mut inp, &mut ii);
     assert!(matches!(ii.evnt, InputEvent::Char(_)));
     if let InputEvent::Char(ref cb) = ii.evnt {
-        assert_eq!("Ó", cb.utf8str());
+        assert_eq!("Ó", cb.as_str());
         assert_eq!(KEY_MOD_NONE, ii.kmod.mask);
     }
 

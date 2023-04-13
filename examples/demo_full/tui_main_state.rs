@@ -42,6 +42,9 @@ pub struct MainWndState {
     radiogrp1_idx: i16,
     //
     lbx_items: Vec<&'static str>,
+    //
+    pub lbl_inpseq: String,
+    pub lbl_inpname: String,
     // text box raw source string and source splitted into rows
     tbx_text: String,
     tbx_wide_lines: utils::StringListRc,
@@ -62,6 +65,8 @@ impl MainWndState {
             invalidated: vec![],
             radiogrp1_idx: 1,
             lbx_items: vec![],
+            lbl_inpseq: String::new(),
+            lbl_inpname: String::new(),
             tbx_text: String::with_capacity(400),
             tbx_wide_lines: Arc::new(RefCell::new(vec![])),
             tbx_narrow_lines: Arc::new(RefCell::new(vec![])),
@@ -539,6 +544,12 @@ impl rtwins::wgt::WindowState for MainWndState {
 
             let wrapped = utils::word_wrap(wgt.size.width as usize - 2, &tmp);
             *txt = wrapped.take().join("\n");
+        }
+        else if wgt.id == id::LABEL_INPSEQ {
+            *txt = self.lbl_inpseq.clone();
+        }
+        else if wgt.id == id::LABEL_INPNAME {
+            *txt = self.lbl_inpname.clone();
         }
     }
 

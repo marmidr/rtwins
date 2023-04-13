@@ -48,7 +48,7 @@ pub fn draw_widgets(term: &mut Term, ws: &mut dyn WindowState, wids: &[WId]) {
     term.cursor_hide();
     term.flush_buff();
 
-    if wids.len() == 1 && wids[0] == WIDGET_ID_ALL {
+    if !wids.is_empty() && wids[0] == WIDGET_ID_ALL {
         let wnd_widgets = ws.get_widgets();
         // window is at index 0
         if let Some(wnd) = wnd_widgets.first() {

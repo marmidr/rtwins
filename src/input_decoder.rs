@@ -7,6 +7,7 @@ use crate::input::*;
 use core::cmp::Ordering;
 
 extern crate alloc;
+use alloc::string::String;
 use alloc::vec::Vec;
 
 pub type InputQue = Vec<u8>;
@@ -539,8 +540,10 @@ impl Decoder {
                         inp_info.kmod.set_ctrl();
                     }
 
-                    mi.col = seq[4] - b' ';
-                    mi.row = seq[5] - b' ';
+                    // protect against possible substract with overflow
+                    mi.col = seq[4].saturating_sub(b' ');
+                    mi.row = seq[5].saturating_sub(b' ');
+
                     inp_info.evnt = InputEvent::Mouse(mi);
                     inp_info.name = "MouseEvent";
                     input.drain(..6);
@@ -652,7 +655,7 @@ impl Decoder {
                     cb.utf8seq[3] = seq[3];
                     cb.utf8sl = utf8seqlen as u8;
                     inp_info.evnt = InputEvent::Char(cb);
-                    inp_info.name = "<.>";
+                    inp_info.name = "<Char>";
 
                     input.drain(..utf8seqlen);
                     return utf8seqlen as u8;
@@ -684,6 +687,25 @@ impl Default for Decoder {
             prev_esc_ignored: false,
         }
     }
+}
+
+/// Prepares displayable form of input bytes sequence
+pub fn inp_seq_debug(inp_seq: &[u8]) -> String {
+    let mut out = String::with_capacity(10);
+    for b in inp_seq {
+        if *b == 0 {
+            break;
+        }
+
+        if *b < b' ' || *b == (AnsiCodes::DEL as u8) {
+            out.push('�')
+        }
+        else {
+            out.push(*b as char)
+        };
+    }
+
+    out
 }
 
 // -----------------------------------------------------------------------------
