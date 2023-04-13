@@ -56,7 +56,7 @@ impl MsgBoxState {
             widgets,
             rs: wgt::RuntimeStates::new(),
             focused_id: WIDGET_ID_NONE,
-            invalidated: vec![],
+            invalidated: Vec::with_capacity(4),
             coord: Coord::cdeflt(),
             on_button: Box::new(|_id: WId| {}),
             wnd_title: String::new(),
@@ -189,7 +189,15 @@ impl rtwins::wgt::WindowState for MsgBoxState {
     /* requests */
 
     fn invalidate_many(&mut self, wids: &[WId]) {
-        self.invalidated.extend(wids.iter());
+        // iterate, to avoid adding the same ID twice
+        for wid in wids.iter() {
+            if !self.invalidated.contains(wid) {
+                self.invalidated.push(*wid);
+            }
+            else {
+                rtwins::tr_warn!("Invalidated again: id::{}", wid);
+            }
+        }
     }
 
     fn instant_redraw(&mut self, wid: WId) {
@@ -206,10 +214,7 @@ impl rtwins::wgt::WindowState for MsgBoxState {
         self.invalidated.clear();
     }
 
-    fn take_invalidated(&mut self) -> Vec<WId> {
-        // TODO: introduce swapping, to avoid frequent, unnecessary allocation on each call
-        let mut ret = Vec::with_capacity(2);
-        std::mem::swap(&mut self.invalidated, &mut ret);
-        ret
+    fn get_invalidated(&mut self, out: &mut Vec<WId>) {
+        std::mem::swap(&mut self.invalidated, out);
     }
 }

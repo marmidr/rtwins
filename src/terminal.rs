@@ -33,6 +33,7 @@ pub struct Term {
     current_cl_bg: ColorBg,
     attr_faint: i8,
     _log_raw_font_memento: FontMementoManual,
+    invalidated: Vec<WId>,
     pub(crate) stack_cl_fg: Vec<ColorFg>,
     pub(crate) stack_cl_bg: Vec<ColorBg>,
     pub(crate) stack_attr: Vec<FontAttrib>,
@@ -49,6 +50,7 @@ impl Default for Term {
             current_cl_bg: ColorBg::Default,
             attr_faint: 0,
             _log_raw_font_memento: FontMementoManual::new(),
+            invalidated: Vec::with_capacity(4),
             stack_cl_fg: vec![],
             stack_cl_bg: vec![],
             stack_attr: vec![],
@@ -469,8 +471,17 @@ impl Term {
     /// Draw widgets marked as invalidated; flushes the buffer.
     /// Clears the invalidated widgets list
     pub fn draw_invalidated(&mut self, ws: &mut dyn WindowState) {
-        let wids = ws.take_invalidated();
-        wgt::draw_widgets(self, ws, &wids[..]);
+        self.invalidated.clear();
+        // this functions performs internal swap of the passed vector with its own vector
+        ws.get_invalidated(&mut self.invalidated);
+
+        if !self.invalidated.is_empty() {
+            // move out the vector, to avoid passing of &mut self + &self to the draw_widgets()
+            let invalidated = core::mem::take(&mut self.invalidated);
+            wgt::draw_widgets(self, ws, &invalidated[..]);
+            // restore the vector
+            self.invalidated = invalidated;
+        }
     }
 
     /// Draw entire window; flushes the buffer

@@ -31,5 +31,7 @@ pretty_assertions = "1.3.0"
 [features]
 # enable fast line drawing on terminals supporting code ESC-b
 fast_line = []
+# delay after each flush() to show the render progress
+slow_flush = []
 # default features:
 default = ["fast_line"]

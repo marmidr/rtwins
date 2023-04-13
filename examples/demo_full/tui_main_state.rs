@@ -69,7 +69,7 @@ impl MainWndState {
             text_edit1_txt: String::new(),
             text_edit2_txt: String::new(),
             text_edit_psw_txt: String::from("qwerty"),
-            invalidated: vec![],
+            invalidated: Vec::with_capacity(4),
             radiogrp1_idx: 1,
             lbx_items: vec![],
             lbl_inpseq: String::new(),
@@ -684,9 +684,7 @@ impl rtwins::wgt::WindowState for MainWndState {
         self.invalidated.clear();
     }
 
-    fn take_invalidated(&mut self) -> Vec<WId> {
-        let mut ret = Vec::with_capacity(4);
-        std::mem::swap(&mut self.invalidated, &mut ret);
-        ret
+    fn get_invalidated(&mut self, out: &mut Vec<WId>) {
+        std::mem::swap(&mut self.invalidated, out);
     }
 }

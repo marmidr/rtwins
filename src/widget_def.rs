@@ -15,7 +15,6 @@ use core::fmt;
 extern crate alloc;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
-use alloc::vec;
 use alloc::vec::Vec;
 
 // ---------------------------------------------------------------------------------------------- //
@@ -634,9 +633,7 @@ pub trait WindowState {
     fn instant_redraw(&mut self, wid: WId) {}
     fn invalidate_many(&mut self, wids: &[WId]) {}
     fn clear_invalidated(&mut self) {}
-    fn take_invalidated(&mut self) -> Vec<WId> {
-        vec![]
-    }
+    fn get_invalidated(&mut self, out: &mut Vec<WId>) {}
 }
 
 // ---------------------------------------------------------------------------------------------- //

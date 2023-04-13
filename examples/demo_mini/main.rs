@@ -53,7 +53,9 @@ impl rtwins::pal::Pal for DemoMiniPal {
             .expect("Error flushing stdout");
 
         self.line_buff.clear();
-        // self.sleep(100); // helpful when debugging drawing process
+
+        #[cfg(feature = "slow_flush")]
+        self.sleep(50); // helpful when debugging drawing process
     }
 
     fn sleep(&self, ms: u16) {
@@ -204,10 +206,8 @@ impl rtwins::wgt::WindowState for MainWndState {
         self.invalidated.clear();
     }
 
-    fn take_invalidated(&mut self) -> Vec<WId> {
-        let mut ret = Vec::with_capacity(4);
-        core::mem::swap(&mut self.invalidated, &mut ret);
-        ret
+    fn get_invalidated(&mut self, out: &mut Vec<WId>) {
+        std::mem::swap(&mut self.invalidated, out);
     }
 }
 

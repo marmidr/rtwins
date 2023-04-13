@@ -65,7 +65,9 @@ impl rtwins::pal::Pal for DemoFullPal {
             .expect("Error flushing stdout");
 
         self.line_buff.clear();
-        // self.sleep(100); // helpful when debugging drawing process
+
+        #[cfg(feature = "slow_flush")]
+        self.sleep(50); // helpful when debugging drawing process
     }
 
     fn mark_logging(&mut self, active: bool) {
@@ -222,7 +224,6 @@ fn main() {
 
     // first draw of the UI
     wmngr.show(wmngr.main.wnd_idx);
-    wmngr.draw_all();
 
     rtwins::tr_info!("Press Ctrl-D to quit");
     // rtwins::tr_warn!("WARN MACRO 1");
@@ -322,7 +323,6 @@ fn main() {
                                 tui_main_def::id::PG_CONTROL,
                                 *key == Key::PgDown,
                             );
-                            main_ws.invalidate(tui_main_def::id::PG_CONTROL);
                         }
                     }
                     else if wmngr.is_top(0) && (*key == Key::F9 || *key == Key::F10) {
@@ -333,7 +333,6 @@ fn main() {
                             tui_main_def::id::PG_CONTROL,
                             *key == Key::F10,
                         );
-                        main_ws.invalidate(tui_main_def::id::PG_CONTROL);
                     }
                 }
 
