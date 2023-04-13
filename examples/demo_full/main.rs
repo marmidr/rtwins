@@ -109,10 +109,12 @@ impl WndMngr {
             visible: vec![],
             // all UI windows:
             main: tui_main_state::MainWndState::new(
+                0,
                 &tui_main_def::WND_MAIN_WGTS[..],
                 Rc::clone(&cmdque),
             ),
             msgbox: tui_msgbox_state::MsgBoxState::new(
+                1,
                 &tui_msgbox_def::WND_MSGBOX_WGTS[..],
                 Rc::clone(&cmdque),
             ),
@@ -219,7 +221,7 @@ fn main() {
     }
 
     // first draw of the UI
-    wmngr.show(0);
+    wmngr.show(wmngr.main.wnd_idx);
     wmngr.draw_all();
 
     rtwins::tr_info!("Press Ctrl-D to quit");
@@ -355,12 +357,12 @@ fn main() {
                                     on_button,
                                 } => {
                                     rtwins::tr_info!("Command: ShowPopup");
-                                    wmngr.msgbox.show(title, message, buttons, on_button);
-                                    wmngr.show(1);
+                                    wmngr.msgbox.setup(title, message, buttons, on_button);
+                                    wmngr.show(wmngr.msgbox.wnd_idx);
                                 }
                                 Command::HidePopup => {
                                     rtwins::tr_info!("Command: HidePopup");
-                                    wmngr.hide(1);
+                                    wmngr.hide(wmngr.msgbox.wnd_idx);
                                 }
                             }
                         }

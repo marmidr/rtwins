@@ -86,11 +86,11 @@ gdb:
     cgdb -ex "b main" target/debug/examples/demo_full -ex "r"
 
 # debug remote
-gdbremote:
+gdb-remote:
     rust-gdb -tui -ex "target remote :6789" -ex "b main" -ex "c"
 
 # gdb server
-gdbserve:
+gdb-server:
     gdbserver :6789 target/debug/examples/demo_full
 
 # project dependencies tree

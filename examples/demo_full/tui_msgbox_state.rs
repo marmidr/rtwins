@@ -21,6 +21,8 @@ use super::tui_msgbox_def::idmb;
 
 /// State of all the DemoWindow widget dynamic properties
 pub struct MsgBoxState {
+    // id of the window
+    pub wnd_idx: usize,
     /// all window widgets, starting with the window widget itself
     widgets: &'static [wgt::Widget],
     /// widgets runtime state
@@ -32,7 +34,7 @@ pub struct MsgBoxState {
     // popup coordinates, centered over main window
     coord: Coord,
     /// button click handler
-    on_button: Box<dyn Fn(WId) + Send + Sync>,
+    on_button: Box<dyn Fn(WId) + Send>,
     /// popup title
     wnd_title: String,
     /// popup message
@@ -44,8 +46,13 @@ pub struct MsgBoxState {
 }
 
 impl MsgBoxState {
-    pub fn new(widgets: &'static [Widget], cmds: Rc<RefCell<CommandsQueue>>) -> Self {
+    pub fn new(
+        wnd_idx: usize,
+        widgets: &'static [Widget],
+        cmds: Rc<RefCell<CommandsQueue>>,
+    ) -> Self {
         MsgBoxState {
+            wnd_idx,
             widgets,
             rs: wgt::RuntimeStates::new(),
             focused_id: WIDGET_ID_NONE,
@@ -68,15 +75,15 @@ impl MsgBoxState {
         self.coord.row += wnd.coord.row;
     }
 
-    /// Shows the MessageBox
+    /// Setup the MessageBox befor showing
     ///
     /// buttons: string of 'ynoc' defining visibility of Yes/No/Ok/Cancel buttons
-    pub fn show(
+    pub fn setup(
         &mut self,
         title: String,
         message: String,
         buttons: &'static str,
-        on_button: Box<dyn Fn(WId) + Send + Sync>,
+        on_button: Box<dyn Fn(WId) + Send>,
     ) {
         self.wnd_title = title;
         if let Some(lbl) = wgt::find_by_id(self.widgets, idmb::LBL_MSG) {
@@ -109,12 +116,12 @@ impl rtwins::wgt::WindowState for MsgBoxState {
     }
 
     fn on_window_unhandled_input_evt(&mut self, wgt: &Widget, ii: &InputInfo) -> bool {
-        rtwins::tr_debug!("onWindowUnhandledInputEvt={}", ii.name);
-        if let InputEvent::Key(key) = ii.evnt {
-            if key == input::Key::Esc {
-                // twins::glob::wMngr.hide(this);
-                return true;
+        rtwins::tr_debug!("on_window_unhandled_input_evt={}", ii.name);
+        if let InputEvent::Key(input::Key::Esc) = ii.evnt {
+            if let Ok(ref mut cmds) = self.cmds.try_borrow_mut() {
+                cmds.push(Command::HidePopup);
             }
+            return true;
         }
 
         false
@@ -200,6 +207,7 @@ impl rtwins::wgt::WindowState for MsgBoxState {
     }
 
     fn take_invalidated(&mut self) -> Vec<WId> {
+        // TODO: introduce swapping, to avoid frequent, unnecessary allocation on each call
         let mut ret = Vec::with_capacity(2);
         std::mem::swap(&mut self.invalidated, &mut ret);
         ret

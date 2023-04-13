@@ -17,7 +17,7 @@ pub mod id {
         WND_MAIN
             BTN_TOASTER
             PG_CONTROL
-                PAGE_VER
+                PAGE_PANELS
                     PANEL_VERSIONS
                         LABEL_FW_VERSION
                         LABEL_DATE
@@ -37,7 +37,7 @@ pub mod id {
                     PRGBAR1
                     PRGBAR2
                     PRGBAR3
-                PAGE_SERV
+                PAGE_LISTBOX
                     LAYER1
                         LABEL_MULTI_FMT
                         LIST_BOX
@@ -47,7 +47,7 @@ pub mod id {
                         RADIO3
                     CHBX_L1
                     CHBX_L2
-                PAGE_DIAG
+                PAGE_TEXTEDIT
                     PANEL_EDT
                         LBL_EDT1_TITLE
                         EDIT1
@@ -55,22 +55,12 @@ pub mod id {
                         EDIT2
                         LBL_EDIT_PSW_TITLE
                         EDIT_PSW
-                    CUSTOM_WGT1
                     PANEL_CHBX
                         LBL_CHBX_TITLE
                         CHBX_A
                         CHBX_B
                         CHBX_C
                         CHBX_D
-                PAGE_INACTIV
-                    PANEL_EMPTY_1
-                        LBL_WORDWRAP
-                        BTN_NOACTION
-                    PANEL_EMPTY_2
-                        LBL_EMPTY2
-                PAGE_TEXTBOX
-                    TBX_WIDE
-                    TBX_NARROW
                 PAGE_COMBOBOX
                     CBX_OPTIONS
                     CBX_COLORS
@@ -78,6 +68,18 @@ pub mod id {
                     BTN_SAY_YES
                     BTN_SAY_NO
                     BTN_1P5
+                PAGE_TEXTBOX
+                    TBX_WIDE
+                    TBX_NARROW
+                PAGE_MISC
+                    LBL_CUSTOM
+                    CUSTOM_WGT1
+                PAGE_INACTIV
+                    PANEL_EMPTY_1
+                        LBL_WORDWRAP
+                        BTN_NOACTION
+                    PANEL_EMPTY_2
+                        LBL_EMPTY2
             LABEL_FTR
     );
 }
@@ -122,7 +124,7 @@ const PNL_STATE_CHILDREN: &[Widget] = &[
 ];
 
 #[rustfmt::skip]
-const PAGE_VER_CHILDREN: &[Widget] = &[
+const PAGE_PANELS_CHILDREN: &[Widget] = &[
     Widget {
         id: id::PANEL_VERSIONS,
         link: Link::cdeflt(),
@@ -302,7 +304,7 @@ const PAGE_VER_CHILDREN: &[Widget] = &[
 ];
 
 #[rustfmt::skip]
-const PAGE_SERV_CHILDREN: &[Widget] = &[
+const PAGE_LISTBOX_CHILDREN: &[Widget] = &[
     Widget {
         id: id::LAYER1,
         prop: prop::Layer {
@@ -395,15 +397,15 @@ const PAGE_SERV_CHILDREN: &[Widget] = &[
 ];
 
 #[rustfmt::skip]
-const PAGE_DIAG_CHILDREN: &[Widget] = &[
+const PAGE_TEXTEDIT_CHILDREN: &[Widget] = &[
     Widget {
         id: id::PANEL_EDT,
         coord: Coord { col: 2, row: 1 },
-        size: Size { width: 32, height: 5 },
+        size: Size { width: 32, height: 8 },
         prop: prop::Panel {
             title : "",
             fg_color : ColorFg::White,
-            bg_color : ColorBg::BlackIntense,
+            bg_color : ColorBg::White,
             no_frame : true,
         }.into(),
         children: &[
@@ -451,20 +453,34 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 }.into(),
                 ..Widget::cdeflt()
             },
+            Widget {
+                id: id::LBL_EDIT_PSW_TITLE,
+                coord: Coord { col: 1, row: 5 },
+                size: Size { width: 10, height: 1 },
+                prop: prop::Label {
+                    title: "Password:",
+                    fg_color: ColorFg::WhiteIntense,
+                    bg_color: ColorBg::Inherit,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+            Widget {
+                id: id::EDIT_PSW,
+                coord: Coord { col: 11, row: 5 },
+                size: Size { width: 20, height: 1 },
+                prop: prop::TextEdit {
+                    fg_color: ColorFg::Black,
+                    bg_color: ColorBgTheme::EditPsw.into(),
+                    psw_mask: true,
+                }.into(),
+                ..Widget::cdeflt()
+            },
         ],
         ..Widget::cdeflt()
     },
     Widget {
-        id: id::CUSTOM_WGT1,
-        coord: Coord { col: 2, row: 6 },
-        size: Size { width: 32, height: 4 },
-        prop: prop::CustomWgt {
-        }.into(),
-        ..Widget::cdeflt()
-    },
-    Widget {
         id: id::PANEL_CHBX,
-        coord: Coord { col: 36, row: 4 },
+        coord: Coord { col: 36, row: 1 },
         size: Size { width: 22, height: 7 },
         prop: prop::Panel {
             title : "",
@@ -517,93 +533,6 @@ const PAGE_DIAG_CHILDREN: &[Widget] = &[
                 prop: prop::CheckBox {
                     text : "Check D ",
                     fg_color : ColorFgTheme::Checkbox.into(),
-                }.into(),
-                ..Widget::cdeflt()
-            },
-        ],
-        ..Widget::cdeflt()
-    },
-    Widget {
-        id: id::LBL_EDIT_PSW_TITLE,
-        coord: Coord { col: 36, row: 1 },
-        size: Size { width: 10, height: 1 },
-        prop: prop::Label {
-            title: "Password:",
-            fg_color: ColorFg::WhiteIntense,
-            bg_color: ColorBg::Inherit,
-        }.into(),
-        ..Widget::cdeflt()
-    },
-    Widget {
-        id: id::EDIT_PSW,
-        coord: Coord { col: 45, row: 1 },
-        size: Size { width: 12, height: 1 },
-        prop: prop::TextEdit {
-            fg_color: ColorFg::Black,
-            bg_color: ColorBgTheme::EditPsw.into(),
-            psw_mask: true,
-        }.into(),
-        ..Widget::cdeflt()
-    },
-];
-
-#[rustfmt::skip]
-const PAGE_INACT_CHILDREN: &[Widget] = &[
-    Widget {
-        id: id::PANEL_EMPTY_1,
-        coord: Coord { col: 5, row: 1 },
-        size: Size { width: 20, height: 10 },
-        prop: prop::Panel {
-            title : "Word-wrap",
-            fg_color : ColorFg::Inherit,
-            bg_color : ColorBg::Inherit,
-            no_frame : false,
-        }.into(),
-        children: &[
-            Widget {
-                id: id::LBL_WORDWRAP,
-                coord: Coord { col: 2, row: 1 },
-                size: Size { width: 16, height: 6 },
-                prop: prop::Label {
-                    title: "",
-                    fg_color: ColorFg::White,
-                    bg_color: ColorBg::BlueIntense,
-                }.into(),
-                ..Widget::cdeflt()
-            },
-            Widget {
-                id: id::BTN_NOACTION,
-                coord: Coord { col: 5, row: 8 },
-                prop: prop::Button {
-                    text: "...",
-                    fg_color: ColorFg::White,
-                    bg_color: ColorBg::Inherit,
-                    style: ButtonStyle::Simple
-                }.into(),
-                ..Widget::cdeflt()
-            },
-        ],
-        ..Widget::cdeflt()
-    },
-    Widget {
-        id: id::PANEL_EMPTY_2,
-        coord: Coord { col: 40, row: 1 },
-        size: Size { width: 12, height: 10 },
-        prop: prop::Panel {
-            title : "...",
-            fg_color : ColorFg::Inherit,
-            bg_color : ColorBg::Inherit,
-            no_frame : false,
-        }.into(),
-        children: &[
-            Widget {
-                id: id::LBL_EMPTY2,
-                coord: Coord { col: 2, row: 2 },
-                size: Size { width: 1, height: 1 },
-                prop: prop::Label {
-                    title: "---",
-                    fg_color: ColorFg::Inherit,
-                    bg_color: ColorBg::Inherit,
                 }.into(),
                 ..Widget::cdeflt()
             },
@@ -706,6 +635,93 @@ const PAGE_CMBBOX_CHILDREN: &[Widget] = &[
     },
 ];
 
+#[rustfmt::skip]
+const PAGE_INACT_CHILDREN: &[Widget] = &[
+    Widget {
+        id: id::PANEL_EMPTY_1,
+        coord: Coord { col: 5, row: 1 },
+        size: Size { width: 20, height: 10 },
+        prop: prop::Panel {
+            title : "Word-wrap",
+            fg_color : ColorFg::Inherit,
+            bg_color : ColorBg::Inherit,
+            no_frame : false,
+        }.into(),
+        children: &[
+            Widget {
+                id: id::LBL_WORDWRAP,
+                coord: Coord { col: 2, row: 1 },
+                size: Size { width: 16, height: 6 },
+                prop: prop::Label {
+                    title: "",
+                    fg_color: ColorFg::White,
+                    bg_color: ColorBg::BlueIntense,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+            Widget {
+                id: id::BTN_NOACTION,
+                coord: Coord { col: 5, row: 8 },
+                prop: prop::Button {
+                    text: "...",
+                    fg_color: ColorFg::White,
+                    bg_color: ColorBg::Inherit,
+                    style: ButtonStyle::Simple
+                }.into(),
+                ..Widget::cdeflt()
+            },
+        ],
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: id::PANEL_EMPTY_2,
+        coord: Coord { col: 40, row: 1 },
+        size: Size { width: 12, height: 10 },
+        prop: prop::Panel {
+            title : "...",
+            fg_color : ColorFg::Inherit,
+            bg_color : ColorBg::Inherit,
+            no_frame : false,
+        }.into(),
+        children: &[
+            Widget {
+                id: id::LBL_EMPTY2,
+                coord: Coord { col: 2, row: 2 },
+                size: Size { width: 1, height: 1 },
+                prop: prop::Label {
+                    title: "---",
+                    fg_color: ColorFg::Inherit,
+                    bg_color: ColorBg::Inherit,
+                }.into(),
+                ..Widget::cdeflt()
+            },
+        ],
+        ..Widget::cdeflt()
+    },
+];
+
+#[rustfmt::skip]
+const PAGE_MISC_CHILDREN: &[Widget] = &[
+    Widget {
+        id: id::LBL_CUSTOM,
+        coord: Coord { col: 2, row: 1 },
+        prop: prop::Label {
+            title: "Custom Widget:",
+            fg_color: ColorFg::Inherit,
+            bg_color: ColorBg::Inherit,
+        }.into(),
+        ..Widget::cdeflt()
+    },
+    Widget {
+        id: id::CUSTOM_WGT1,
+        coord: Coord { col: 2, row: 2 },
+        size: Size { width: 32, height: 8 },
+        prop: prop::CustomWgt {
+        }.into(),
+        ..Widget::cdeflt()
+    },
+];
+
 // ---------------------------------------------------------------------------------------------- //
 
 #[rustfmt::skip]
@@ -743,39 +759,39 @@ const WINDOW_MAIN: Widget = Widget {
             }.into(),
             children: &[
                 Widget {
-                    id: id::PAGE_VER,
+                    id: id::PAGE_PANELS,
                     prop: prop::Page {
-                        title: "Version",
+                        title: "Panels",
                         fg_color: ColorFg::Yellow,
                     }.into(),
-                    children: PAGE_VER_CHILDREN,
+                    children: PAGE_PANELS_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
-                    id: id::PAGE_SERV,
+                    id: id::PAGE_LISTBOX,
                     prop: prop::Page {
-                        title: "Service ∑",
+                        title: "ListBox ∑",
                         fg_color: ColorFg::White,
                     }.into(),
-                    children: PAGE_SERV_CHILDREN,
+                    children: PAGE_LISTBOX_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
-                    id: id::PAGE_DIAG,
+                    id: id::PAGE_TEXTEDIT,
                     prop: prop::Page {
-                        title: "Diagnostics",
+                        title: "TextEdit",
                         fg_color: ColorFg::Yellow,
                     }.into(),
-                    children: PAGE_DIAG_CHILDREN,
+                    children: PAGE_TEXTEDIT_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
-                    id: id::PAGE_INACTIV,
+                    id: id::PAGE_COMBOBOX,
                     prop: prop::Page {
-                        title: "Inactiv 🍀",
+                        title: "Combo Box",
                         fg_color: ColorFg::White,
                     }.into(),
-                    children: PAGE_INACT_CHILDREN,
+                    children: PAGE_CMBBOX_CHILDREN,
                     ..Widget::cdeflt()
                 },
                 Widget {
@@ -788,12 +804,21 @@ const WINDOW_MAIN: Widget = Widget {
                     ..Widget::cdeflt()
                 },
                 Widget {
-                    id: id::PAGE_COMBOBOX,
+                    id: id::PAGE_INACTIV,
                     prop: prop::Page {
-                        title: "Combo Box",
+                        title: "Misc.",
                         fg_color: ColorFg::White,
                     }.into(),
-                    children: PAGE_CMBBOX_CHILDREN,
+                    children: PAGE_MISC_CHILDREN,
+                    ..Widget::cdeflt()
+                },
+                Widget {
+                    id: id::PAGE_MISC,
+                    prop: prop::Page {
+                        title: "Inactiv 🍀",
+                        fg_color: ColorFg::White,
+                    }.into(),
+                    children: PAGE_INACT_CHILDREN,
                     ..Widget::cdeflt()
                 },
             ],
@@ -813,7 +838,7 @@ const WINDOW_MAIN: Widget = Widget {
                     "F5 Refresh • ",
                     "F6 Clr Logs • ",
                     "F9/F10 Page • ",
-                    "\u{2581}\u{2582}\u{2583}\u{2584}\u{2585}\u{2586}\u{2587}\u{2588}\u{1F569}"
+                    "\u{2581}\u{2582}\u{2583}\u{2584}\u{2585}\u{2586}\u{2587}\u{2588}"
                 ),
                 fg_color: ColorFg::White,
                 bg_color: ColorBgTheme::LabelFtr.into(),

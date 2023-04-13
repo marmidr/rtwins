@@ -7,4 +7,5 @@
 [ ] use crate `log` in place of own macros
 [ ] fix rendering of the disabled window
 [ ] simplify the RuntimeState
-[ ] reorganize DemoFull, rename tabs
+[x] reorganize DemoFull, rename tabs
+[ ] improve Tab-traversal

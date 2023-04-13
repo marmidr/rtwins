@@ -255,8 +255,9 @@ fn main() {
             }
         }
 
-        TERM.try_lock().unwrap().draw_invalidated(&mut ws_main);
-        rtwins::tr_flush!(&mut TERM.try_lock().unwrap());
+        let mut term_guard = TERM.try_lock().unwrap();
+        term_guard.draw_invalidated(&mut ws_main);
+        rtwins::tr_flush!(&mut term_guard);
     }
 
     // epilogue

@@ -9,7 +9,7 @@ pub enum Command {
         title: String,
         message: String,
         buttons: &'static str,
-        on_button: Box<dyn Fn(WId) + Send + Sync>,
+        on_button: Box<dyn Fn(WId) + Send>,
     },
     HidePopup,
 }

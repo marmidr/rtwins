@@ -26,6 +26,8 @@ use super::tui_main_def::id;
 
 /// State of all the DemoWindow widget dynamic properties
 pub struct MainWndState {
+    // id of the window
+    pub wnd_idx: usize,
     /// all window widgets, starting with the window widget itself
     widgets: &'static [wgt::Widget],
     /// widgets runtime state
@@ -54,8 +56,13 @@ pub struct MainWndState {
 }
 
 impl MainWndState {
-    pub fn new(widgets: &'static [Widget], cmds: Rc<RefCell<CommandsQueue>>) -> Self {
+    pub fn new(
+        wnd_idx: usize,
+        widgets: &'static [Widget],
+        cmds: Rc<RefCell<CommandsQueue>>,
+    ) -> Self {
         let mut wnd_state = MainWndState {
+            wnd_idx,
             widgets,
             rs: wgt::RuntimeStates::new(),
             focused_ids: vec![],
@@ -306,7 +313,7 @@ impl rtwins::wgt::WindowState for MainWndState {
                 self.invalidate(id::PANEL_STATE);
             }
             id::CHBX_LOCK => rtwins::tr_debug!("CHBX_LOCK"),
-            id::CHBX_L1 | id::CHBX_L2 => self.invalidate(id::PAGE_SERV),
+            id::CHBX_L1 | id::CHBX_L2 => self.invalidate(id::PAGE_LISTBOX),
             _ => rtwins::tr_debug!("CHBX"),
         }
     }
