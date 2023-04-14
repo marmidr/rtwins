@@ -26,16 +26,53 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'demo1'",
+            "name": "Debug example 'demo_full'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=demo1",
+                    "--example=demo_full",
                     "--package=rtwins"
                 ],
                 "filter": {
-                    "name": "demo1",
-                    "kind": "bin"
+                    "name": "demo_full",
+                    "kind": "example"
+                }
+            },
+            "args": ["--tty=10"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'demo_full'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=demo_full",
+                    "--package=rtwins"
+                ],
+                "filter": {
+                    "name": "demo_full",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}",
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'demo_mini'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=demo_mini",
+                    "--package=rtwins"
+                ],
+                "filter": {
+                    "name": "demo_mini",
+                    "kind": "example"
                 }
             },
             "args": [],
@@ -44,17 +81,131 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in executable 'demo'",
+            "name": "Debug unit tests in example 'demo_mini'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
-                    "--bin=demo",
+                    "--example=demo_mini",
                     "--package=rtwins"
                 ],
                 "filter": {
-                    "name": "demo",
-                    "kind": "bin"
+                    "name": "demo_mini",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'test_widget'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=test_widget",
+                    "--package=rtwins"
+                ],
+                "filter": {
+                    "name": "test_widget",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'test_utils'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=test_utils",
+                    "--package=rtwins"
+                ],
+                "filter": {
+                    "name": "test_utils",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'test_input_decoder'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=test_input_decoder",
+                    "--package=rtwins"
+                ],
+                "filter": {
+                    "name": "test_input_decoder",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'test_esc'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=test_esc",
+                    "--package=rtwins"
+                ],
+                "filter": {
+                    "name": "test_esc",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'test_str_ext'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=test_str_ext",
+                    "--package=rtwins"
+                ],
+                "filter": {
+                    "name": "test_str_ext",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'test_colors'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--test=test_colors",
+                    "--package=rtwins"
+                ],
+                "filter": {
+                    "name": "test_colors",
+                    "kind": "test"
                 }
             },
             "args": [],

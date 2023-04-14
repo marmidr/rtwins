@@ -5,11 +5,15 @@ use libc;
 use std::io::Read;
 use std::os::unix::io::AsRawFd;
 
+// default reference to the controlling terminal for a process;
+// to read the input in GDB session, you may want to use another terminal:
+// https://stackoverflow.com/questions/8963208/gdb-display-output-of-target-application-in-a-separate-window#31804225
 const TTY_FILE_PATH: &str = "/dev/tty";
 
 // ---------------------------------------------------------------------------------------------- //
 
 pub struct InputTty {
+    tty_path: String,
     tty_file: Option<std::fs::File>,
     c_lflag_bkp: libc::tcflag_t,
     eof_code: libc::cc_t,
@@ -43,8 +47,19 @@ impl Drop for InputTty {
 impl InputTty {
     /// Createas new TTY input reader with given timeout in [ms];
     /// the timeout applies when calling `read_input()`
-    pub fn new(timeout_ms: u16) -> Self {
+    pub fn new(tty_path: Option<String>, timeout_ms: u16) -> Self {
+        let tty_path = tty_path.map(|path| {
+            if path.parse::<u32>().is_ok() {
+                // if only the pts number was passed
+                format!("/dev/pts/{}", path)
+            }
+            else {
+                path
+            }
+        });
+
         let mut itty = InputTty {
+            tty_path: tty_path.unwrap_or(TTY_FILE_PATH.to_owned()),
             tty_file: None,
             c_lflag_bkp: 0,
             eof_code: 0,
@@ -53,10 +68,11 @@ impl InputTty {
             input_len: 0,
         };
 
-        itty.tty_file = match std::fs::File::open(TTY_FILE_PATH) {
+        itty.tty_file = match std::fs::File::open(&itty.tty_path) {
             Ok(f) => Some(f),
             Err(e) => {
-                eprintln!("Cannot open tty : {:?}", e);
+                rtwins::tr_err!("Cannot open tty '{}'", itty.tty_path);
+                rtwins::tr_err!("{:?}", e);
                 None
             }
         };

@@ -5,6 +5,7 @@ use rtwins::wnd_manager::WindowManager;
 use rtwins::{tetrary, wgt, TERM};
 
 use std::cell::RefCell;
+use std::env;
 use std::io::Write;
 use std::rc::Rc;
 
@@ -231,7 +232,22 @@ fn main() {
     // rtwins::tr_debug!("DEBUG MACRO: X={} N={}", 42, "Warduna");
     rtwins::tr_flush!(&mut TERM.try_lock().unwrap());
 
-    let mut itty = input_tty::InputTty::new(1000);
+    let tty_path = {
+        // type `tty` in separate terminal, to get it's number
+        let path_opt = env::args().find(|a| a.starts_with("--tty=")).map(|tty|
+            // --tty=/dev/pts/10
+            // --tty=10
+            tty.split_once('=')
+            .unwrap_or_default().1.to_owned());
+
+        if let Some(ref p) = path_opt {
+            rtwins::tr_info!("Input TTY: {}", p);
+        }
+
+        path_opt
+    };
+
+    let mut itty = input_tty::InputTty::new(tty_path, 1000);
     let mut ique = rtwins::input_decoder::InputQue::new();
     let mut dec = rtwins::input_decoder::Decoder::default();
     let mut ii = rtwins::input::InputInfo::default();

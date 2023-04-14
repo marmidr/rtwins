@@ -234,7 +234,7 @@ fn main() {
     rtwins::tr_info!("Press Ctrl-D to quit");
     rtwins::tr_flush!(&mut TERM.try_lock().unwrap());
 
-    let mut itty = input_tty::InputTty::new(1000);
+    let mut itty = input_tty::InputTty::new(None, 1000);
     let mut ique = rtwins::input_decoder::InputQue::new();
     let mut dec = rtwins::input_decoder::Decoder::default();
     let mut ii = rtwins::input::InputInfo::default();
