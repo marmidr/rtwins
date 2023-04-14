@@ -78,12 +78,12 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 ```bash
 # standard runner
-cargo r --bin demo_full
+cargo r --example demo_full
 # mini demo
-cargo r --bin demo_mini
+cargo r --example demo_mini
 
-# full demo with fast_fill enabled:
-cargo r --features=fast_fill --bin demo_full
+# full demo with slow_flush enabled:
+cargo r --features=slow_flush --example demo_full
 # using justfile
 just r
 ```
@@ -93,8 +93,6 @@ just r
 ```bash
 # standard test runner
 cargo t
-# to show println! messages from tests:
-cargo test -- --color always --nocapture
 # test using nextest (https://nexte.st/)
 just nx
 ```

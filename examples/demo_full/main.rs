@@ -352,8 +352,9 @@ fn main() {
                     }
                 }
 
-                wmngr.main.lbl_inpseq = rtwins::input_decoder::inp_seq_debug(inp_seq);
-                wmngr.main.lbl_inpname = ii.name.to_owned();
+                wmngr.main.rs.lbl.entry(id::LABEL_INPSEQ).or_default().txt =
+                    rtwins::input_decoder::inp_seq_debug(inp_seq);
+                wmngr.main.rs.lbl.entry(id::LABEL_INPNAME).or_default().txt = ii.name.to_owned();
                 wmngr
                     .main
                     .invalidate_many(&[id::LABEL_INPNAME, id::LABEL_INPSEQ]);

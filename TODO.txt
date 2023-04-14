@@ -6,6 +6,6 @@
 [x] make the lib `no_std`
 [ ] use crate `log` in place of own macros
 [x] fix rendering of the disabled window
-[ ] simplify the RuntimeState
+[x] simplify the RuntimeState
 [x] reorganize DemoFull, rename tabs
 [ ] improve Tab-traversal

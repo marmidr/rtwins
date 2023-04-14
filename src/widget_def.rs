@@ -8,8 +8,6 @@ use crate::common::*;
 use crate::input::*;
 use crate::wgt;
 
-use paste::paste;
-
 use core::fmt;
 
 extern crate alloc;
@@ -373,7 +371,9 @@ impl Link {
 /// Widget RunTime state
 pub mod rstate {
     use crate::utils::StringListRc;
-    use core::prelude::rust_2021::*;
+
+    extern crate alloc;
+    use alloc::string::String;
 
     /// CheckBox
     #[derive(Default, Clone, Copy)]
@@ -385,6 +385,18 @@ pub mod rstate {
     #[derive(Default, Clone, Copy)]
     pub struct LedState {
         pub lit: bool,
+    }
+
+    /// Label
+    #[derive(Default, Clone)]
+    pub struct LblState {
+        pub txt: String,
+    }
+
+    /// TextEdit
+    #[derive(Default, Clone)]
+    pub struct TxteState {
+        pub txt: String,
     }
 
     /// ListBox
@@ -422,82 +434,30 @@ pub mod rstate {
     }
 
     /// PageControl
-    #[derive(Default)]
+    #[derive(Default, Clone, Copy)]
     pub struct PgctrlState {
         pub page: i16,
-    }
-
-    use super::paste;
-
-    // Implements into() for all properties
-    macro_rules! impl_into {
-        ($($PROP: ident)*) => (
-            $(
-                impl paste!{ [< $PROP State >]} {
-                    pub fn into(self) -> State {
-                        State::$PROP(self)
-                    }
-                }
-            )*
-        )
-    }
-
-    impl_into! {Chbx Led Lbx Cbbx Pgbar Txtbx Pgctrl}
-
-    pub enum State {
-        None,
-        Chbx(ChbxState),
-        Led(LedState),
-        Lbx(LbxState),
-        Cbbx(CbbxState),
-        Pgbar(PgbarState),
-        Txtbx(TxtbxState),
-        Pgctrl(PgctrlState),
-    }
-
-    #[allow(clippy::derivable_impls)]
-    impl Default for State {
-        fn default() -> State {
-            State::None
-        }
     }
 } // mod
 
 /// Contains runtime states for most types of the widgets
 #[derive(Default)]
 pub struct RuntimeStates {
-    // widget type state
-    states: BTreeMap<WId, rstate::State>,
+    // state for each widget type
+    pub chbx: BTreeMap<WId, rstate::ChbxState>,
+    pub led: BTreeMap<WId, rstate::LedState>,
+    pub lbl: BTreeMap<WId, rstate::LblState>,
+    pub lbx: BTreeMap<WId, rstate::LbxState>,
+    pub cbbx: BTreeMap<WId, rstate::CbbxState>,
+    pub pgbar: BTreeMap<WId, rstate::PgbarState>,
+    pub txtbx: BTreeMap<WId, rstate::TxtbxState>,
+    pub pgctrl: BTreeMap<WId, rstate::PgctrlState>,
+    pub txte: BTreeMap<WId, rstate::TxteState>,
     // applies to every widget
-    enabled: BTreeMap<WId, bool>,
-}
-
-// macro generating similar member functions
-macro_rules! impl_as {
-    ($NAME: ident, $PROP: ident) => {
-        paste! {
-            pub fn $NAME(&mut self, id: WId) -> &mut rstate::[< $PROP State >] {
-                let rs = self.states.entry(id).or_insert(
-                    rstate::[< $PROP State >]::default().into());
-
-                if let rstate::State::$PROP(ref mut stat) = rs {
-                    return stat;
-                }
-
-                panic!("Invalid widget rt state")
-            }
-        }
-    };
+    pub enabled: BTreeMap<WId, bool>,
 }
 
 impl RuntimeStates {
-    pub fn new() -> Self {
-        RuntimeStates {
-            states: BTreeMap::new(),
-            enabled: BTreeMap::new(),
-        }
-    }
-
     pub fn get_enabled_or_default(&self, id: WId) -> bool {
         let en = self.enabled.get(&id).unwrap_or(&true);
         *en
@@ -506,22 +466,6 @@ impl RuntimeStates {
     pub fn set_enabled(&mut self, id: WId, en: bool) {
         *self.enabled.entry(id).or_insert(true) = en;
     }
-
-    pub fn insert_state(&mut self, id: WId, state: rstate::State) {
-        self.states.insert(id, state);
-    }
-
-    pub fn get_state(&self, id: WId) -> Option<&rstate::State> {
-        self.states.get(&id)
-    }
-
-    impl_as!(as_chbx, Chbx);
-    impl_as!(as_led, Led);
-    impl_as!(as_lbx, Lbx);
-    impl_as!(as_cbbx, Cbbx);
-    impl_as!(as_pgbar, Pgbar);
-    impl_as!(as_txtbx, Txtbx);
-    impl_as!(as_pgctrl, Pgctrl);
 }
 
 // ---------------------------------------------------------------------------------------------- //
@@ -600,29 +544,29 @@ pub trait WindowState {
     fn get_window_size(&mut self) -> Size {
         Size::cdeflt()
     }
-    fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {}
+    fn get_window_title(&mut self, wgt: &Widget, out: &mut String) {}
     fn get_checkbox_checked(&mut self, wgt: &Widget) -> bool {
         false
     }
-    fn get_label_text(&mut self, wgt: &Widget, txt: &mut String) {}
-    fn get_text_edit_text(&mut self, wgt: &Widget, txt: &mut String, edit_mode: bool) {}
+    fn get_label_text(&mut self, wgt: &Widget, out: &mut String) {}
+    fn get_text_edit_text(&mut self, wgt: &Widget, out: &mut String, edit_mode: bool) {}
     fn get_led_lit(&mut self, wgt: &Widget) -> bool {
         false
     }
-    fn get_led_text(&mut self, wgt: &Widget, txt: &mut String) {}
-    fn get_progress_bar_state(&mut self, wgt: &Widget, state: &mut rstate::PgbarState) {}
+    fn get_led_text(&mut self, wgt: &Widget, out: &mut String) {}
+    fn get_progress_bar_state(&mut self, wgt: &Widget, out: &mut rstate::PgbarState) {}
     fn get_page_ctrl_page_index(&mut self, wgt: &Widget) -> i16 {
         0
     }
-    fn get_list_box_state(&mut self, wgt: &Widget, state: &mut rstate::LbxState) {}
-    fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
-    fn get_combo_box_state(&mut self, wgt: &Widget, state: &mut rstate::CbbxState) {}
-    fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: i16, txt: &mut String) {}
+    fn get_list_box_state(&mut self, wgt: &Widget, out: &mut rstate::LbxState) {}
+    fn get_list_box_item(&mut self, wgt: &Widget, item_idx: i16, out: &mut String) {}
+    fn get_combo_box_state(&mut self, wgt: &Widget, out: &mut rstate::CbbxState) {}
+    fn get_combo_box_item(&mut self, wgt: &Widget, item_idx: i16, out: &mut String) {}
     fn get_radio_index(&mut self, wgt: &Widget) -> i16 {
         -1
     }
-    fn get_text_box_state(&mut self, wgt: &Widget, state: &mut rstate::TxtbxState) {}
-    fn get_button_text(&mut self, wgt: &Widget, txt: &mut String) {}
+    fn get_text_box_state(&mut self, wgt: &Widget, out: &mut rstate::TxtbxState) {}
+    fn get_button_text(&mut self, wgt: &Widget, out: &mut String) {}
 
     /// requests
     fn set_focused_id(&mut self, wid: WId) {}

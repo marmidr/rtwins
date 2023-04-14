@@ -54,7 +54,7 @@ impl MsgBoxState {
         MsgBoxState {
             wnd_idx,
             widgets,
-            rs: wgt::RuntimeStates::new(),
+            rs: wgt::RuntimeStates::default(),
             focused_id: WIDGET_ID_NONE,
             invalidated: Vec::with_capacity(4),
             coord: Coord::cdeflt(),
@@ -174,15 +174,15 @@ impl rtwins::wgt::WindowState for MsgBoxState {
         self.widgets.first().unwrap().size
     }
 
-    fn get_window_title(&mut self, wgt: &Widget, txt: &mut String) {
-        txt.push_str(&self.wnd_title)
+    fn get_window_title(&mut self, wgt: &Widget, out: &mut String) {
+        out.push_str(&self.wnd_title)
     }
 
-    fn get_label_text(&mut self, wgt: &Widget, txt: &mut String) {
+    fn get_label_text(&mut self, wgt: &Widget, out: &mut String) {
         if wgt.id == idmb::LBL_MSG {
             // let wrapped = utils::word_wrap(wgt.size.width as usize, &self.wnd_message);
             // txt.push_str(wrapped.take().join("\n").as_str());
-            txt.push_str(&self.wnd_message);
+            out.push_str(&self.wnd_message);
         }
     }
 
