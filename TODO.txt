@@ -9,5 +9,4 @@
 [x] simplify the RuntimeState
 [x] reorganize DemoFull, rename tabs
 [ ] improve Tab-traversal
-[ ] TextBox - what happened to text colors?
 [ ] TextBox - textwrap behind window, when widget is narrow

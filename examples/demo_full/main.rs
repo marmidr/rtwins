@@ -218,6 +218,9 @@ fn tui() {
         term_guard.write_str(rtwins::esc::TERM_RESET);
         term_guard.mouse_mode(rtwins::MouseMode::M2);
     }
+    else {
+        panic!("Could not lock the TERM");
+    }
 
     tui_colors::init();
     // first draw of the UI
@@ -228,6 +231,7 @@ fn tui() {
         "Size of WND_MAIN_WGTS: {} B",
         core::mem::size_of_val(&tui_main_def::WND_MAIN_WGTS)
     );
+
     if cfg!(feature = "qemu") {
         rtwins::tr_info!(
             "{}Running from QEMU{}",
@@ -257,7 +261,7 @@ fn tui() {
             path_opt
         };
 
-        input_libc_tty::InputTty::new(tty_path, 1000)
+        input_libc_tty::InputTty::new(tty_path, 100)
     };
     #[cfg(target_os = "none")]
     let mut inp = pal_semihosting::InputSemiHost::new();

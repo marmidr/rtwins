@@ -1,6 +1,6 @@
 //! # RTWins reading terminal keys
 
-use libc;
+// use libc;
 
 use std::io::Read;
 use std::os::unix::io::AsRawFd;

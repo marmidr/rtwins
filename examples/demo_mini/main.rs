@@ -5,16 +5,36 @@
 
 use rtwins::colors::{ColorBg, ColorFg};
 use rtwins::common::*;
+use rtwins::esc;
 use rtwins::input::*;
 use rtwins::wgt;
 use rtwins::wgt::prop;
 use rtwins::wgt::*;
 use rtwins::TERM;
 
+extern crate alloc;
+use alloc::boxed::Box;
+use alloc::format;
+use alloc::vec;
+use alloc::vec::Vec;
+
 #[cfg(target_os = "linux")]
 mod input_libc_tty;
 #[cfg(target_os = "linux")]
 mod pal_std;
+
+#[cfg(target_os = "none")]
+use alloc_cortex_m::CortexMHeap;
+// use embedded_alloc::Heap; // TODO: linker error when used
+#[cfg(target_os = "none")]
+use cortex_m_rt::entry;
+#[cfg(target_os = "none")]
+use cortex_m_semihosting::debug;
+#[cfg(target_os = "none")]
+use panic_semihosting as _;
+
+#[cfg(target_os = "none")]
+mod pal_semihosting;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -93,9 +113,7 @@ const WND_MAIN_WGTS: [Widget; transform::tree_wgt_count(&WINDOW_MAIN)] =
 // ---------------------------------------------------------------------------------------------- //
 
 struct MainWndState {
-    /// currently focused widget, for each pagecontrol page
     focused_id: WId,
-    /// list of widgets to redraw
     invalidated: Vec<WId>,
 }
 
@@ -145,8 +163,7 @@ impl rtwins::wgt::WindowState for MainWndState {
         if let Some(mut term_guard) = TERM.try_lock() {
             term_guard.draw(self, &[wid]);
             term_guard.flush_buff();
-        }
-        else {
+        } else {
             rtwins::tr_warn!("Cannot lock the term");
         }
     }
@@ -160,20 +177,68 @@ impl rtwins::wgt::WindowState for MainWndState {
     }
 
     fn get_invalidated(&mut self, out: &mut Vec<WId>) {
-        std::mem::swap(&mut self.invalidated, out);
+        core::mem::swap(&mut self.invalidated, out);
     }
 }
 
 // ---------------------------------------------------------------------------------------------- //
 
-fn main() {
-    let mut ws_main = MainWndState::default();
+// this is the allocator the application will use
+#[cfg(target_os = "none")]
+#[global_allocator]
+static ALLOCATOR: CortexMHeap = CortexMHeap::empty();
+// static HEAP: Heap = Heap::empty();
 
-    // replace default PAL with our own:
-    #[cfg(any(windows, unix))]
-    {
-        TERM.try_lock().unwrap().pal = Box::new(pal_std::DemoPal::new());
+#[cfg(target_os = "linux")]
+fn main() {
+    tui();
+}
+
+#[cfg(target_os = "none")]
+#[entry]
+fn main() -> ! {
+    tui();
+
+    if cfg!(feature = "qemu") {
+        // exit QEMU
+        // NOTE do not run this on hardware; it can corrupt OpenOCD state
+        debug::exit(debug::EXIT_SUCCESS);
     }
+
+    loop {}
+}
+
+fn tui() {
+    // Initialize the allocator BEFORE you use it
+    #[cfg(target_os = "none")]
+    unsafe {
+        const HEAP_SIZE: usize = 1024 * 2; // in bytes
+        ALLOCATOR.init(cortex_m_rt::heap_start() as usize, HEAP_SIZE);
+    }
+
+    #[cfg(target_os = "none")]
+    let cp = cortex_m::Peripherals::take().unwrap();
+
+    #[cfg(target_os = "none")]
+    {
+        let delay = cortex_m::delay::Delay::new(cp.SYST, 32_000_000);
+        TERM.try_lock().unwrap().pal = Box::new(pal_semihosting::SemihostingPal::new(delay));
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        // replace default PAL with our own:
+        TERM.try_lock().unwrap().pal = Box::new(pal_std::DemoPal::new());
+
+        // register function providing traces timestamp
+        rtwins::tr_set_timestr_function!(|| {
+            let local_time = chrono::Local::now();
+            local_time.format("%H:%M:%S%.3f ").to_string()
+        });
+    }
+
+    // create window state:
+    let mut ws_main = MainWndState::default();
 
     // configure terminal
     if let Some(mut term_guard) = TERM.try_lock() {
@@ -182,47 +247,86 @@ fn main() {
             let sz = ws_main.get_window_size();
             coord.row as u16 + sz.height as u16 + 1
         };
-        term_guard.write_str(rtwins::esc::TERM_RESET);
+        term_guard.write_str(esc::TERM_RESET);
         term_guard.mouse_mode(rtwins::MouseMode::M2);
+        term_guard.draw_wnd(&mut ws_main);
+    }
+    else {
+        panic!("Could not lock the TERM");
     }
 
-    TERM.try_lock().unwrap().draw_wnd(&mut ws_main);
     rtwins::tr_info!("Press Ctrl-D to quit");
+    rtwins::tr_info!("Size of WND_MAIN_WGTS: {} B",
+        core::mem::size_of_val(&WND_MAIN_WGTS));
+
+    if cfg!(feature = "qemu") {
+        rtwins::tr_info!(
+            "{}Running from QEMU{}",
+            esc::FG_BLUE_VIOLET,
+            esc::FG_DEFAULT
+        );
+    }
     rtwins::tr_flush!(&mut TERM.try_lock().unwrap());
 
-    let mut itty = input_libc_tty::InputTty::new(None, 1000);
-    let mut ique = rtwins::input_decoder::InputQue::new();
+    #[cfg(target_os = "linux")]
+    let mut inp = input_libc_tty::InputTty::new(None, 100);
+    #[cfg(target_os = "none")]
+    let mut inp = pal_semihosting::InputSemiHost::new();
+
+    let mut ique = rtwins::input_decoder::InputQue::default();
     let mut dec = rtwins::input_decoder::Decoder::default();
     let mut ii = rtwins::input::InputInfo::default();
 
-    // main loop
-    loop {
-        let (inp_seq, q) = itty.read_input();
+    #[allow(unused_labels)]
+    'mainloop: loop  {
+        let (inp_seq, q) = inp.read_input();
 
         if q {
-            rtwins::tr_info!("Exit requested");
+            rtwins::tr_warn!("Exit requested");
             break;
         }
         else if !inp_seq.is_empty() {
             ique.extend(inp_seq.iter());
 
             while dec.decode_input_seq(&mut ique, &mut ii) > 0 {
+                // check for Ctrl+D
+                #[cfg(target_os = "none")]
+                if let InputEvent::Char(ref cb) = ii.evnt {
+                    if cb.as_str() == "D" && ii.kmod.has_ctrl() {
+                        rtwins::tr_warn!("Exit requested");
+                        break 'mainloop;
+                    }
+                }
+
+                rtwins::tr_debug!("Input: {}{}{}, bytes: {:?}",
+                    esc::BOLD, ii.name, esc::NORMAL, inp_seq);
                 let _key_handled = wgt::process_input(&mut ws_main, &ii);
             }
         }
 
-        let mut term_guard = TERM.try_lock().unwrap();
-        term_guard.draw_invalidated(&mut ws_main);
-        rtwins::tr_flush!(&mut term_guard);
+        {
+            let mut term_guard = TERM.try_lock().unwrap();
+            term_guard.draw_invalidated(&mut ws_main);
+            rtwins::tr_flush!(&mut term_guard);
+
+            // wait for a key
+            if cfg!(feature = "qemu") {
+                term_guard.pal.as_mut().sleep(50);
+            }
+        }
     }
 
     // epilogue
     {
         let mut term_guard = TERM.try_lock().unwrap();
-        rtwins::tr_flush!(&mut term_guard);
         term_guard.mouse_mode(rtwins::MouseMode::Off);
-        term_guard.trace_area_clear();
+        rtwins::tr_flush!(&mut term_guard);
+
+        term_guard.pal.as_mut().sleep(1_000);
         // clear logs below the cursor
+        term_guard.trace_area_clear();
+
+        // set the cursor on the expected position
         let logs_row = term_guard.trace_row;
         term_guard.move_to(0, logs_row);
         term_guard.flush_buff();

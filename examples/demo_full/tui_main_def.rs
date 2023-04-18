@@ -752,7 +752,7 @@ const WINDOW_MAIN: Widget = Widget {
         Widget {
             id: id::PG_CONTROL,
             coord: Coord { col: 1, row: 1 },
-            size: Size { width: 75, height: 12 },
+            size: Size { width: 76, height: 12 },
             prop: prop::PageCtrl {
                 tab_width: 14,
                 vert_offs: 2
