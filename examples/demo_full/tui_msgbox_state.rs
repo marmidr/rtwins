@@ -11,18 +11,24 @@ use rtwins::wgt::{self, WId, Widget, WIDGET_ID_NONE};
 use rtwins::TERM;
 use rtwins::*;
 
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use super::tui_commands::*;
 use super::tui_msgbox_def::idmb;
+
+use core::cell::RefCell;
+
+extern crate alloc;
+use alloc::boxed::Box;
+use alloc::format;
+use alloc::rc::Rc;
+use alloc::string::String;
+use alloc::vec::Vec;
 
 // ---------------------------------------------------------------------------------------------- //
 
 /// State of all the DemoWindow widget dynamic properties
 pub struct MsgBoxState {
     // id of the window
-    pub wnd_idx: usize,
+    pub wnd_id: WId,
     /// all window widgets, starting with the window widget itself
     widgets: &'static [wgt::Widget],
     /// widgets runtime state
@@ -46,13 +52,9 @@ pub struct MsgBoxState {
 }
 
 impl MsgBoxState {
-    pub fn new(
-        wnd_idx: usize,
-        widgets: &'static [Widget],
-        cmds: Rc<RefCell<CommandsQueue>>,
-    ) -> Self {
+    pub fn new(wnd_id: WId, widgets: &'static [Widget], cmds: Rc<RefCell<CommandsQueue>>) -> Self {
         MsgBoxState {
-            wnd_idx,
+            wnd_id,
             widgets,
             rs: wgt::RuntimeStates::default(),
             focused_id: WIDGET_ID_NONE,
@@ -215,6 +217,6 @@ impl rtwins::wgt::WindowState for MsgBoxState {
     }
 
     fn get_invalidated(&mut self, out: &mut Vec<WId>) {
-        std::mem::swap(&mut self.invalidated, out);
+        core::mem::swap(&mut self.invalidated, out);
     }
 }

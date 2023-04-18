@@ -51,24 +51,24 @@ rtwins::static_assert!((ColorBgTheme::ThemeEnd as u8) <= ColorBg::ThemeEnd as u8
 impl ColorFgTheme {
     pub const fn into(self) -> ColorFg {
         // SAFETY: static_assert() assure that the self value is within correct ColorFG range
-        unsafe { std::mem::transmute::<ColorFgTheme, ColorFg>(self) }
+        unsafe { core::mem::transmute::<ColorFgTheme, ColorFg>(self) }
     }
 
     pub const fn from(cl: ColorFg) -> ColorFgTheme {
         // SAFETY: static_assert() assure that the self value is within correct ColorFG range
-        unsafe { std::mem::transmute::<ColorFg, ColorFgTheme>(cl) }
+        unsafe { core::mem::transmute::<ColorFg, ColorFgTheme>(cl) }
     }
 }
 
 impl ColorBgTheme {
     pub const fn into(self) -> ColorBg {
         // SAFETY: static_assert() assure that the self value is within correct ColorBG range
-        unsafe { std::mem::transmute::<ColorBgTheme, ColorBg>(self) }
+        unsafe { core::mem::transmute::<ColorBgTheme, ColorBg>(self) }
     }
 
     pub const fn from(cl: ColorBg) -> ColorBgTheme {
         // SAFETY: static_assert() assure that the self value is within correct ColorBG range
-        unsafe { std::mem::transmute::<ColorBg, ColorBgTheme>(cl) }
+        unsafe { core::mem::transmute::<ColorBg, ColorBgTheme>(cl) }
     }
 }
 

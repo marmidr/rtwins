@@ -13,21 +13,27 @@ use rtwins::Term;
 use rtwins::TERM;
 use rtwins::*;
 
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::sync::Arc;
-
-use crate::tui_msgbox_def::idmb;
-
 use super::tui_commands::*;
 use super::tui_main_def::id;
+use crate::tui_msgbox_def::idmb;
+
+use core::cell::RefCell;
+
+extern crate alloc;
+use alloc::borrow::ToOwned;
+use alloc::boxed::Box;
+use alloc::rc::Rc;
+use alloc::string::String;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
+use alloc::{format, vec};
 
 // ---------------------------------------------------------------------------------------------- //
 
 /// State of all the DemoWindow widget dynamic properties
 pub struct MainWndState {
     // id of the window
-    pub wnd_idx: usize,
+    pub wnd_id: WId,
     /// all window widgets, starting with the window widget itself
     widgets: &'static [wgt::Widget],
     /// widgets runtime state
@@ -49,13 +55,9 @@ pub struct MainWndState {
 }
 
 impl MainWndState {
-    pub fn new(
-        wnd_idx: usize,
-        widgets: &'static [Widget],
-        cmds: Rc<RefCell<CommandsQueue>>,
-    ) -> Self {
+    pub fn new(wnd_id: WId, widgets: &'static [Widget], cmds: Rc<RefCell<CommandsQueue>>) -> Self {
         let mut wnd_state = MainWndState {
-            wnd_idx,
+            wnd_id,
             widgets,
             rs: wgt::RuntimeStates::default(),
             focused_ids: vec![],
@@ -252,7 +254,8 @@ impl rtwins::wgt::WindowState for MainWndState {
                     rtwins::wgt::mark_button_down(wgt, true);
                     self.instant_redraw(wgt.id);
                     // wait and unpress the button
-                    std::thread::sleep(std::time::Duration::from_millis(200));
+                    // TODO: PAL::
+                    // std::thread::sleep(core::time::Duration::from_millis(200));
                     rtwins::wgt::mark_button_down(wgt, false);
                     self.invalidate(wgt.id);
                     // clear input queue as it may be full of Keyboar key events;
@@ -270,7 +273,7 @@ impl rtwins::wgt::WindowState for MainWndState {
 
     fn on_text_edit_change(&mut self, wgt: &Widget, txt: &mut String) {
         rtwins::tr_debug!("TXT_EDIT_CHANGE: {}", txt);
-        self.rs.txte.entry(wgt.id).or_default().txt = std::mem::take(txt);
+        self.rs.txte.entry(wgt.id).or_default().txt = core::mem::take(txt);
     }
 
     fn on_text_edit_input_evt(
@@ -360,7 +363,7 @@ impl rtwins::wgt::WindowState for MainWndState {
         rs.top_line = top_line;
     }
 
-    fn on_custom_widget_draw(&mut self, wgt: &Widget, term_cell: &std::cell::RefCell<&mut Term>) {
+    fn on_custom_widget_draw(&mut self, wgt: &Widget, term_cell: &RefCell<&mut Term>) {
         let coord = rtwins::wgt::get_screen_coord(self, wgt);
         let sz = &wgt.size;
         let mut term = term_cell.borrow_mut();
@@ -648,6 +651,6 @@ impl rtwins::wgt::WindowState for MainWndState {
     }
 
     fn get_invalidated(&mut self, out: &mut Vec<WId>) {
-        std::mem::swap(&mut self.invalidated, out);
+        core::mem::swap(&mut self.invalidated, out);
     }
 }

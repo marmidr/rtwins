@@ -555,8 +555,8 @@ const PAGE_TXTBOX_CHILDREN: &[Widget] = &[
     },
     Widget {
         id: id::TBX_NARROW,
-        coord: Coord { col: 46, row: 1 },
-        size: Size { width: 12, height: 10 },
+        coord: Coord { col: 45, row: 1 },
+        size: Size { width: 13, height: 10 },
         prop: prop::TextBox {
             fg_color: ColorFg::White,
             bg_color: ColorBg::BlueIntense,

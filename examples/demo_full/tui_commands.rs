@@ -2,6 +2,11 @@
 
 use rtwins::wgt::WId;
 
+extern crate alloc;
+use alloc::boxed::Box;
+use alloc::string::String;
+use alloc::vec::Vec;
+
 // ---------------------------------------------------------------------------------------------- //
 
 pub enum Command {
@@ -32,7 +37,7 @@ impl CommandsQueue {
             None
         }
         else {
-            Some(std::mem::take(&mut self.commands))
+            Some(core::mem::take(&mut self.commands))
         }
     }
 

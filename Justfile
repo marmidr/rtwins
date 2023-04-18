@@ -17,15 +17,15 @@ alias rr := run-rel
 alias t  := test
 alias nx := nxtest
 
-# build debug; eg: `just build-dbg -v`
-build-dbg *ARGS:
-    cargo build {{ARGS}}
-    ls -hsk target/debug/examples/demo_full
+# build debug; eg: `just build-dbg `
+build-dbg:
+    cargo build --example demo_full
+    cargo size --example demo_full -- -B
 
 # build release
-build-rel *ARGS:
-    cargo build --release {{ARGS}}
-    ls -hsk target/release/examples/demo_full
+build-rel:
+    cargo build --release --example demo_full
+    cargo size --release --example demo_full -- -B
 
 #
 run-dbg:

@@ -1,5 +1,8 @@
 //! # RTWins minimal demo app
 
+#![cfg_attr(target_os = "none", no_main)]
+#![cfg_attr(target_os = "none", no_std)]
+
 use rtwins::colors::{ColorBg, ColorFg};
 use rtwins::common::*;
 use rtwins::input::*;
@@ -8,60 +11,10 @@ use rtwins::wgt::prop;
 use rtwins::wgt::*;
 use rtwins::TERM;
 
-use std::io::Write;
-
-mod input_tty;
-
-// ---------------------------------------------------------------------------------------------- //
-
-struct DemoMiniPal {
-    line_buff: String,
-}
-
-impl Default for DemoMiniPal {
-    fn default() -> Self {
-        DemoMiniPal {
-            line_buff: String::with_capacity(100),
-        }
-    }
-}
-
-impl rtwins::pal::Pal for DemoMiniPal {
-    fn write_char_n(&mut self, c: char, repeat: i16) {
-        for _ in 0..repeat {
-            self.line_buff.push(c);
-        }
-    }
-
-    fn write_str_n(&mut self, s: &str, repeat: i16) {
-        self.line_buff.reserve(s.len() * repeat as usize);
-
-        for _ in 0..repeat {
-            self.line_buff.push_str(s);
-        }
-    }
-
-    fn flush_buff(&mut self) {
-        std::io::stdout()
-            .lock()
-            .write_all(self.line_buff.as_bytes())
-            .expect("Error writing to stdout");
-
-        std::io::stdout()
-            .lock()
-            .flush()
-            .expect("Error flushing stdout");
-
-        self.line_buff.clear();
-
-        #[cfg(feature = "slow_flush")]
-        self.sleep(50); // helpful when debugging drawing process
-    }
-
-    fn sleep(&self, ms: u16) {
-        std::thread::sleep(std::time::Duration::from_millis(ms as u64));
-    }
-}
+#[cfg(target_os = "linux")]
+mod input_libc_tty;
+#[cfg(target_os = "linux")]
+mod pal_std;
 
 // ---------------------------------------------------------------------------------------------- //
 
@@ -217,7 +170,10 @@ fn main() {
     let mut ws_main = MainWndState::default();
 
     // replace default PAL with our own:
-    TERM.try_lock().unwrap().pal = Box::<DemoMiniPal>::default();
+    #[cfg(any(windows, unix))]
+    {
+        TERM.try_lock().unwrap().pal = Box::new(pal_std::DemoPal::new());
+    }
 
     // configure terminal
     if let Some(mut term_guard) = TERM.try_lock() {
@@ -234,7 +190,7 @@ fn main() {
     rtwins::tr_info!("Press Ctrl-D to quit");
     rtwins::tr_flush!(&mut TERM.try_lock().unwrap());
 
-    let mut itty = input_tty::InputTty::new(None, 1000);
+    let mut itty = input_libc_tty::InputTty::new(None, 1000);
     let mut ique = rtwins::input_decoder::InputQue::new();
     let mut dec = rtwins::input_decoder::Decoder::default();
     let mut ii = rtwins::input::InputInfo::default();

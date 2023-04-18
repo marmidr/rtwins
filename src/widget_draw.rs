@@ -165,6 +165,7 @@ fn draw_widget_internal(dctx: &mut DrawCtx) {
 
 // ---------------------------------------------------------------------------------------------- //
 
+#[inline(never)]
 fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window) {
     let wnd_coord = dctx.wnd_state.get_window_coord();
     draw_area(
@@ -223,6 +224,7 @@ fn draw_window(dctx: &mut DrawCtx, prp: &prop::Window) {
     }
 }
 
+#[inline(never)]
 fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel) {
     let mut fm = FontMementoManual::from_term(&dctx.term_cell.borrow());
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
@@ -277,6 +279,7 @@ fn draw_panel(dctx: &mut DrawCtx, prp: &prop::Panel) {
     fm.restore(&mut dctx.term_cell.borrow_mut());
 }
 
+#[inline(never)]
 fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label) {
     // label text
     let mut title = String::new();
@@ -324,6 +327,7 @@ fn draw_label(dctx: &mut DrawCtx, prp: &prop::Label) {
     }
 }
 
+#[inline(never)]
 fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit) {
     let mut display_pos = 0;
     let max_w = dctx.wgt.size.width as i16 - 3;
@@ -389,6 +393,7 @@ fn draw_text_edit(dctx: &mut DrawCtx, prp: &prop::TextEdit) {
     term.write_str(dctx.strbuff.as_str());
 }
 
+#[inline(never)]
 fn draw_led(dctx: &mut DrawCtx, prp: &prop::Led) {
     let clbg = if dctx.wnd_state.get_led_lit(dctx.wgt) {
         prp.bg_color_on
@@ -417,6 +422,7 @@ fn draw_led(dctx: &mut DrawCtx, prp: &prop::Led) {
     term.write_str(dctx.strbuff.as_str());
 }
 
+#[inline(never)]
 fn draw_checkbox(dctx: &mut DrawCtx, prp: &prop::CheckBox) {
     let chk_state = if dctx.wnd_state.get_checkbox_checked(dctx.wgt) {
         "[■] "
@@ -440,6 +446,7 @@ fn draw_checkbox(dctx: &mut DrawCtx, prp: &prop::CheckBox) {
     term.write_str(prp.text);
 }
 
+#[inline(never)]
 fn draw_radio(dctx: &mut DrawCtx, prp: &prop::Radio) {
     let radio_state = {
         let ridx = dctx.wnd_state.get_radio_index(dctx.wgt);
@@ -467,6 +474,7 @@ fn draw_radio(dctx: &mut DrawCtx, prp: &prop::Radio) {
     term.write_str(prp.text);
 }
 
+#[inline(never)]
 fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button) {
     let focused = dctx.wnd_state.is_focused(dctx.wgt);
     let pressed = dctx.wgt.id == WGT_STATE.try_lock().unwrap().mouse_down_wgt;
@@ -657,6 +665,7 @@ fn draw_button(dctx: &mut DrawCtx, prp: &prop::Button) {
     }
 }
 
+#[inline(never)]
 fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl) {
     let mut fm = FontMementoManual::from_term(&dctx.term_cell.borrow());
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
@@ -769,6 +778,7 @@ fn draw_page_control(dctx: &mut DrawCtx, prp: &prop::PageCtrl) {
     fm.restore(&mut dctx.term_cell.borrow_mut());
 }
 
+#[inline(never)]
 fn draw_page(dctx: &mut DrawCtx, prp: &prop::Page, erase_bg: bool /*=false*/) {
     let pgctrl = wgt::get_parent(dctx.wgt);
     let mut my_coord = dctx.parent_coord + dctx.wgt.coord;
@@ -846,6 +856,7 @@ fn draw_progress_bar(dctx: &mut DrawCtx, prp: &prop::ProgressBar) {
     //  ▁▂▃▄▅▆▇█ - for vertical ▂▄▆█
 }
 
+#[inline(never)]
 fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox) {
     let mut fm = FontMementoManual::from_term(&dctx.term_cell.borrow());
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
@@ -899,6 +910,7 @@ fn draw_list_box(dctx: &mut DrawCtx, prp: &prop::ListBox) {
     fm.restore(&mut term);
 }
 
+#[inline(never)]
 fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox) {
     let _fm = FontMemento::new(&dctx.term_cell);
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
@@ -967,11 +979,13 @@ fn draw_combo_box(dctx: &mut DrawCtx, prp: &prop::ComboBox) {
     }
 }
 
+#[inline(never)]
 fn draw_custom_wgt(dctx: &mut DrawCtx, _: &prop::CustomWgt) {
     dctx.wnd_state
         .on_custom_widget_draw(dctx.wgt, &dctx.term_cell);
 }
 
+#[inline(never)]
 fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
     let _fm = FontMemento::new(&dctx.term_cell);
     let my_coord = dctx.parent_coord + dctx.wgt.coord;
@@ -1058,6 +1072,7 @@ fn draw_text_box(dctx: &mut DrawCtx, prp: &prop::TextBox) {
     }
 }
 
+#[inline(never)]
 fn draw_layer(dctx: &mut DrawCtx, _: &prop::Layer) {
     // draw only childrens; to erase, redraw layer's parent
     let layer = dctx.wgt;
@@ -1333,7 +1348,7 @@ fn get_widget_fg_color(wgt: &Widget) -> ColorFg {
         Property::Button(ref p) => p.fg_color,
         Property::Led(ref p) => p.fg_color,
         Property::Page(ref p) => p.fg_color,
-        Property::ProgressBar(ref p) => p.fg_color,
+        // Property::ProgressBar(ref p) => p.fg_color,
         Property::ListBox(ref p) => p.fg_color,
         Property::ComboBox(ref p) => p.fg_color,
         Property::TextBox(ref p) => p.fg_color,

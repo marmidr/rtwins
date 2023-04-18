@@ -28,6 +28,11 @@ chrono = "0.4"
 libc = "0.2"
 pretty_assertions = "1.3.0"
 
+[profile.release]
+# optimize examples:
+lto = true  # 53KiB -> 34KiB
+opt-level = 'z'
+
 [features]
 # enable fast line drawing on terminals supporting code ESC-b
 fast_line = []

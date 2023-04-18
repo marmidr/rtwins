@@ -1,11 +1,15 @@
 # RTWins in brief
 
-`RTWins` is a Rust library designed for easy creation of visual terminal applications on non-os platforms, like bare Cortex-M3.
-It provides basic facilities required by interactive applications such as screen and cursor management, keyboard input, keymaps, color codes.
+`RTWins` is a Rust library designed for easy creation of terminal applications,
+targetting non-os, resource-constrained devices, like bare metal Cortex-M3 devices (64KiB Flash or more).
+
+It provides basic facilities required by interactive applications,
+such as screen and cursor management, keyboard input, keymaps, color codes.
 
 ![example 1](assets/sshot1.png)
 ![example 2](assets/sshot2.png)
 ![example 3](assets/sshot3.png)
+![example 4](assets/sshot4.png)
 
 ## References
 
@@ -29,7 +33,7 @@ Implementation is based on:
 * [x] buffered terminal output
 * [x] platform abstraction layer (PAL) to ease porting
 * [ ] command line interface with history (CLI)
-* [x] #![no_std]
+* [x] no_std
 
 ## Secondary goals
 
@@ -74,10 +78,16 @@ Implementation is based on:
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-### Build and run GUI demo
+## `just` - convenient command runner
+
+Package comes with the `Justfile` - make-like collection of useful commands.
+
+https://github.com/casey/just#packages
+
+### Build and run TUI demo
 
 ```bash
-# standard runner
+# full demo
 cargo r --example demo_full
 # mini demo
 cargo r --example demo_mini
@@ -164,6 +174,8 @@ Install from sources:
 
 ```sh
 cargo install cargo-expand
+just expand-lib debug_trace
+just expand-demo tui_msgbox_def
 ```
 
 ## `bloat` - what takes most of the space in your executable
@@ -172,6 +184,8 @@ https://github.com/RazrFalcon/cargo-bloat
 
 ```sh
 cargo install cargo-bloat
+just bloat-lib
+just bloat-demo
 ```
 
 ## `audit` - performs vulnerabilities check
@@ -179,11 +193,6 @@ cargo install cargo-bloat
 https://crates.io/crates/cargo-audit
 
 ```sh
-cargo install cargo-audit
+# cargo install cargo-audit - auto installed by `just audit`
+just audit
 ```
-
-## `just` - convenient commands
-
-Package comes with the `Justfile` - make-like collection of useful commands.
-
-https://github.com/casey/just
