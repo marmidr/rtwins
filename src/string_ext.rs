@@ -27,6 +27,8 @@ pub trait StringExt {
     fn erase_char_range(&mut self, ch_idx: usize, len: usize);
     /// Remove trailing text, starting at given char (not byte) index
     fn trim_at_char_idx(&mut self, ch_idx: usize);
+    /// Insert str at given char (not byte) index
+    fn insert_str_at_char_idx(&mut self, ch_idx: usize, s: &str);
     /// Return string slice after given char (not byte) index
     fn split_at_char_idx(&self, ch_idx: usize) -> &str;
 }
@@ -114,6 +116,20 @@ impl StringExt for String {
             if char_idx == ch_idx {
                 self.truncate(byte_idx);
                 break;
+            }
+        }
+    }
+
+    fn insert_str_at_char_idx(&mut self, ch_idx: usize, s: &str) {
+        if ch_idx >= self.chars().count() {
+            self.push_str(s);
+        }
+        else {
+            for (char_idx, (byte_idx, _)) in self.char_indices().enumerate() {
+                if char_idx == ch_idx {
+                    self.insert_str(byte_idx, s);
+                    break;
+                }
             }
         }
     }

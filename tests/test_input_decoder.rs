@@ -99,6 +99,9 @@ fn utf8_character_incomplete_ok() {
 
     let smile = [240u8, 159, 152, 142]; // 😎
     assert_eq!(4, utils::utf8_char_width(smile[0]));
+    assert_eq!(0, utils::utf8_char_width(smile[1]));
+    assert_eq!(0, utils::utf8_char_width(smile[2]));
+    assert_eq!(0, utils::utf8_char_width(smile[3]));
     inp.push(smile[0]);
     inp.push(smile[1]);
     inp.push(smile[2]);
@@ -122,6 +125,34 @@ fn utf8_character_incomplete_ok() {
 }
 
 #[test]
+fn not_utf8_boundary() {
+    let mut dec = Decoder::default();
+    let mut inp = InputQue::new();
+    let mut ii = InputInfo::default();
+
+    let garbage = [159, 152, 142, b'+']; // ...+
+    assert_eq!(0, utils::utf8_char_width(garbage[0]));
+    assert_eq!(0, utils::utf8_char_width(garbage[1]));
+    assert_eq!(0, utils::utf8_char_width(garbage[2]));
+    assert_eq!(1, utils::utf8_char_width(garbage[3]));
+    inp.push(garbage[0]);
+    inp.push(garbage[1]);
+    inp.push(garbage[2]);
+    inp.push(garbage[3]);
+
+    // try to decode invalid input
+    dec.decode_input_seq(&mut inp, &mut ii);
+    // 3 invalid bytes skipped, recognized '+'
+    assert_eq!(0, inp.len());
+    assert!(matches!(ii.evnt, InputEvent::Char(_)));
+
+    if let InputEvent::Char(ref cb) = ii.evnt {
+        assert_eq!(1, cb.utf8sl);
+        assert_eq!('+', cb.as_char());
+    }
+}
+
+#[test]
 fn utf8_character_incomplete_err() {
     let mut dec = Decoder::default();
     let mut inp = InputQue::new();
@@ -134,19 +165,18 @@ fn utf8_character_incomplete_err() {
     inp.push(smile[1]);
     inp.push(smile[2]);
     // invalid byte
-    inp.push(b' ');
+    inp.push(b'@');
     // character following the sequence
     inp.push(b'+');
     assert_eq!(5, inp.len());
 
-    // try to decode invalid input
+    // try to decode invalid input - entire incomplete sequence will be skipped
     dec.decode_input_seq(&mut inp, &mut ii);
-    // input drained from sequence
+    // 3 bytes dropped, expect '@'
     assert_eq!(1, inp.len());
     assert!(matches!(ii.evnt, InputEvent::Char(_)));
     if let InputEvent::Char(ref cb) = ii.evnt {
-        // because UTF-8 validation returns error, we receive ""
-        assert_eq!("", cb.as_str());
+        assert_eq!("@", cb.as_str());
     }
 
     // decode remaining

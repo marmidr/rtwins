@@ -177,6 +177,7 @@ pub fn num_edit_input_evt(
 
 // copied from core::str::validations.rs
 // https://tools.ietf.org/html/rfc3629
+// Valid UTF-8 char boundary: b < 128 || b >= 192
 const UTF8_CHAR_WIDTH: &[u8; 256] = &[
     // 1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 0

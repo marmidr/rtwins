@@ -163,7 +163,8 @@ impl rtwins::wgt::WindowState for MainWndState {
         if let Some(mut term_guard) = TERM.try_lock() {
             term_guard.draw(self, &[wid]);
             term_guard.flush_buff();
-        } else {
+        }
+        else {
             rtwins::tr_warn!("Cannot lock the term");
         }
     }
@@ -256,8 +257,10 @@ fn tui() {
     }
 
     rtwins::tr_info!("Press Ctrl-D to quit");
-    rtwins::tr_info!("Size of WND_MAIN_WGTS: {} B",
-        core::mem::size_of_val(&WND_MAIN_WGTS));
+    rtwins::tr_info!(
+        "Size of WND_MAIN_WGTS: {} B",
+        core::mem::size_of_val(&WND_MAIN_WGTS)
+    );
 
     if cfg!(feature = "qemu") {
         rtwins::tr_info!(
@@ -278,7 +281,7 @@ fn tui() {
     let mut ii = rtwins::input::InputInfo::default();
 
     #[allow(unused_labels)]
-    'mainloop: loop  {
+    'mainloop: loop {
         let (inp_seq, q) = inp.read_input();
 
         if q {
@@ -298,8 +301,13 @@ fn tui() {
                     }
                 }
 
-                rtwins::tr_debug!("Input: {}{}{}, bytes: {:?}",
-                    esc::BOLD, ii.name, esc::NORMAL, inp_seq);
+                rtwins::tr_debug!(
+                    "Input: {}{}{}, bytes: {:?}",
+                    esc::BOLD,
+                    ii.name,
+                    esc::NORMAL,
+                    inp_seq
+                );
                 let _key_handled = wgt::process_input(&mut ws_main, &ii);
             }
         }

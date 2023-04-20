@@ -1050,7 +1050,9 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                     }
                     key_handled = true;
                 }
-                Key::Up | Key::Down => {}
+                Key::Up | Key::Down => {
+                    //
+                }
                 Key::Left => {
                     if !is_psw_masked && cursor_pos > 0 {
                         cursor_pos -= 1;
@@ -1082,9 +1084,10 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
                 _ => {}
             }
         }
-        else if let InputEvent::Char(ref ch) = ii.evnt {
-            let ch = ch.utf8seq[0] as char;
-            te_state.txt.insert(cursor_pos as usize, ch);
+        else if let InputEvent::Char(ref cb) = ii.evnt {
+            te_state
+                .txt
+                .insert_str_at_char_idx(cursor_pos as usize, cb.as_str());
             cursor_pos += 1;
             ws.invalidate(wgt.id);
             key_handled = true;
@@ -1109,8 +1112,8 @@ fn process_key_text_edit(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
 }
 
 fn process_key_check_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
-    if let InputEvent::Char(ref ch) = ii.evnt {
-        if ii.kmod.is_empty() && ch.utf8seq[0] == b' ' {
+    if let InputEvent::Char(ref cb) = ii.evnt {
+        if ii.kmod.is_empty() && cb.utf8seq[0] == b' ' {
             ws.on_checkbox_toggle(wgt);
             ws.invalidate(wgt.id);
             return true;
@@ -1129,8 +1132,8 @@ fn process_key_check_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
 }
 
 fn process_key_radio(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo) -> bool {
-    if let InputEvent::Char(ref ch) = ii.evnt {
-        if ii.kmod.is_empty() && ch.utf8seq[0] == b' ' {
+    if let InputEvent::Char(ref cb) = ii.evnt {
+        if ii.kmod.is_empty() && cb.utf8seq[0] == b' ' {
             ws.on_radio_select(wgt);
             invalidate_radio_group(ws, wgt);
             return true;
@@ -1254,8 +1257,8 @@ fn process_key_combo_box(ws: &mut dyn WindowState, wgt: &Widget, ii: &InputInfo)
     ws.get_combo_box_state(wgt, &mut cbs);
     let mut input_handled = false;
 
-    if let InputEvent::Char(ref ch) = ii.evnt {
-        if ch.utf8seq[0] == b' ' && cbs.items_cnt > 0 {
+    if let InputEvent::Char(ref cb) = ii.evnt {
+        if cb.utf8seq[0] == b' ' && cbs.items_cnt > 0 {
             cbs.drop_down = !cbs.drop_down;
 
             if cbs.drop_down {

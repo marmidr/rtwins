@@ -283,6 +283,16 @@ fn trim_at_char_idx() {
 }
 
 #[test]
+fn insert_str_at_char_idx() {
+    let mut s = String::from("🌄");
+    s.insert_str_at_char_idx(0, "+");
+    assert_eq!("+🌄", s);
+
+    s.insert_str_at_char_idx(2, "-");
+    assert_eq!("+🌄-", s);
+}
+
+#[test]
 fn split_at_char() {
     let s = String::from("Łódź 🌄 wita!");
     assert_eq!("", s.split_at_char_idx(100));

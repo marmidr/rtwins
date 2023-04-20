@@ -249,8 +249,8 @@ impl rtwins::wgt::WindowState for MainWndState {
         if wgt.id == id::BTN_1P5 {
             rtwins::tr_debug!("BTN_ON_KEY");
 
-            if let InputEvent::Char(ref ch) = ii.evnt {
-                if ch.utf8seq[0] == b' ' {
+            if let InputEvent::Char(ref cb) = ii.evnt {
+                if cb.first_byte() == b' ' {
                     rtwins::wgt::mark_button_down(wgt, true);
                     self.instant_redraw(wgt.id);
                     // wait and unpress the button

@@ -3,6 +3,7 @@
 #![allow(dead_code)]
 
 use crate::input::*;
+use crate::utils;
 
 use core::cmp::Ordering;
 
@@ -13,6 +14,8 @@ use alloc::vec::Vec;
 pub type InputQue = Vec<u8>;
 
 // -----------------------------------------------------------------------------
+
+// Note: all sequence names in this code occupies ~800bytes;
 
 /// ESC sequence definition
 #[derive(Copy, Clone)]
@@ -643,22 +646,35 @@ impl Decoder {
                 }
 
                 // 4. regular ASCII character or UTF-8 sequence
-                let utf8seqlen = crate::utils::utf8_char_width(seq[0]); // 0..4
-                                                                        // dbg!(seq, seq_sz, utf8seqlen);
+                let utf8seqlen = utils::utf8_char_width(seq[0]);
 
                 if utf8seqlen > 0 && utf8seqlen <= seq_sz {
-                    // copy valid UTF-8 seq
-                    let mut cb = CharBuff::default();
-                    cb.utf8seq[0] = seq[0];
-                    cb.utf8seq[1] = seq[1];
-                    cb.utf8seq[2] = seq[2];
-                    cb.utf8seq[3] = seq[3];
-                    cb.utf8sl = utf8seqlen as u8;
-                    inp_info.evnt = InputEvent::Char(cb);
-                    inp_info.name = "<Char>";
+                    // all UTF-8 char bytes are in the `seq` buffer
 
-                    input.drain(..utf8seqlen);
-                    return utf8seqlen as u8;
+                    // validate that remaining bytes of multibyte sequence are correct
+                    let valid_bytes = 1 + seq[1..utf8seqlen]
+                        .iter()
+                        .take_while(|&b| utils::utf8_char_width(*b) == 0)
+                        .count();
+
+                    if valid_bytes == utf8seqlen {
+                        let mut cb = CharBuff::default();
+                        cb.utf8seq[0] = seq[0];
+                        cb.utf8seq[1] = seq[1];
+                        cb.utf8seq[2] = seq[2];
+                        cb.utf8seq[3] = seq[3];
+                        cb.utf8sl = utf8seqlen as u8;
+
+                        inp_info.evnt = InputEvent::Char(cb);
+                        inp_info.name = "<Char>";
+
+                        input.drain(..utf8seqlen);
+                        return utf8seqlen as u8;
+                    }
+                    else {
+                        // drop the incomplete starting sequence
+                        input.drain(..valid_bytes);
+                    }
                 }
                 else {
                     // invalid/incomplete sequence?
@@ -667,7 +683,7 @@ impl Decoder {
                         return 0;
                     }
                     else {
-                        // invalid byte
+                        // invalid byte, not utf8_char_boundary
                         input.drain(..1);
                     }
                 }

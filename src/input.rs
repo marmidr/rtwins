@@ -188,8 +188,8 @@ impl KeyMod {
 /// Buffer for UTF-8 sequence
 #[derive(Debug, Default, Clone)]
 pub struct CharBuff {
-    pub utf8seq: [u8; 4], // UTF-8 code: 'a', '4', 'Ł'
-    pub utf8sl: u8,       // length of utf8seq seq
+    pub(crate) utf8seq: [u8; 4], // UTF-8 code: 'a', '4', 'Ł'
+    pub utf8sl: u8,              // length of utf8seq seq
 }
 
 impl CharBuff {
@@ -208,8 +208,15 @@ impl CharBuff {
 
     /// Uses `as_str()` to encode a `char`
     pub fn as_char(&self) -> char {
+        // TODO: this code could be smaller/faster
         let seq = self.as_str();
         seq.chars().next().unwrap_or_default()
+    }
+
+    /// Returns the first byte of sequence
+    #[inline]
+    pub fn first_byte(&self) -> u8 {
+        self.utf8seq[0]
     }
 }
 
