@@ -101,8 +101,8 @@ impl MainWndState {
             << "🔶 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam arcu magna, placerat sit amet libero at, aliquam fermentum augue.\n"
             << esc::NORMAL
             << esc::FG_GOLD
-            << " Morbi egestas consectetur malesuada. Mauris vehicula, libero eget tempus ullamcorper, nisi lorem efficitur velit, vel bibendum augue eros vel lorem. Duis vestibulum magna a ornare bibendum. Curabitur eleifend dictum odio, eu ultricies nunc eleifend et.\n"
-            << "Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.\n"
+            << "  Morbi egestas consectetur malesuada. Mauris vehicula, libero eget tempus ullamcorper, nisi lorem efficitur velit, vel bibendum augue eros vel lorem. Duis vestibulum magna a ornare bibendum. Curabitur eleifend dictum odio, eu ultricies nunc eleifend et.\n"
+            << "  Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.\n"
             << esc::FG_GREEN_YELLOW
             << "🔷 Interdum et malesuada fames ac ante ipsum primis in faucibus. Aenean malesuada lacus leo, a eleifend lorem suscipit sed.\n"
             << "▄";
@@ -139,11 +139,11 @@ impl MainWndState {
         wnd_state
             .rs
             .pgctrl
-            .insert(id::PG_CONTROL, PgctrlState { page: 0 });
+            .insert(id::PG_CONTROL, PgctrlState { page: 4 });
         wnd_state.rs.txtbx.insert(
-            id::TBX_WIDE,
+            id::TBX_NARROW,
             TxtbxState {
-                top_line: 9,
+                top_line: 0,
                 lines: Default::default(),
             },
         );

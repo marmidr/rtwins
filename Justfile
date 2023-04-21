@@ -82,8 +82,8 @@ clip:
 
 # debug locally
 gdb:
-    # rust-gdb -tui -ex "b main" target/debug/examples/demo_full -ex "r"
-    cgdb -ex "b main" target/debug/examples/demo_full -ex "r"
+    # rust-gdb -tui -ex "b main" target/debug/examples/demo_full
+    cgdb -ex "b main" target/debug/examples/demo_full
 
 # debug remote
 gdb-remote:

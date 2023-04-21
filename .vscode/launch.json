@@ -4,25 +4,6 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        // {
-        //     "type": "lldb",
-        //     "request": "launch",
-        //     "name": "Debug unit tests in library 'rtwins'",
-        //     "cargo": {
-        //         "args": [
-        //             "test",
-        //             "--no-run",
-        //             "--lib",
-        //             "--package=rtwins"
-        //         ],
-        //         "filter": {
-        //             "name": "rtwins",
-        //             "kind": "lib"
-        //         }
-        //     },
-        //     "args": [],
-        //     "cwd": "${workspaceFolder}"
-        // },
         {
             "type": "lldb",
             "request": "launch",
@@ -39,27 +20,8 @@
                 }
             },
             // "args": ["--tty=2"],
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
         },
-        // {
-        //     "type": "lldb",
-        //     "request": "launch",
-        //     "name": "Debug unit tests in example 'demo_full'",
-        //     "cargo": {
-        //         "args": [
-        //             "test",
-        //             "--no-run",
-        //             "--example=demo_full",
-        //             "--package=rtwins"
-        //         ],
-        //         "filter": {
-        //             "name": "demo_full",
-        //             "kind": "example"
-        //         }
-        //     },
-        //     "args": [],
-        //     "cwd": "${workspaceFolder}"
-        // },
         {
             "type": "lldb",
             "request": "launch",
@@ -78,25 +40,6 @@
             "args": [],
             "cwd": "${workspaceFolder}"
         },
-        // {
-        //     "type": "lldb",
-        //     "request": "launch",
-        //     "name": "Debug unit tests in example 'demo_mini'",
-        //     "cargo": {
-        //         "args": [
-        //             "test",
-        //             "--no-run",
-        //             "--example=demo_mini",
-        //             "--package=rtwins"
-        //         ],
-        //         "filter": {
-        //             "name": "demo_mini",
-        //             "kind": "example"
-        //         }
-        //     },
-        //     "args": [],
-        //     "cwd": "${workspaceFolder}"
-        // },
         {
             "type": "lldb",
             "request": "launch",

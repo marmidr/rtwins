@@ -49,41 +49,47 @@ pub fn word_wrap(max_disp_w: usize, src: &str) -> StringListRc {
         .split_inclusive(char::is_whitespace)
         .scan((0usize, 0usize, 0usize), |state, word| {
             let word_w = word.displayed_width();
-            // println!("w:'{}', wl:{}", word, word.len());
 
             if state.0 + word_w > max_disp_w {
-                // ready to output the line as the current word would made it too wide
-                let outslice = &src[state.1..state.2];
-                // println!(">'{}'", outslice);
+                // ready to output the line, as the current word would made it too wide
+                let ends_with_nl = state.2 > 0 && src.as_bytes()[state.2-1] == b'\n';
+                let outslice = &src[state.1..state.2 - ends_with_nl as usize];
                 state.0 = word_w; // line_w = word_w
                 state.1 = state.2; // begin = end
                 state.2 += word.len(); // end += word.len
                 Some(outslice.to_string())
             }
-            else if word.ends_with('\n') {
-                // shorter than possible, but ends with new line
+            else if word.as_bytes().ends_with(&[b'\n']) {
+                // perhaps shorter than possible, but ends with a new line
                 state.2 += word.len(); // end += word.len
-                state.2 -= 1; // do not put '\n' to the output
-                let outslice = &src[state.1..state.2];
-                // println!("<'{}'", outslice);
+                let outslice = &src[state.1..state.2 - 1];
                 state.0 = 0;
-                state.2 += 1; // do not put '\n' to the output
                 state.1 = state.2; // begin = end
                 Some(outslice.to_string())
             }
             else {
-                // single word not ending with \n
-                state.0 += word_w; // line_w += word_w
-                state.2 += word.len(); // end += word.len
-
-                if state.2 == src.len() {
-                    // `word` is the last item in a string -> output it
-                    // println!("<'{}'", src[state.1..state.2].to_string());
-                    Some(word.to_string())
+                if state.2 > state.1 && src.as_bytes()[state.2-1] == b'\n' {
+                    // existing sequence ends with the new line
+                    let outslice = &src[state.1..state.2 - 1];
+                    state.0 = word_w; // line_w = word_w
+                    state.1 = state.2; // begin = end
+                    state.2 += word.len(); // end += word.len
+                    // FIXME: if `word` is the last item in a string, it will be lost
+                    Some(outslice.to_string())
                 }
                 else {
-                    // keep iterating -> return Some
-                    Some("".to_string()) // empty str -> will be filtered out
+                    // single word not ending with \n
+                    state.0 += word_w; // line_w += word_w
+                    state.2 += word.len(); // end += word.len
+
+                    if state.2 == src.len() {
+                        // `word` is the last item in a string -> output it
+                        Some(word.to_string())
+                    }
+                    else {
+                        // keep iterating -> return Some
+                        Some("".to_string()) // empty str -> will be filtered out
+                    }
                 }
             }
         })

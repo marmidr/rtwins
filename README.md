@@ -1,7 +1,7 @@
 # RTWins in brief
 
 `RTWins` is a Rust library designed for easy creation of terminal applications,
-targetting non-os, resource-constrained devices, like bare metal Cortex-M3 devices (64KiB Flash or more).
+targetting non-os, resource-constrained devices, like bare metal Cortex-M3 devices (128KiB Flash or more).
 
 It provides basic facilities required by interactive applications,
 such as screen and cursor management, keyboard input, keymaps, color codes.

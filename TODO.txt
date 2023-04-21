@@ -9,4 +9,4 @@
 [x] simplify the RuntimeState
 [x] reorganize DemoFull, rename tabs
 [ ] improve Tab-traversal
-[ ] TextBox - textwrap behind window, when widget is narrow
+[x] TextBox - textwrap behind window, when widget is narrow
